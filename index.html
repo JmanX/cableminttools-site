@@ -49,5 +49,29 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
 <section><div class="wrap"><div class="sectionhead"><div><div class="kicker" style="color:#18b979">WHY CABLEMINT</div><h2>Cleaner documentation. Less hunting for information.</h2></div></div><div class="why"><div><strong>Plan</strong><span>Capture important details before installation starts.</span></div><div><strong>Document</strong><span>Keep field information organized and easy to reference.</span></div><div><strong>Track</strong><span>Follow cables, devices, ports, doors, fiber, and progress.</span></div><div><strong>Complete</strong><span>Finish projects with cleaner records and fewer loose ends.</span></div></div></div></section>
 <section id="about"><div class="wrap about"><img src="logo.png" alt="CableMint Tools"><div><div class="kicker" style="color:#18b979">ABOUT CABLEMINT TOOLS</div><h2>Digital tools for connected work.</h2><p>CableMint Tools creates practical digital and physical resources for low-voltage, networking, security, and IT professionals. The goal is simple: make planning, documentation, and project tracking easier to use on real jobs.</p><div class="buttons"><a class="btn primary" href="https://cableminttools.etsy.com" target="_blank" rel="noopener noreferrer">Shop All Tools</a></div></div></div></section>
 <footer><div class="wrap foot"><div><strong>CableMint Tools</strong><br><small>Digital Tools for Connected Work</small></div><div class="footlinks"><a href="https://cableminttools.com">Home</a><a href="https://cableminttools.etsy.com" target="_blank" rel="noopener noreferrer">Etsy</a><a href="https://www.youtube.com/@CableMintTools" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://www.tiktok.com/@cableminttools" target="_blank" rel="noopener noreferrer">TikTok</a><a href="https://www.instagram.com/cableminttools" target="_blank" rel="noopener noreferrer">Instagram</a></div></div></footer>
+<script>
+document.addEventListener('click', function (event) {
+  const link = event.target.closest('a[href*="etsy.com"]');
+  if (!link) return;
+
+  let product = 'shop';
+  const href = link.href;
+
+  if (href.includes('4577504671')) product = 'complete_bundle';
+  else if (href.includes('4570923329')) product = 'cable_tracker';
+  else if (href.includes('4571005424')) product = 'cctv_site_survey';
+  else if (href.includes('4571010941')) product = 'network_rack';
+  else if (href.includes('4571030692')) product = 'fiber_optic';
+  else if (href.includes('4571015878')) product = 'access_control';
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'etsy_click', {
+      link_url: href,
+      product_name: product,
+      link_text: (link.textContent || '').trim()
+    });
+  }
+});
+</script>
 </body>
 </html>
