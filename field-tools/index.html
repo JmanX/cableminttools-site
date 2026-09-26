@@ -22,7 +22,7 @@ header{background:linear-gradient(135deg,var(--ink),#0b3944);color:#fff;padding:
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:10px;font-weight:900}.brand img{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:50%}
 .home{font-size:14px;font-weight:800;padding:10px 14px;border:1px solid #53717a;border-radius:10px}.hero{padding:34px 0 4px}.hero h1{font-size:clamp(34px,7vw,58px);line-height:1;margin:0 0 12px}.hero p{max-width:730px;color:#c9d8de;font-size:18px;margin:0}
 .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.badge{padding:7px 10px;border-radius:999px;background:#1a4753;font-size:12px;font-weight:800}
-main{padding:34px 0 70px}.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
+main{padding:34px 0 70px}.tabs{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
 .panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 10px 28px rgba(16,39,50,.07)}h2{margin:0 0 6px;font-size:28px}.sub{color:var(--muted);margin:0 0 20px}
 .fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:800}input,select{width:100%;padding:12px 13px;border:1px solid #c9d8d2;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(24,185,121,.25);border-color:var(--green)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button.primary,button.secondary{border:0;border-radius:10px;padding:12px 16px;font-weight:900;cursor:pointer}button.primary{background:var(--green);color:#fff}button.secondary{background:#e8f0ed;color:var(--ink)}
@@ -39,6 +39,8 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <div class="tabs">
 <button class="tab active" data-tab="cctv">CCTV Storage</button>
 <button class="tab" data-tab="power">Volts / Amps / Watts</button>
+<button class="tab" data-tab="ohms">Ohm's Law</button>
+<button class="tab" data-tab="battery">Battery Runtime</button>
 <button class="tab" data-tab="poe">PoE Budget</button>
 <button class="tab" data-tab="fiber">Fiber Loss</button>
 <button class="tab" data-tab="voltage">Voltage Drop</button>
@@ -64,6 +66,28 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <div class="field"><label>Watts (W)</label><input id="powerWatts" type="number" min="0" step=".01" placeholder="Calculated"></div>
 </div><div class="actions"><button class="primary" onclick="calcPower()">Calculate</button><button class="secondary" onclick="saveCurrent('Volts / Amps / Watts','powerResult')">Save Result</button></div></div>
 <div class="card result" id="powerResult"><div class="metric"><span>Calculated value</span><strong>—</strong></div><div class="metric"><span>Formula</span><strong>W = V × A</strong></div><div class="note">Useful for APs, cameras, access-control devices, power supplies, and other DC loads when a spec sheet gives only two of the three values. For AC equipment, power factor can matter, so VA and watts may not be identical.</div></div>
+</div></section>
+
+<section id="ohms" class="panel"><div class="grid">
+<div class="card"><h2>Ohm's Law Calculator</h2><p class="sub">Solve voltage, current, resistance, or power from any two known values.</p><div class="fields">
+<div class="field"><label>Solve for</label><select id="ohmSolve"><option value="volts">Volts (V)</option><option value="amps">Amps (A)</option><option value="ohms" selected>Resistance (Ω)</option><option value="watts">Watts (W)</option></select></div>
+<div class="field"><label>Volts (V)</label><input id="ohmV" type="number" min="0" step=".01" value="24"></div>
+<div class="field"><label>Amps (A)</label><input id="ohmA" type="number" min="0" step=".001" value="1"></div>
+<div class="field"><label>Resistance (Ω)</label><input id="ohmR" type="number" min="0" step=".01" placeholder="Calculated"></div>
+<div class="field"><label>Watts (W)</label><input id="ohmW" type="number" min="0" step=".01" placeholder="Optional / calculated"></div>
+</div><div class="actions"><button class="primary" onclick="calcOhms()">Calculate</button><button class="secondary" onclick="saveCurrent('Ohm\'s Law','ohmsResult')">Save Result</button></div></div>
+<div class="card result" id="ohmsResult"><div class="metric"><span>Calculated value</span><strong>—</strong></div><div class="metric"><span>Formula</span><strong>V = I × R</strong></div><div class="note">For DC resistive circuits. Electronics with regulation, inrush, inductive loads, or AC power factor may not behave like a simple resistor.</div></div>
+</div></section>
+
+<section id="battery" class="panel"><div class="grid">
+<div class="card"><h2>Battery Runtime Calculator</h2><p class="sub">Estimate runtime for DC battery-backed loads such as access control, cameras, radios, and network devices.</p><div class="fields">
+<div class="field"><label>Battery voltage (V)</label><input id="batV" type="number" min=".1" step=".1" value="12"></div>
+<div class="field"><label>Battery capacity (Ah)</label><input id="batAh" type="number" min=".1" step=".1" value="18"></div>
+<div class="field"><label>Total load (W)</label><input id="batLoadW" type="number" min=".1" step=".1" value="24"></div>
+<div class="field"><label>Usable capacity</label><select id="batUse"><option value=".5">50%</option><option value=".7">70%</option><option value=".8" selected>80%</option><option value=".9">90%</option></select></div>
+<div class="field"><label>System efficiency</label><select id="batEff"><option value=".8">80%</option><option value=".85">85%</option><option value=".9" selected>90%</option><option value=".95">95%</option></select></div>
+</div><div class="actions"><button class="primary" onclick="calcBattery()">Calculate</button><button class="secondary" onclick="saveCurrent('Battery Runtime','batteryResult')">Save Result</button></div></div>
+<div class="card result" id="batteryResult"><div class="metric"><span>Estimated runtime</span><strong>—</strong></div><div class="metric"><span>Usable energy</span><strong>—</strong></div><div class="metric"><span>Equivalent load current</span><strong>—</strong></div><div class="note">Planning estimate only. Real runtime varies with battery age, chemistry, discharge rate, temperature, inverter/DC-DC losses, and manufacturer discharge curves.</div></div>
 </div></section>
 
 <section id="poe" class="panel"><div class="grid">
@@ -140,6 +164,40 @@ function calcPower(){
   setMetrics('powerResult',[label,formula]);
   trackCalc('power');
 }
+function calcOhms(){
+  const solve=$('ohmSolve').value,V=n('ohmV'),A=n('ohmA'),R=n('ohmR'),W=n('ohmW');
+  let val=0,label='',formula='';
+  if(solve==='ohms'){
+    if(V<=0||A<=0)return alert('Enter volts and amps greater than 0.');
+    val=V/A; label=val.toFixed(2)+' Ω'; formula='R = V ÷ I = '+V+' ÷ '+A;
+    $('ohmR').value=val.toFixed(2); $('ohmW').value=(V*A).toFixed(2);
+  } else if(solve==='volts'){
+    if(A>0&&R>0){val=A*R;formula='V = I × R = '+A+' × '+R;}
+    else if(W>0&&A>0){val=W/A;formula='V = P ÷ I = '+W+' ÷ '+A;}
+    else return alert('Enter amps + resistance, or watts + amps.');
+    label=val.toFixed(2)+' V'; $('ohmV').value=val.toFixed(2);
+  } else if(solve==='amps'){
+    if(V>0&&R>0){val=V/R;formula='I = V ÷ R = '+V+' ÷ '+R;}
+    else if(W>0&&V>0){val=W/V;formula='I = P ÷ V = '+W+' ÷ '+V;}
+    else return alert('Enter volts + resistance, or watts + volts.');
+    label=val.toFixed(3)+' A'; $('ohmA').value=val.toFixed(3);
+  } else {
+    if(V>0&&A>0){val=V*A;formula='P = V × I = '+V+' × '+A;}
+    else if(A>0&&R>0){val=A*A*R;formula='P = I² × R';}
+    else if(V>0&&R>0){val=V*V/R;formula='P = V² ÷ R';}
+    else return alert('Enter any valid pair of volts, amps, or resistance.');
+    label=val.toFixed(2)+' W'; $('ohmW').value=val.toFixed(2);
+  }
+  setMetrics('ohmsResult',[label,formula]); trackCalc('ohms_law');
+}
+function calcBattery(){
+  const V=n('batV'),Ah=n('batAh'),load=n('batLoadW'),usable=parseFloat($('batUse').value),eff=parseFloat($('batEff').value);
+  if(V<=0||Ah<=0||load<=0)return alert('Enter battery voltage, amp-hours, and load greater than 0.');
+  const nominalWh=V*Ah, usableWh=nominalWh*usable*eff, hours=usableWh/load, amps=load/V;
+  const runtime=hours>=24?(hours/24).toFixed(2)+' days':hours.toFixed(2)+' hours';
+  setMetrics('batteryResult',[runtime,usableWh.toFixed(1)+' Wh',amps.toFixed(2)+' A']);
+  trackCalc('battery_runtime');
+}
 function calcPoE(){const load=n('poeDevices')*n('poeWatts'),budget=n('poeBudget'),remaining=budget-load,limit=budget*(1-parseFloat($('poeHead').value));let s=load<=limit?'<span class="status ok">PASS — headroom maintained</span>':load<=budget?'<span class="status warn">CAUTION — limited headroom</span>':'<span class="status bad">FAIL — budget exceeded</span>';setMetrics('poeResult',[load.toFixed(1)+' W',remaining.toFixed(1)+' W',s]);trackCalc('poe')}
 function calcFiber(){const passive=n('fiberKm')*n('fiberAtt')+n('connectors')*n('connectorLoss')+n('splices')*n('spliceLoss'),design=passive+n('fiberMargin');setMetrics('fiberResult',[passive.toFixed(2)+' dB',design.toFixed(2)+' dB']);trackCalc('fiber')}
 function calcVoltage(){const resistancePer1000=parseFloat($('awg').value),r=resistancePer1000*(n('lengthFt')*2/1000),drop=n('amps')*r,load=n('sourceV')-drop,pct=n('sourceV')?drop/n('sourceV')*100:0;setMetrics('voltageResult',[drop.toFixed(2)+' V',load.toFixed(2)+' V',pct.toFixed(1)+'%']);trackCalc('voltage')}
@@ -150,6 +208,15 @@ function renderSaved(){const all=JSON.parse(localStorage.getItem('cm_saved')||'[
 function delSaved(i){const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');all.splice(i,1);localStorage.setItem('cm_saved',JSON.stringify(all));renderSaved()}
 document.addEventListener('click',e=>{const a=e.target.closest('a[href*="etsy.com"]');if(a&&typeof gtag==='function')gtag('event','etsy_click',{product_name:'field_tools_app',link_url:a.href,link_text:(a.textContent||'').trim()})});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+function syncOhmFields(){
+  ['ohmV','ohmA','ohmR','ohmW'].forEach(id=>$(id).disabled=false);
+  const solve=$('ohmSolve').value;
+  const target=solve==='volts'?'ohmV':solve==='amps'?'ohmA':solve==='ohms'?'ohmR':'ohmW';
+  $(target).disabled=true; $(target).value='';
+  setMetrics('ohmsResult',['—',solve==='volts'?'V = I × R':solve==='amps'?'I = V ÷ R':solve==='ohms'?'R = V ÷ I':'P = V × I']);
+}
+$('ohmSolve').addEventListener('change',syncOhmFields);
+syncOhmFields();
 function syncPowerFields(){
   const solve=$('powerSolve').value;
   ['powerVolts','powerAmps','powerWatts'].forEach(id=>{$(id).disabled=false;});
