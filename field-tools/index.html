@@ -9,6 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="../logo.png">
 <link rel="apple-touch-icon" href="../logo.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5K0LXZLD9"></script>
 <script>
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
@@ -22,7 +23,7 @@ header{background:linear-gradient(135deg,var(--ink),#0b3944);color:#fff;padding:
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:10px;font-weight:900}.brand img{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:50%}
 .home{font-size:14px;font-weight:800;padding:10px 14px;border:1px solid #53717a;border-radius:10px}.hero{padding:34px 0 4px}.hero h1{font-size:clamp(34px,7vw,58px);line-height:1;margin:0 0 12px}.hero p{max-width:730px;color:#c9d8de;font-size:18px;margin:0}
 .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.badge{padding:7px 10px;border-radius:999px;background:#1a4753;font-size:12px;font-weight:800}
-main{padding:34px 0 70px}.appbar{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-bottom:18px}.projectbox,.quickbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}.projectline{display:flex;gap:10px;align-items:end}.projectline .field{flex:1}.installbtn{display:none;border:0;border-radius:10px;padding:12px 14px;background:var(--ink);color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}.mobilepicker{display:none;margin-bottom:14px}.quicklinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.quicklink{border:1px solid var(--line);background:#f7fbf9;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:900;cursor:pointer}.pinbtn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;font-weight:900;cursor:pointer}.tabs{display:grid;grid-template-columns:repeat(10,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
+main{padding:34px 0 70px}.accountbar{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.accountleft{min-width:0}.accounttitle{font-weight:900}.accountmeta{font-size:13px;color:var(--muted);overflow-wrap:anywhere}.accountactions{display:flex;gap:8px;flex-wrap:wrap}.accountactions button,.accountactions a{border:0;border-radius:10px;padding:10px 13px;font-weight:900;cursor:pointer;text-decoration:none}.acctprimary{background:var(--green);color:#fff}.acctsecondary{background:#e8f0ed;color:var(--ink)}.prochip{display:inline-block;margin-left:8px;padding:3px 8px;border-radius:999px;background:#e6f8f0;color:#137e56;font-size:11px;font-weight:900}.authform{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.authform.show{display:block}.authgrid{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end}.authmsg{font-size:13px;margin-top:8px;color:var(--muted)}.appbar{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-bottom:18px}.projectbox,.quickbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}.projectline{display:flex;gap:10px;align-items:end}.projectline .field{flex:1}.installbtn{display:none;border:0;border-radius:10px;padding:12px 14px;background:var(--ink);color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}.mobilepicker{display:none;margin-bottom:14px}.quicklinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.quicklink{border:1px solid var(--line);background:#f7fbf9;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:900;cursor:pointer}.pinbtn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;font-weight:900;cursor:pointer}.tabs{display:grid;grid-template-columns:repeat(10,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
 .panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 10px 28px rgba(16,39,50,.07)}h2{margin:0 0 6px;font-size:28px}.sub{color:var(--muted);margin:0 0 20px}
 .fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:800}input,select{width:100%;padding:12px 13px;border:1px solid #c9d8d2;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(24,185,121,.25);border-color:var(--green)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button.primary,button.secondary{border:0;border-radius:10px;padding:12px 16px;font-weight:900;cursor:pointer}button.primary{background:var(--green);color:#fff}button.secondary{background:#e8f0ed;color:var(--ink)}
@@ -30,12 +31,24 @@ main{padding:34px 0 70px}.appbar{display:grid;grid-template-columns:1.2fr .8fr;g
 .saved{margin-top:22px}.savedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.savedrow:last-child{border-bottom:0}.savedrow small{color:var(--muted)}.del{background:none;border:0;color:var(--bad);font-weight:800;cursor:pointer}
 .footcta{margin-top:28px;background:var(--ink);color:#fff;border-radius:18px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.footcta p{margin:4px 0 0;color:#c8d5da}.footcta a{background:var(--green);padding:12px 16px;border-radius:10px;font-weight:900;white-space:nowrap}
 footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
-@media(max-width:820px){.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
+@media(max-width:820px){.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
 </style>
 </head>
 <body>
 <header><div class="wrap"><div class="top"><a class="brand" href="../"><img src="../logo.png" alt="CableMint Tools"><span>CableMint Field Tools</span></a><a class="home" href="../">Main Site</a></div><div class="hero"><h1>Field math without the spreadsheet hunt.</h1><p>Fast calculators for low-voltage, security, fiber, networking, and estimating work. Free to use and built for phones in the field.</p><div class="badges"><span class="badge">Free MVP</span><span class="badge">Mobile Friendly</span><span class="badge">Works Offline After First Load</span><span class="badge">Saved Locally</span></div></div></div></header>
 <main><div class="wrap">
+<div class="accountbar" id="accountBar">
+<div class="accountleft"><div class="accounttitle">CableMint Account <span id="proChip"></span></div><div class="accountmeta" id="accountMeta">Not signed in · Free access</div></div>
+<div class="accountactions"><button id="accountToggle" class="acctsecondary" type="button">Sign In / Create Account</button><a id="upgradeBtn" class="acctprimary" href="/pricing/">Upgrade to Pro</a><button id="signOutBtn" class="acctsecondary" type="button" style="display:none">Sign Out</button></div>
+<div class="authform" id="authForm" style="flex-basis:100%">
+<div class="authgrid">
+<div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+<div class="field"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters"></div>
+<button id="signInBtn" class="acctprimary" type="button">Sign In</button>
+<button id="signUpBtn" class="acctsecondary" type="button">Create Account</button>
+</div><div class="authmsg" id="authMsg">Use the same email address you use at Paddle checkout so Pro access can be matched automatically.</div>
+</div>
+</div>
 <div class="appbar">
 <div class="projectbox"><div class="projectline"><div class="field"><label>Project / Site Name <span style="font-weight:500;color:var(--muted)">(optional)</span></label><input id="projectName" type="text" maxlength="60" placeholder="Example: 123 Main St - MDF"></div><button id="installBtn" class="installbtn" type="button">Install App</button></div><div class="note">Saved results will be grouped with this project name on this device.</div></div>
 <div class="quickbox"><strong>Quick Access</strong><div id="quickLinks" class="quicklinks"><span class="note">Your most-used and pinned tools will appear here.</span></div></div>
@@ -169,6 +182,60 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <footer><div class="wrap">CableMint Field Tools · Free MVP · Calculations are planning aids, not engineering approval.</div></footer>
 <script>
 const $=id=>document.getElementById(id);
+const SUPABASE_URL='https://kgbrhdjbeosljpwghxte.supabase.co';
+const SUPABASE_KEY='sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+async function refreshAccount(){
+  const {data:{user}}=await sb.auth.getUser();
+  const meta=$('accountMeta'),chip=$('proChip'),toggle=$('accountToggle'),out=$('signOutBtn'),upgrade=$('upgradeBtn');
+  if(!user){
+    meta.textContent='Not signed in · Free access';
+    chip.innerHTML='';
+    toggle.style.display='';
+    out.style.display='none';
+    upgrade.style.display='';
+    return;
+  }
+  meta.textContent=user.email+' · Checking subscription…';
+  toggle.style.display='none'; out.style.display=''; 
+  let isPro=false, subStatus='';
+  const {data:customer}=await sb.from('paddle_customers').select('paddle_customer_id').ilike('email',user.email).maybeSingle();
+  if(customer){
+    const {data:subs}=await sb.from('paddle_subscriptions').select('status').eq('paddle_customer_id',customer.paddle_customer_id).in('status',['active','trialing']).limit(1);
+    if(subs&&subs.length){isPro=true;subStatus=subs[0].status;}
+  }
+  if(isPro){
+    meta.textContent=user.email+' · Pro subscription '+subStatus;
+    chip.innerHTML='<span class="prochip">PRO</span>';
+    upgrade.style.display='none';
+  }else{
+    meta.textContent=user.email+' · Free access';
+    chip.innerHTML='';
+    upgrade.style.display='';
+  }
+}
+$('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
+$('signInBtn').addEventListener('click',async()=>{
+  $('authMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
+  if(error){$('authMsg').textContent=error.message;return}
+  $('authMsg').textContent='Signed in.';
+  $('authForm').classList.remove('show');
+  await refreshAccount();
+});
+$('signUpBtn').addEventListener('click',async()=>{
+  $('authMsg').textContent='Creating account…';
+  const email=$('authEmail').value.trim(),password=$('authPassword').value;
+  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://www.cableminttools.com/field-tools/'}});
+  if(error){$('authMsg').textContent=error.message;return}
+  if(data.session){$('authMsg').textContent='Account created and signed in.';$('authForm').classList.remove('show');await refreshAccount();}
+  else $('authMsg').textContent='Account created. Check your email to confirm your address, then return here and sign in.';
+});
+$('signOutBtn').addEventListener('click',async()=>{await sb.auth.signOut();await refreshAccount()});
+sb.auth.onAuthStateChange(()=>setTimeout(refreshAccount,0));
+refreshAccount();
+
 const toolNames={cctv:'CCTV Storage',power:'Volts / Amps / Watts',ohms:"Ohm's Law",battery:'Battery Runtime',bandwidth:'Camera Bandwidth',poeclass:'PoE Class Check',poe:'PoE Budget',fiber:'Fiber Loss',voltage:'Voltage Drop',labor:'Labor + Markup'};
 function openTool(id,track=true){
   document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));
