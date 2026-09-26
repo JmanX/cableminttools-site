@@ -1,0 +1,13 @@
+{
+  "name":"CableMint Field Tools",
+  "short_name":"Field Tools",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#eef4f1",
+  "theme_color":"#102732",
+  "description":"Free low-voltage field calculators from CableMint Tools.",
+  "icons":[
+    {"src":"../logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
