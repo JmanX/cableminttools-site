@@ -22,7 +22,7 @@ header{background:linear-gradient(135deg,var(--ink),#0b3944);color:#fff;padding:
 .top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:10px;font-weight:900}.brand img{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:50%}
 .home{font-size:14px;font-weight:800;padding:10px 14px;border:1px solid #53717a;border-radius:10px}.hero{padding:34px 0 4px}.hero h1{font-size:clamp(34px,7vw,58px);line-height:1;margin:0 0 12px}.hero p{max-width:730px;color:#c9d8de;font-size:18px;margin:0}
 .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.badge{padding:7px 10px;border-radius:999px;background:#1a4753;font-size:12px;font-weight:800}
-main{padding:34px 0 70px}.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
+main{padding:34px 0 70px}.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
 .panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 10px 28px rgba(16,39,50,.07)}h2{margin:0 0 6px;font-size:28px}.sub{color:var(--muted);margin:0 0 20px}
 .fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:800}input,select{width:100%;padding:12px 13px;border:1px solid #c9d8d2;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(24,185,121,.25);border-color:var(--green)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button.primary,button.secondary{border:0;border-radius:10px;padding:12px 16px;font-weight:900;cursor:pointer}button.primary{background:var(--green);color:#fff}button.secondary{background:#e8f0ed;color:var(--ink)}
@@ -38,6 +38,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <main><div class="wrap">
 <div class="tabs">
 <button class="tab active" data-tab="cctv">CCTV Storage</button>
+<button class="tab" data-tab="power">Volts / Amps / Watts</button>
 <button class="tab" data-tab="poe">PoE Budget</button>
 <button class="tab" data-tab="fiber">Fiber Loss</button>
 <button class="tab" data-tab="voltage">Voltage Drop</button>
@@ -53,6 +54,16 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <div class="field"><label>Storage overhead</label><select id="overhead"><option value="1">0%</option><option value="1.1" selected>10%</option><option value="1.2">20%</option><option value="1.3">30%</option></select></div>
 </div><div class="actions"><button class="primary" onclick="calcCCTV()">Calculate</button><button class="secondary" onclick="saveCurrent('CCTV Storage','cctvResult')">Save Result</button></div></div>
 <div class="card result" id="cctvResult"><div class="metric"><span>Estimated storage</span><strong>—</strong></div><div class="metric"><span>Raw daily storage</span><strong>—</strong></div><div class="note">Estimate only. VBR, motion recording, analytics, RAID, codec efficiency, and scene activity can materially change actual requirements.</div></div>
+</div></section>
+
+<section id="power" class="panel"><div class="grid">
+<div class="card"><h2>Volts / Amps / Watts Calculator</h2><p class="sub">Enter any two electrical values and calculate the third using DC power: Watts = Volts × Amps.</p><div class="fields">
+<div class="field"><label>Solve for</label><select id="powerSolve"><option value="watts" selected>Watts (W)</option><option value="amps">Amps (A)</option><option value="volts">Volts (V)</option></select></div>
+<div class="field"><label>Volts (V)</label><input id="powerVolts" type="number" min="0" step=".01" value="48"></div>
+<div class="field"><label>Amps (A)</label><input id="powerAmps" type="number" min="0" step=".001" value=".5"></div>
+<div class="field"><label>Watts (W)</label><input id="powerWatts" type="number" min="0" step=".01" placeholder="Calculated"></div>
+</div><div class="actions"><button class="primary" onclick="calcPower()">Calculate</button><button class="secondary" onclick="saveCurrent('Volts / Amps / Watts','powerResult')">Save Result</button></div></div>
+<div class="card result" id="powerResult"><div class="metric"><span>Calculated value</span><strong>—</strong></div><div class="metric"><span>Formula</span><strong>W = V × A</strong></div><div class="note">Useful for APs, cameras, access-control devices, power supplies, and other DC loads when a spec sheet gives only two of the three values. For AC equipment, power factor can matter, so VA and watts may not be identical.</div></div>
 </div></section>
 
 <section id="poe" class="panel"><div class="grid">
@@ -110,6 +121,25 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{doc
 function n(id){return parseFloat($(id).value)||0}
 function setMetrics(id,vals){const metrics=$(id).querySelectorAll('.metric strong');vals.forEach((v,i)=>{if(metrics[i])metrics[i].innerHTML=v})}
 function calcCCTV(){const raw=n('cameras')*n('bitrate')*1e6/8*3600*n('hours')/1e12;const total=raw*n('days')*parseFloat($('overhead').value);setMetrics('cctvResult',[total.toFixed(2)+' TB',raw.toFixed(2)+' TB/day']);trackCalc('cctv')}
+function calcPower(){
+  const solve=$('powerSolve').value, V=n('powerVolts'), A=n('powerAmps'), W=n('powerWatts');
+  let value=0, label='', formula='';
+  if(solve==='watts'){
+    if(V<=0||A<0)return alert('Enter volts and amps greater than or equal to 0.');
+    value=V*A; label=value.toFixed(2)+' W'; formula='W = V × A = '+V+' × '+A;
+    $('powerWatts').value=value.toFixed(2);
+  }else if(solve==='amps'){
+    if(V<=0||W<0)return alert('Enter watts and a voltage greater than 0.');
+    value=W/V; label=value.toFixed(3)+' A'; formula='A = W ÷ V = '+W+' ÷ '+V;
+    $('powerAmps').value=value.toFixed(3);
+  }else{
+    if(A<=0||W<0)return alert('Enter watts and amps greater than 0.');
+    value=W/A; label=value.toFixed(2)+' V'; formula='V = W ÷ A = '+W+' ÷ '+A;
+    $('powerVolts').value=value.toFixed(2);
+  }
+  setMetrics('powerResult',[label,formula]);
+  trackCalc('power');
+}
 function calcPoE(){const load=n('poeDevices')*n('poeWatts'),budget=n('poeBudget'),remaining=budget-load,limit=budget*(1-parseFloat($('poeHead').value));let s=load<=limit?'<span class="status ok">PASS — headroom maintained</span>':load<=budget?'<span class="status warn">CAUTION — limited headroom</span>':'<span class="status bad">FAIL — budget exceeded</span>';setMetrics('poeResult',[load.toFixed(1)+' W',remaining.toFixed(1)+' W',s]);trackCalc('poe')}
 function calcFiber(){const passive=n('fiberKm')*n('fiberAtt')+n('connectors')*n('connectorLoss')+n('splices')*n('spliceLoss'),design=passive+n('fiberMargin');setMetrics('fiberResult',[passive.toFixed(2)+' dB',design.toFixed(2)+' dB']);trackCalc('fiber')}
 function calcVoltage(){const resistancePer1000=parseFloat($('awg').value),r=resistancePer1000*(n('lengthFt')*2/1000),drop=n('amps')*r,load=n('sourceV')-drop,pct=n('sourceV')?drop/n('sourceV')*100:0;setMetrics('voltageResult',[drop.toFixed(2)+' V',load.toFixed(2)+' V',pct.toFixed(1)+'%']);trackCalc('voltage')}
@@ -120,6 +150,16 @@ function renderSaved(){const all=JSON.parse(localStorage.getItem('cm_saved')||'[
 function delSaved(i){const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');all.splice(i,1);localStorage.setItem('cm_saved',JSON.stringify(all));renderSaved()}
 document.addEventListener('click',e=>{const a=e.target.closest('a[href*="etsy.com"]');if(a&&typeof gtag==='function')gtag('event','etsy_click',{product_name:'field_tools_app',link_url:a.href,link_text:(a.textContent||'').trim()})});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+function syncPowerFields(){
+  const solve=$('powerSolve').value;
+  ['powerVolts','powerAmps','powerWatts'].forEach(id=>{$(id).disabled=false;});
+  const target=solve==='watts'?'powerWatts':solve==='amps'?'powerAmps':'powerVolts';
+  $(target).disabled=true;
+  $(target).value='';
+  setMetrics('powerResult',['—',solve==='watts'?'W = V × A':solve==='amps'?'A = W ÷ V':'V = W ÷ A']);
+}
+$('powerSolve').addEventListener('change',syncPowerFields);
+syncPowerFields();
 renderSaved();calcCCTV();
 </script>
 </body></html>
