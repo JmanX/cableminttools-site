@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CableMint Field Tools</title>
+<meta name="description" content="Free field calculators for CCTV storage, PoE budgets, fiber loss, voltage drop, and labor markup.">
+<meta name="theme-color" content="#102732">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../logo.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-R5K0LXZLD9"></script>
+<script>
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
+gtag('js',new Date());gtag('config','G-R5K0LXZLD9');
+</script>
+<style>
+:root{--ink:#102732;--ink2:#173b47;--green:#18b979;--green2:#0ed69b;--bg:#eef4f1;--card:#fff;--muted:#66777f;--line:#d8e5df;--warn:#b86a12;--bad:#b42318}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+a{text-decoration:none;color:inherit}.wrap{width:min(1120px,94%);margin:auto}
+header{background:linear-gradient(135deg,var(--ink),#0b3944);color:#fff;padding:18px 0 34px;border-bottom:5px solid var(--green)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:10px;font-weight:900}.brand img{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:50%}
+.home{font-size:14px;font-weight:800;padding:10px 14px;border:1px solid #53717a;border-radius:10px}.hero{padding:34px 0 4px}.hero h1{font-size:clamp(34px,7vw,58px);line-height:1;margin:0 0 12px}.hero p{max-width:730px;color:#c9d8de;font-size:18px;margin:0}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.badge{padding:7px 10px;border-radius:999px;background:#1a4753;font-size:12px;font-weight:800}
+main{padding:34px 0 70px}.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}.tab{border:0;border-radius:12px;background:#fff;padding:14px 10px;font-weight:900;color:var(--ink);box-shadow:0 4px 14px rgba(16,39,50,.06);cursor:pointer}.tab.active{background:var(--green);color:#fff}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 10px 28px rgba(16,39,50,.07)}h2{margin:0 0 6px;font-size:28px}.sub{color:var(--muted);margin:0 0 20px}
+.fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:800}input,select{width:100%;padding:12px 13px;border:1px solid #c9d8d2;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(24,185,121,.25);border-color:var(--green)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button.primary,button.secondary{border:0;border-radius:10px;padding:12px 16px;font-weight:900;cursor:pointer}button.primary{background:var(--green);color:#fff}button.secondary{background:#e8f0ed;color:var(--ink)}
+.result{display:grid;gap:12px}.metric{padding:17px;border:1px solid var(--line);border-radius:14px;background:#f9fcfb}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.metric strong{font-size:27px;line-height:1.15}.note{font-size:13px;color:var(--muted);padding-top:4px}.status{font-weight:900}.ok{color:#118a5a}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.saved{margin-top:22px}.savedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.savedrow:last-child{border-bottom:0}.savedrow small{color:var(--muted)}.del{background:none;border:0;color:var(--bad);font-weight:800;cursor:pointer}
+.footcta{margin-top:28px;background:var(--ink);color:#fff;border-radius:18px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.footcta p{margin:4px 0 0;color:#c8d5da}.footcta a{background:var(--green);padding:12px 16px;border-radius:10px;font-weight:900;white-space:nowrap}
+footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:820px){.tabs{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="top"><a class="brand" href="../"><img src="../logo.png" alt="CableMint Tools"><span>CableMint Field Tools</span></a><a class="home" href="../">Main Site</a></div><div class="hero"><h1>Field math without the spreadsheet hunt.</h1><p>Fast calculators for low-voltage, security, fiber, networking, and estimating work. Free to use and built for phones in the field.</p><div class="badges"><span class="badge">Free MVP</span><span class="badge">Mobile Friendly</span><span class="badge">Works Offline After First Load</span><span class="badge">Saved Locally</span></div></div></div></header>
+<main><div class="wrap">
+<div class="tabs">
+<button class="tab active" data-tab="cctv">CCTV Storage</button>
+<button class="tab" data-tab="poe">PoE Budget</button>
+<button class="tab" data-tab="fiber">Fiber Loss</button>
+<button class="tab" data-tab="voltage">Voltage Drop</button>
+<button class="tab" data-tab="labor">Labor + Markup</button>
+</div>
+
+<section id="cctv" class="panel active"><div class="grid">
+<div class="card"><h2>CCTV Storage Calculator</h2><p class="sub">Estimate recording storage from camera count, bitrate, retention, and recording schedule.</p><div class="fields">
+<div class="field"><label>Cameras</label><input id="cameras" type="number" min="1" value="16"></div>
+<div class="field"><label>Average bitrate per camera (Mbps)</label><input id="bitrate" type="number" min=".1" step=".1" value="4"></div>
+<div class="field"><label>Retention (days)</label><input id="days" type="number" min="1" value="30"></div>
+<div class="field"><label>Recording hours per day</label><input id="hours" type="number" min="1" max="24" value="24"></div>
+<div class="field"><label>Storage overhead</label><select id="overhead"><option value="1">0%</option><option value="1.1" selected>10%</option><option value="1.2">20%</option><option value="1.3">30%</option></select></div>
+</div><div class="actions"><button class="primary" onclick="calcCCTV()">Calculate</button><button class="secondary" onclick="saveCurrent('CCTV Storage','cctvResult')">Save Result</button></div></div>
+<div class="card result" id="cctvResult"><div class="metric"><span>Estimated storage</span><strong>—</strong></div><div class="metric"><span>Raw daily storage</span><strong>—</strong></div><div class="note">Estimate only. VBR, motion recording, analytics, RAID, codec efficiency, and scene activity can materially change actual requirements.</div></div>
+</div></section>
+
+<section id="poe" class="panel"><div class="grid">
+<div class="card"><h2>PoE Budget Calculator</h2><p class="sub">Check whether a switch has enough PoE capacity with practical headroom.</p><div class="fields">
+<div class="field"><label>Number of PoE devices</label><input id="poeDevices" type="number" min="1" value="12"></div>
+<div class="field"><label>Average watts per device</label><input id="poeWatts" type="number" min=".1" step=".1" value="12"></div>
+<div class="field"><label>Switch PoE budget (W)</label><input id="poeBudget" type="number" min="1" value="370"></div>
+<div class="field"><label>Recommended headroom</label><select id="poeHead"><option value=".1">10%</option><option value=".2" selected>20%</option><option value=".25">25%</option><option value=".3">30%</option></select></div>
+</div><div class="actions"><button class="primary" onclick="calcPoE()">Calculate</button><button class="secondary" onclick="saveCurrent('PoE Budget','poeResult')">Save Result</button></div></div>
+<div class="card result" id="poeResult"><div class="metric"><span>Estimated load</span><strong>—</strong></div><div class="metric"><span>Remaining capacity</span><strong>—</strong></div><div class="metric"><span>Status</span><strong>—</strong></div><div class="note">Use device maximum draw and manufacturer specifications for final design.</div></div>
+</div></section>
+
+<section id="fiber" class="panel"><div class="grid">
+<div class="card"><h2>Fiber Loss Budget</h2><p class="sub">Estimate passive optical loss from distance, connectors, and splices.</p><div class="fields">
+<div class="field"><label>Fiber length (km)</label><input id="fiberKm" type="number" min="0" step=".01" value="1"></div>
+<div class="field"><label>Fiber attenuation (dB/km)</label><input id="fiberAtt" type="number" min="0" step=".01" value=".35"></div>
+<div class="field"><label>Mated connector pairs</label><input id="connectors" type="number" min="0" value="2"></div>
+<div class="field"><label>Loss per connector pair (dB)</label><input id="connectorLoss" type="number" min="0" step=".01" value=".75"></div>
+<div class="field"><label>Splices</label><input id="splices" type="number" min="0" value="4"></div>
+<div class="field"><label>Loss per splice (dB)</label><input id="spliceLoss" type="number" min="0" step=".01" value=".3"></div>
+<div class="field"><label>Engineering margin (dB)</label><input id="fiberMargin" type="number" min="0" step=".1" value="3"></div>
+</div><div class="actions"><button class="primary" onclick="calcFiber()">Calculate</button><button class="secondary" onclick="saveCurrent('Fiber Loss','fiberResult')">Save Result</button></div></div>
+<div class="card result" id="fiberResult"><div class="metric"><span>Passive link loss</span><strong>—</strong></div><div class="metric"><span>Design budget incl. margin</span><strong>—</strong></div><div class="note">Use project standards and manufacturer limits for acceptance. Default component allowances are intentionally editable.</div></div>
+</div></section>
+
+<section id="voltage" class="panel"><div class="grid">
+<div class="card"><h2>Voltage Drop Calculator</h2><p class="sub">Quick DC copper voltage-drop estimate for common low-voltage circuits.</p><div class="fields">
+<div class="field"><label>Source voltage (VDC)</label><input id="sourceV" type="number" min=".1" step=".1" value="24"></div>
+<div class="field"><label>Load current (A)</label><input id="amps" type="number" min=".01" step=".01" value="1"></div>
+<div class="field"><label>One-way cable length (ft)</label><input id="lengthFt" type="number" min="1" value="200"></div>
+<div class="field"><label>Copper wire gauge</label><select id="awg"><option value="6.385">18 AWG</option><option value="4.016" selected>16 AWG</option><option value="2.525">14 AWG</option><option value="1.588">12 AWG</option><option value=".999">10 AWG</option></select></div>
+</div><div class="actions"><button class="primary" onclick="calcVoltage()">Calculate</button><button class="secondary" onclick="saveCurrent('Voltage Drop','voltageResult')">Save Result</button></div></div>
+<div class="card result" id="voltageResult"><div class="metric"><span>Voltage drop</span><strong>—</strong></div><div class="metric"><span>Voltage at load</span><strong>—</strong></div><div class="metric"><span>Percent drop</span><strong>—</strong></div><div class="note">Approximate DC copper calculation using round-trip conductor length. Confirm conductor resistance, temperature, and equipment voltage tolerance for final design.</div></div>
+</div></section>
+
+<section id="labor" class="panel"><div class="grid">
+<div class="card"><h2>Labor + Markup Calculator</h2><p class="sub">Estimate sell price, gross profit, and margin from labor and material costs.</p><div class="fields">
+<div class="field"><label>Labor hours</label><input id="laborHours" type="number" min="0" step=".25" value="16"></div>
+<div class="field"><label>Internal labor cost / hr ($)</label><input id="laborCost" type="number" min="0" step=".01" value="45"></div>
+<div class="field"><label>Materials cost ($)</label><input id="materialCost" type="number" min="0" step=".01" value="1200"></div>
+<div class="field"><label>Other direct costs ($)</label><input id="otherCost" type="number" min="0" step=".01" value="100"></div>
+<div class="field"><label>Markup on total cost</label><input id="markup" type="number" min="0" step=".1" value="35"></div>
+</div><div class="actions"><button class="primary" onclick="calcLabor()">Calculate</button><button class="secondary" onclick="saveCurrent('Labor + Markup','laborResult')">Save Result</button></div></div>
+<div class="card result" id="laborResult"><div class="metric"><span>Total cost</span><strong>—</strong></div><div class="metric"><span>Suggested sell price</span><strong>—</strong></div><div class="metric"><span>Gross profit</span><strong>—</strong></div><div class="metric"><span>Gross margin</span><strong>—</strong></div><div class="note">Markup and margin are different. This calculator applies markup to total direct cost, then shows resulting gross margin.</div></div>
+</div></section>
+
+<div class="card saved"><h2>Saved Results</h2><p class="sub">Saved only on this device. No account required.</p><div id="savedList"><span class="note">No saved results yet.</span></div></div>
+
+<div class="footcta"><div><strong>Need full project documentation?</strong><p>Use CableMint templates for cable tracking, CCTV, racks, fiber, access control, and closeout.</p></div><a href="https://cableminttools.etsy.com" target="_blank" rel="noopener noreferrer" data-etsy="field-tools">Shop CableMint Tools →</a></div>
+</div></main>
+<footer><div class="wrap">CableMint Field Tools · Free MVP · Calculations are planning aids, not engineering approval.</div></footer>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');gtag('event','field_tool_open',{tool_name:b.dataset.tab})}));
+function n(id){return parseFloat($(id).value)||0}
+function setMetrics(id,vals){const metrics=$(id).querySelectorAll('.metric strong');vals.forEach((v,i)=>{if(metrics[i])metrics[i].innerHTML=v})}
+function calcCCTV(){const raw=n('cameras')*n('bitrate')*1e6/8*3600*n('hours')/1e12;const total=raw*n('days')*parseFloat($('overhead').value);setMetrics('cctvResult',[total.toFixed(2)+' TB',raw.toFixed(2)+' TB/day']);trackCalc('cctv')}
+function calcPoE(){const load=n('poeDevices')*n('poeWatts'),budget=n('poeBudget'),remaining=budget-load,limit=budget*(1-parseFloat($('poeHead').value));let s=load<=limit?'<span class="status ok">PASS — headroom maintained</span>':load<=budget?'<span class="status warn">CAUTION — limited headroom</span>':'<span class="status bad">FAIL — budget exceeded</span>';setMetrics('poeResult',[load.toFixed(1)+' W',remaining.toFixed(1)+' W',s]);trackCalc('poe')}
+function calcFiber(){const passive=n('fiberKm')*n('fiberAtt')+n('connectors')*n('connectorLoss')+n('splices')*n('spliceLoss'),design=passive+n('fiberMargin');setMetrics('fiberResult',[passive.toFixed(2)+' dB',design.toFixed(2)+' dB']);trackCalc('fiber')}
+function calcVoltage(){const resistancePer1000=parseFloat($('awg').value),r=resistancePer1000*(n('lengthFt')*2/1000),drop=n('amps')*r,load=n('sourceV')-drop,pct=n('sourceV')?drop/n('sourceV')*100:0;setMetrics('voltageResult',[drop.toFixed(2)+' V',load.toFixed(2)+' V',pct.toFixed(1)+'%']);trackCalc('voltage')}
+function calcLabor(){const cost=n('laborHours')*n('laborCost')+n('materialCost')+n('otherCost'),sell=cost*(1+n('markup')/100),profit=sell-cost,margin=sell?profit/sell*100:0;setMetrics('laborResult',['$'+cost.toFixed(2),'$'+sell.toFixed(2),'$'+profit.toFixed(2),margin.toFixed(1)+'%']);trackCalc('labor')}
+function trackCalc(tool){gtag('event','calculator_use',{tool_name:tool})}
+function saveCurrent(name,id){const vals=[...$(id).querySelectorAll('.metric')].map(m=>m.innerText.trim().replace(/\n/g,': ')).join(' · ');if(vals.includes('—'))return alert('Calculate first.');const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');all.unshift({name,vals,at:new Date().toLocaleString()});localStorage.setItem('cm_saved',JSON.stringify(all.slice(0,20)));renderSaved();gtag('event','calculator_save',{tool_name:name})}
+function renderSaved(){const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');$('savedList').innerHTML=all.length?all.map((x,i)=>'<div class="savedrow"><div><strong>'+x.name+'</strong><br><small>'+x.vals+' · '+x.at+'</small></div><button class="del" onclick="delSaved('+i+')">Delete</button></div>').join(''):'<span class="note">No saved results yet.</span>'}
+function delSaved(i){const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');all.splice(i,1);localStorage.setItem('cm_saved',JSON.stringify(all));renderSaved()}
+document.addEventListener('click',e=>{const a=e.target.closest('a[href*="etsy.com"]');if(a&&typeof gtag==='function')gtag('event','etsy_click',{product_name:'field_tools_app',link_url:a.href,link_text:(a.textContent||'').trim()})});
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+renderSaved();calcCCTV();
+</script>
+</body></html>
