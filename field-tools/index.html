@@ -10,6 +10,8 @@
 <link rel="icon" href="../logo.png">
 <link rel="apple-touch-icon" href="../logo.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5K0LXZLD9"></script>
 <script>
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
@@ -28,7 +30,7 @@ main{padding:34px 0 70px}.accountbar{background:#fff;border:1px solid var(--line
 .fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:800}input,select{width:100%;padding:12px 13px;border:1px solid #c9d8d2;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(24,185,121,.25);border-color:var(--green)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button.primary,button.secondary{border:0;border-radius:10px;padding:12px 16px;font-weight:900;cursor:pointer}button.primary{background:var(--green);color:#fff}button.secondary{background:#e8f0ed;color:var(--ink)}
 .result{display:grid;gap:12px}.metric{padding:17px;border:1px solid var(--line);border-radius:14px;background:#f9fcfb}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.metric strong{font-size:27px;line-height:1.15}.note{font-size:13px;color:var(--muted);padding-top:4px}.status{font-weight:900}.ok{color:#118a5a}.warn{color:var(--warn)}.bad{color:var(--bad)}
-.upgradeprompt{margin-top:12px;padding:12px 14px;border:1px solid #ead79d;background:#fff7df;border-radius:12px;color:#6b5715;font-size:13px}.upgradeprompt a{font-weight:900;color:var(--ink);text-decoration:underline}.projectshead{display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap}.projectsummary{color:var(--muted);font-size:13px}.projectcards{display:grid;gap:12px}.projectcard{border:1px solid var(--line);border-radius:14px;background:#f9fcfb;overflow:hidden}.projectcard summary{list-style:none;cursor:pointer;padding:15px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}.projectcard summary::-webkit-details-marker{display:none}.projectcard[open] summary{border-bottom:1px solid var(--line)}.projectname{font-weight:900}.projectmeta{font-size:12px;color:var(--muted);margin-top:2px}.projecttools{display:flex;gap:8px;flex-wrap:wrap}.projecttools button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 10px;font-weight:800;cursor:pointer}.projectbody{padding:0 16px 12px}.saved{margin-top:22px}.savedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.savedrow:last-child{border-bottom:0}.savedrow small{color:var(--muted)}.del{background:none;border:0;color:var(--bad);font-weight:800;cursor:pointer}
+.upgradeprompt{margin-top:12px;padding:12px 14px;border:1px solid #ead79d;background:#fff7df;border-radius:12px;color:#6b5715;font-size:13px}.upgradeprompt a{font-weight:900;color:var(--ink);text-decoration:underline}.projectshead{display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap}.projectsummary{color:var(--muted);font-size:13px}.projectcards{display:grid;gap:12px}.projectcard{border:1px solid var(--line);border-radius:14px;background:#f9fcfb;overflow:hidden}.projectcard summary{list-style:none;cursor:pointer;padding:15px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}.projectcard summary::-webkit-details-marker{display:none}.projectcard[open] summary{border-bottom:1px solid var(--line)}.projectname{font-weight:900}.projectmeta{font-size:12px;color:var(--muted);margin-top:2px}.projecttools{display:flex;gap:8px;flex-wrap:wrap}.projecttools button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 10px;font-weight:800;cursor:pointer}.projecttools button.reportbtn{background:var(--ink);color:#fff;border-color:var(--ink)}.projecttools button:disabled{opacity:.6;cursor:wait}.projectbody{padding:0 16px 12px}.saved{margin-top:22px}.savedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.savedrow:last-child{border-bottom:0}.savedrow small{color:var(--muted)}.del{background:none;border:0;color:var(--bad);font-weight:800;cursor:pointer}
 .footcta{margin-top:28px;background:var(--ink);color:#fff;border-radius:18px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.footcta p{margin:4px 0 0;color:#c8d5da}.footcta a{background:var(--green);padding:12px 16px;border-radius:10px;font-weight:900;white-space:nowrap}
 footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:820px){.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
@@ -393,7 +395,7 @@ async function renderSaved(){
     summary.textContent=projects.length+' project'+(projects.length===1?'':'s')+' · '+total+' saved result'+(total===1?'':'s');
     $('savedList').innerHTML='<div class="projectcards">'+projects.map(p=>{
       const rows=byProject[p.id]||[];
-      return '<details class="projectcard"><summary><div><div class="projectname">'+escapeHtml(p.name)+'</div><div class="projectmeta">'+rows.length+' saved result'+(rows.length===1?'':'s')+' · Updated '+new Date(p.updated_at).toLocaleString()+'</div></div><div class="projecttools"><button type="button" onclick="event.preventDefault();useCloudProject(\''+p.id+'\',\''+escapeJs(p.name)+'\')">Use Project</button></div></summary><div class="projectbody">'+(rows.length?rows.map(x=>'<div class="savedrow"><div><strong>'+escapeHtml(x.tool_name)+'</strong><br><small>'+escapeHtml(x.result_text)+' · '+new Date(x.created_at).toLocaleString()+'</small></div><button class="del" onclick="delCloudSaved(\''+x.id+'\')">Delete</button></div>').join(''):'<span class="note">No saved calculations in this project.</span>')+'</div></details>';
+      return '<details class="projectcard"><summary><div><div class="projectname">'+escapeHtml(p.name)+'</div><div class="projectmeta">'+rows.length+' saved result'+(rows.length===1?'':'s')+' · Updated '+new Date(p.updated_at).toLocaleString()+'</div></div><div class="projecttools"><button type="button" onclick="event.preventDefault();event.stopPropagation();useCloudProject(\''+p.id+'\',\''+escapeJs(p.name)+'\')">Use Project</button><button class="reportbtn" type="button" onclick="event.preventDefault();event.stopPropagation();generateProjectPdf(\''+p.id+'\',\''+escapeJs(p.name)+'\',this)">PDF Report</button></div></summary><div class="projectbody">'+(rows.length?rows.map(x=>'<div class="savedrow"><div><strong>'+escapeHtml(x.tool_name)+'</strong><br><small>'+escapeHtml(x.result_text)+' · '+new Date(x.created_at).toLocaleString()+'</small></div><button class="del" onclick="delCloudSaved(\''+x.id+'\')">Delete</button></div>').join(''):'<span class="note">No saved calculations in this project.</span>')+'</div></details>';
     }).join('')+'</div>';
     return;
   }
@@ -416,6 +418,129 @@ function useLocalProject(name){
   $('projectName').value=name;
   localStorage.setItem('cm_project_name',name);
   window.scrollTo({top:$('accountBar').offsetTop,behavior:'smooth'});
+}
+
+async function fetchAllProjectCalculations(projectId){
+  const pageSize=500;
+  let from=0,all=[];
+  while(true){
+    const {data,error}=await sb.from('field_project_calculations')
+      .select('id,tool_name,result_text,created_at')
+      .eq('project_id',projectId)
+      .eq('user_id',currentUser.id)
+      .order('created_at',{ascending:true})
+      .range(from,from+pageSize-1);
+    if(error)throw error;
+    all=all.concat(data||[]);
+    if(!data||data.length<pageSize)break;
+    from+=pageSize;
+  }
+  return all;
+}
+function pdfSafeFileName(name){
+  return String(name||'CableMint Project').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,80)||'CableMint Project';
+}
+async function loadPdfLogo(){
+  try{
+    const res=await fetch('../logo.png',{cache:'force-cache'});
+    if(!res.ok)return null;
+    const blob=await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(reader.result);
+      reader.onerror=reject;
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){return null}
+}
+function splitSavedResult(resultText){
+  return String(resultText||'').split(' · ').map(x=>x.trim()).filter(Boolean).join('\n');
+}
+async function generateProjectPdf(projectId,projectName,button){
+  if(!currentUser||!currentIsPro)return alert('PDF Project Reports are available with CableMint Pro.');
+  if(!window.jspdf||!window.jspdf.jsPDF)return alert('PDF tools are still loading. Please try again in a moment.');
+  const original=button?button.textContent:'PDF Report';
+  if(button){button.disabled=true;button.textContent='Generating…'}
+  try{
+    const calculations=await fetchAllProjectCalculations(projectId);
+    if(!calculations.length)return alert('This project does not have any saved calculations yet.');
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+    const pageW=doc.internal.pageSize.getWidth();
+    const pageH=doc.internal.pageSize.getHeight();
+    const margin=44;
+    const logo=await loadPdfLogo();
+
+    doc.setProperties({
+      title:projectName+' - CableMint Project Report',
+      subject:'CableMint Field Tools project calculation report',
+      author:'CableMint Tools',
+      creator:'CableMint Field Tools'
+    });
+
+    if(logo){
+      try{doc.addImage(logo,'PNG',margin,34,42,42)}catch(e){}
+    }
+    doc.setTextColor(16,39,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(20);
+    doc.text('CableMint Project Report',logo?96:margin,52);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(102,119,127);
+    doc.text('Field calculation summary',logo?96:margin,69);
+
+    doc.setDrawColor(24,185,121);
+    doc.setLineWidth(2);
+    doc.line(margin,88,pageW-margin,88);
+
+    doc.setTextColor(16,39,50);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(16);
+    doc.text(projectName,margin,116);
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(102,119,127);
+    const generated=new Date();
+    doc.text('Generated: '+generated.toLocaleString(),margin,134);
+    doc.text('Saved calculations: '+calculations.length,margin,149);
+
+    const rows=calculations.map((x,i)=>[
+      String(i+1),
+      x.tool_name||'Field Tool',
+      splitSavedResult(x.result_text),
+      new Date(x.created_at).toLocaleString()
+    ]);
+
+    doc.autoTable({
+      startY:170,
+      head:[['#','Tool','Saved result','Saved']],
+      body:rows,
+      margin:{left:margin,right:margin,bottom:64},
+      styles:{font:'helvetica',fontSize:8,cellPadding:6,valign:'top',overflow:'linebreak',lineColor:[216,229,223],lineWidth:.4,textColor:[16,39,50]},
+      headStyles:{fillColor:[16,39,50],textColor:[255,255,255],fontStyle:'bold'},
+      alternateRowStyles:{fillColor:[249,252,251]},
+      columnStyles:{0:{cellWidth:24,halign:'center'},1:{cellWidth:92,fontStyle:'bold'},2:{cellWidth:'auto'},3:{cellWidth:92}},
+      didDrawPage:()=>{
+        const pages=doc.internal.getNumberOfPages();
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(102,119,127);
+        doc.text('Planning report only. Verify results against project requirements, manufacturer specifications, applicable codes, and professional judgment.',margin,pageH-32,{maxWidth:pageW-margin*2-55});
+        doc.text('Page '+pages,pageW-margin,pageH-32,{align:'right'});
+      }
+    });
+
+    doc.save(pdfSafeFileName(projectName)+' - CableMint Report.pdf');
+    if(typeof gtag==='function')gtag('event','pdf_report_generated',{project_id:projectId,calculation_count:calculations.length});
+  }catch(e){
+    console.error(e);
+    alert('Could not generate the PDF report. Please try again.');
+  }finally{
+    if(button){button.disabled=false;button.textContent=original}
+  }
 }
 async function delCloudSaved(id){
   if(!currentUser)return;
