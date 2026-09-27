@@ -337,8 +337,13 @@ function trackCalc(tool){
 }
 function localProjectKey(name){return (name||'My Project').trim()||'My Project'}
 async function saveCurrent(name,id){
-  const vals=[...$(id).querySelectorAll('.metric')].map(m=>m.innerText.trim().replace(/\n/g,': ')).join(' · ');
-  if(vals.includes('—'))return alert('Calculate first.');
+  const metrics=[...$(id).querySelectorAll('.metric')];
+  const metricValues=metrics.map(m=>{
+    const strong=m.querySelector('strong');
+    return strong ? strong.textContent.trim() : '';
+  });
+  if(metricValues.some(v=>!v || v==='—'))return alert('Calculate first.');
+  const vals=metrics.map(m=>m.innerText.trim().replace(/\n/g,': ')).join(' · ');
   const project=localProjectKey($('projectName').value);
 
   if(currentIsPro&&currentUser){
