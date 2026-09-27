@@ -201,7 +201,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
       <button class="scan" id="scanDeviceBtn" type="button">📷 Scan MAC / Serial</button>
       <input id="devicePhoto" type="file" accept="image/*" capture="environment" hidden>
     </div>
-    <div class="scanstatus" id="scanStatus">Fill most of the photo with the device label. CableMint scans the printed barcodes first, then uses text recognition as a fallback.</div>
+    <div class="scanstatus" id="scanStatus">Fill most of the photo with the device label. CableMint reads barcodes plus printed MAC, S/N, and Model text. Some devices may have only a serial number, which is okay.</div>
     <div class="privacyline">Privacy: the photo is processed temporarily on this device to read label data. It is not uploaded or stored by CableMint.</div>
   </div>
   <div class="capturegrid" style="margin-top:14px">
@@ -552,7 +552,9 @@ function findSerialInText(text){
     const m=line.match(/(?:S\/?N|SN|SERIAL(?:\s*(?:NO|NUMBER|NUM))?)\s*[:#=-]?\s*([A-Z0-9._/-]{4,})/i);
     if(m)return m[1].replace(/[),;]+$/,'').trim();
   }
-  return '';
+  const flat=String(text||'').replace(/\r?\n/g,' ');
+  const m=flat.match(/(?:S\/?N|SN|SERIAL(?:\s*(?:NO|NUMBER|NUM))?)\s*[:#=-]?\s*([A-Z0-9._/-]{4,})/i);
+  return m?m[1].replace(/[),;]+$/,'').trim():'';
 }
 function findModelInText(text){
   const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
@@ -560,7 +562,9 @@ function findModelInText(text){
     const m=line.match(/(?:MODEL|M\/N|MODEL\s*(?:NO|NUMBER))\s*[:#=-]?\s*([A-Z0-9._/-]{3,})/i);
     if(m)return m[1].replace(/[),;]+$/,'').trim();
   }
-  return '';
+  const flat=String(text||'').replace(/\r?\n/g,' ');
+  const m=flat.match(/(?:MODEL|M\/N|MODEL\s*(?:NO|NUMBER))\s*[:#=-]?\s*([A-Z0-9._/-]{3,})/i);
+  return m?m[1].replace(/[),;]+$/,'').trim():'';
 }
 function loadTesseract(){
   if(window.Tesseract)return Promise.resolve();
@@ -792,39 +796,35 @@ async function processDevicePhoto(file){
       if(serialCode)serial=serialCode.trim();
     }
 
-    if(!mac||!serial){
-      try{
-        const text1=await runOcr(base,'Reading label…');
-        ocrWorked=true;
-        if(!mac)mac=findMacInText(text1);
-        if(!serial)serial=findSerialInText(text1);
+    try{
+      const text1=await runOcr(base,'Reading printed label…');
+      ocrWorked=true;
+      const explicitMac=findMacInText(text1);
+      const explicitSerial=findSerialInText(text1);
+      const explicitModel=findModelInText(text1);
+      if(explicitMac)mac=explicitMac;
+      if(explicitSerial)serial=explicitSerial;
+      if(explicitModel)$('capModel').value=explicitModel;
+
+      if(!mac||!serial){
+        const text2=await runOcr(enhanced,'Trying enhanced label scan…');
+        if(!mac)mac=findMacInText(text2);
+        if(!serial)serial=findSerialInText(text2);
         if(!$('capModel').value){
-          const model=findModelInText(text1);
+          const model=findModelInText(text2);
           if(model)$('capModel').value=model;
         }
+      }
 
-        if(!mac){
-          const text2=await runOcr(enhanced,'Trying enhanced label scan…');
-          if(!mac)mac=findMacInText(text2);
-          if(!serial)serial=findSerialInText(text2);
-          if(!$('capModel').value){
-            const model=findModelInText(text2);
-            if(model)$('capModel').value=model;
-          }
-        }
-
-        // Standalone/PWA camera captures can be processed differently by the browser.
-        // A hard black/white pass often recovers tiny printed MAC text.
-        if(!mac){
-          const text3=await runOcr(thresholded,'Running PWA compatibility scan…');
-          if(!mac)mac=findMacInText(text3);
-          if(!serial)serial=findSerialInText(text3);
-        }
-      }catch(e){
+      if(!mac&&!serial){
+        const text3=await runOcr(thresholded,'Running compatibility scan…');
+        if(!mac)mac=findMacInText(text3);
+        if(!serial)serial=findSerialInText(text3);
+      }
+    }catch(e){
         console.error('OCR failed',e);
         $('scanStatus').textContent='OCR could not start on this device. Barcode scan completed; try again or enter the MAC manually.';
       }
-    }
 
     if(mac)$('capMac').value=normalizeMac(mac);
     if(serial)$('capSerial').value=serial;
@@ -873,17 +873,30 @@ $('clearDeviceBtn').addEventListener('click',()=>clearPerDeviceFields(false));
 $('saveDeviceBtn').addEventListener('click',saveCapturedDevice);
 async function saveCapturedDevice(){
   if(!currentUser||!currentIsPro)return alert('Device Capture requires CableMint Pro.');
-  const mac=normalizeMac($('capMac').value);
-  if(!validMac(mac))return alert('Verify the MAC address before saving. Expected format: AA:BB:CC:DD:EE:FF');
+  const macRaw=$('capMac').value.trim();
+  const mac=macRaw?normalizeMac(macRaw):'';
+  const serial=$('capSerial').value.trim();
+  if(macRaw&&!validMac(mac))return alert('Verify the MAC address before saving. Expected format: AA:BB:CC:DD:EE:FF');
+  if(!mac&&!serial)return alert('Scan or enter at least a MAC address or serial number before saving.');
   const projectName=localProjectKey($('projectName').value);
   $('deviceSaveStatus').textContent='Checking for duplicates…';
   try{
     const proj=await ensureCaptureProject();
-    const {data:existing,error:dupErr}=await sb.from('field_devices').select('id,unit_location,device_type').eq('project_id',proj.id).eq('user_id',currentUser.id).eq('mac_address',mac).maybeSingle();
-    if(dupErr)throw dupErr;
-    if(existing){
-      $('deviceSaveStatus').textContent='';
-      return alert('Duplicate MAC: '+mac+' is already saved in this project'+(existing.unit_location?' at '+existing.unit_location:'')+'.');
+    if(mac){
+      const {data:existing,error:dupErr}=await sb.from('field_devices').select('id,unit_location,device_type').eq('project_id',proj.id).eq('user_id',currentUser.id).eq('mac_address',mac).maybeSingle();
+      if(dupErr)throw dupErr;
+      if(existing){
+        $('deviceSaveStatus').textContent='';
+        return alert('Duplicate MAC: '+mac+' is already saved in this project'+(existing.unit_location?' at '+existing.unit_location:'')+'.');
+      }
+    }
+    if(serial){
+      const {data:existingSerial,error:serialErr}=await sb.from('field_devices').select('id,unit_location,device_type').eq('project_id',proj.id).eq('user_id',currentUser.id).ilike('serial_number',serial).maybeSingle();
+      if(serialErr)throw serialErr;
+      if(existingSerial){
+        $('deviceSaveStatus').textContent='';
+        return alert('Duplicate serial: '+serial+' is already saved in this project'+(existingSerial.unit_location?' at '+existingSerial.unit_location:'')+'.');
+      }
     }
     $('deviceSaveStatus').textContent='Saving verified device…';
     const payload={
@@ -895,7 +908,7 @@ async function saveCapturedDevice(){
       manufacturer:$('capManufacturer').value.trim(),
       model:$('capModel').value.trim(),
       mac_address:mac,
-      serial_number:$('capSerial').value.trim(),
+      serial_number:serial,
       ip_address:$('capIp').value.trim(),
       switch_name:$('capSwitch').value.trim(),
       switch_port:$('capPort').value.trim(),
@@ -910,7 +923,7 @@ async function saveCapturedDevice(){
     }
     await sb.from('field_projects').update({updated_at:new Date().toISOString()}).eq('id',proj.id).eq('user_id',currentUser.id);
     saveCaptureDefaults();
-    $('deviceSaveStatus').textContent='Saved '+mac+'. Ready for the next device.';
+    $('deviceSaveStatus').textContent='Saved '+(mac||serial)+'. Ready for the next device.';
     if(typeof gtag==='function')gtag('event','device_capture_save',{device_type:payload.device_type,has_serial:payload.serial_number?'yes':'no'});
     clearPerDeviceFields(true);
     await refreshDeviceList();
