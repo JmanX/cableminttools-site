@@ -28,7 +28,7 @@ main{padding:34px 0 70px}.accountbar{background:#fff;border:1px solid var(--line
 .fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:800}input,select{width:100%;padding:12px 13px;border:1px solid #c9d8d2;border-radius:10px;background:#fff;font:inherit;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(24,185,121,.25);border-color:var(--green)}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}button.primary,button.secondary{border:0;border-radius:10px;padding:12px 16px;font-weight:900;cursor:pointer}button.primary{background:var(--green);color:#fff}button.secondary{background:#e8f0ed;color:var(--ink)}
 .result{display:grid;gap:12px}.metric{padding:17px;border:1px solid var(--line);border-radius:14px;background:#f9fcfb}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.metric strong{font-size:27px;line-height:1.15}.note{font-size:13px;color:var(--muted);padding-top:4px}.status{font-weight:900}.ok{color:#118a5a}.warn{color:var(--warn)}.bad{color:var(--bad)}
-.saved{margin-top:22px}.savedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.savedrow:last-child{border-bottom:0}.savedrow small{color:var(--muted)}.del{background:none;border:0;color:var(--bad);font-weight:800;cursor:pointer}
+.upgradeprompt{margin-top:12px;padding:12px 14px;border:1px solid #ead79d;background:#fff7df;border-radius:12px;color:#6b5715;font-size:13px}.upgradeprompt a{font-weight:900;color:var(--ink);text-decoration:underline}.saved{margin-top:22px}.savedrow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.savedrow:last-child{border-bottom:0}.savedrow small{color:var(--muted)}.del{background:none;border:0;color:var(--bad);font-weight:800;cursor:pointer}
 .footcta{margin-top:28px;background:var(--ink);color:#fff;border-radius:18px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.footcta p{margin:4px 0 0;color:#c8d5da}.footcta a{background:var(--green);padding:12px 16px;border-radius:10px;font-weight:900;white-space:nowrap}
 footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:820px){.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
@@ -50,7 +50,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 </div>
 </div>
 <div class="appbar">
-<div class="projectbox"><div class="projectline"><div class="field"><label>Project / Site Name <span style="font-weight:500;color:var(--muted)">(optional)</span></label><input id="projectName" type="text" maxlength="60" placeholder="Example: 123 Main St - MDF"></div></div><div class="note">Saved results will be grouped with this project name on this device.</div></div>
+<div class="projectbox"><div class="projectline"><div class="field"><label>Project / Site Name <span style="font-weight:500;color:var(--muted)">(optional)</span></label><input id="projectName" type="text" maxlength="60" placeholder="Example: 123 Main St - MDF"></div></div><div class="note">Free: 1 saved project on this device. Pro: unlimited saved projects synced to your CableMint account.</div></div>
 <div class="quickbox"><strong>Quick Access</strong><div id="quickLinks" class="quicklinks"><span class="note">Your most-used and pinned tools will appear here.</span></div></div>
 </div>
 <div class="mobilepicker"><label for="toolPicker">Choose a tool</label><select id="toolPicker">
@@ -185,9 +185,13 @@ const $=id=>document.getElementById(id);
 const SUPABASE_URL='https://kgbrhdjbeosljpwghxte.supabase.co';
 const SUPABASE_KEY='sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+let currentIsPro=false;
 
 async function refreshAccount(){
   const {data:{user}}=await sb.auth.getUser();
+  currentUser=user||null;
+  currentIsPro=false;
   const meta=$('accountMeta'),chip=$('proChip'),toggle=$('accountToggle'),out=$('signOutBtn'),upgrade=$('upgradeBtn');
   if(!user){
     meta.textContent='Not signed in · Free access';
@@ -195,18 +199,18 @@ async function refreshAccount(){
     toggle.style.display='';
     out.style.display='none';
     upgrade.style.display='';
+    await renderSaved();
     return;
   }
   meta.textContent=user.email+' · Checking subscription…';
-  toggle.style.display='none'; out.style.display=''; 
-  let isPro=false, subStatus='';
+  toggle.style.display='none'; out.style.display='';
   const {data:customer}=await sb.from('paddle_customers').select('paddle_customer_id').ilike('email',user.email).maybeSingle();
   if(customer){
     const {data:subs}=await sb.from('paddle_subscriptions').select('status').eq('paddle_customer_id',customer.paddle_customer_id).in('status',['active','trialing']).limit(1);
-    if(subs&&subs.length){isPro=true;subStatus=subs[0].status;}
+    if(subs&&subs.length) currentIsPro=true;
   }
-  if(isPro){
-    meta.textContent=user.email+' · Pro subscription '+subStatus;
+  if(currentIsPro){
+    meta.textContent=user.email+' · Pro subscription active';
     chip.innerHTML='<span class="prochip">PRO</span>';
     upgrade.style.display='none';
   }else{
@@ -214,8 +218,8 @@ async function refreshAccount(){
     chip.innerHTML='';
     upgrade.style.display='';
   }
-}
-$('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
+  await renderSaved();
+}$('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
 $('signInBtn').addEventListener('click',async()=>{
   $('authMsg').textContent='Signing in…';
   const {error}=await sb.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
@@ -331,21 +335,71 @@ function trackCalc(tool){
   renderQuickLinks();
   if(typeof gtag==='function')gtag('event','calculator_use',{tool_name:tool});
 }
-function saveCurrent(name,id){
+function localProjectKey(name){return (name||'My Project').trim()||'My Project'}
+async function saveCurrent(name,id){
   const vals=[...$(id).querySelectorAll('.metric')].map(m=>m.innerText.trim().replace(/\n/g,': ')).join(' · ');
   if(vals.includes('—'))return alert('Calculate first.');
-  const project=($('projectName').value||'').trim();
+  const project=localProjectKey($('projectName').value);
+
+  if(currentIsPro&&currentUser){
+    let {data:proj,error:findErr}=await sb.from('field_projects').select('id,name').eq('user_id',currentUser.id).eq('name',project).maybeSingle();
+    if(findErr)return alert('Could not check cloud project. Try again.');
+    if(!proj){
+      const {data:newProj,error:createErr}=await sb.from('field_projects').insert({user_id:currentUser.id,name:project}).select('id,name').single();
+      if(createErr)return alert('Could not create cloud project. Try again.');
+      proj=newProj;
+    }
+    const {error:saveErr}=await sb.from('field_project_calculations').insert({
+      project_id:proj.id,user_id:currentUser.id,tool_name:name,result_text:vals
+    });
+    if(saveErr)return alert('Could not save to cloud. Try again.');
+    await sb.from('field_projects').update({updated_at:new Date().toISOString()}).eq('id',proj.id);
+    await renderSaved();
+    if(typeof gtag==='function')gtag('event','calculator_save',{tool_name:name,has_project:'yes',storage:'cloud'});
+    return;
+  }
+
   const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');
+  const existingProjects=[...new Set(all.map(x=>localProjectKey(x.project)))];
+  if(existingProjects.length&& !existingProjects.includes(project)){
+    const msg='Free accounts can save 1 project. Keep using "'+existingProjects[0]+'" or upgrade to Pro for unlimited cloud-synced projects.';
+    alert(msg);
+    return;
+  }
   all.unshift({name,project,vals,at:new Date().toLocaleString()});
-  localStorage.setItem('cm_saved',JSON.stringify(all.slice(0,30)));
-  renderSaved();
-  if(typeof gtag==='function')gtag('event','calculator_save',{tool_name:name,has_project:project?'yes':'no'});
+  localStorage.setItem('cm_saved',JSON.stringify(all.slice(0,50)));
+  await renderSaved();
+  if(typeof gtag==='function')gtag('event','calculator_save',{tool_name:name,has_project:'yes',storage:'local'});
 }
-function renderSaved(){
+
+async function renderSaved(){
+  if(currentIsPro&&currentUser){
+    const {data:projects,error:pErr}=await sb.from('field_projects').select('id,name,updated_at').eq('user_id',currentUser.id).order('updated_at',{ascending:false});
+    if(pErr){$('savedList').innerHTML='<span class="note">Could not load cloud projects.</span>';return}
+    if(!projects||!projects.length){$('savedList').innerHTML='<span class="note">No cloud-saved projects yet.</span>';return}
+    const ids=projects.map(p=>p.id);
+    const {data:calcs,error:cErr}=await sb.from('field_project_calculations').select('id,project_id,tool_name,result_text,created_at').in('project_id',ids).order('created_at',{ascending:false}).limit(100);
+    if(cErr){$('savedList').innerHTML='<span class="note">Could not load cloud calculations.</span>';return}
+    const projectMap=Object.fromEntries(projects.map(p=>[p.id,p.name]));
+    $('savedList').innerHTML=(calcs||[]).map(x=>'<div class="savedrow"><div><strong>'+escapeHtml(projectMap[x.project_id]||'Project')+' · '+escapeHtml(x.tool_name)+'</strong><br><small>'+escapeHtml(x.result_text)+' · '+new Date(x.created_at).toLocaleString()+'</small></div><button class="del" onclick="delCloudSaved(\''+x.id+'\')">Delete</button></div>').join('')||'<span class="note">No cloud-saved calculations yet.</span>';
+    return;
+  }
   const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');
-  $('savedList').innerHTML=all.length?all.map((x,i)=>'<div class="savedrow"><div><strong>'+(x.project?x.project+' · ':'')+x.name+'</strong><br><small>'+x.vals+' · '+x.at+'</small></div><button class="del" onclick="delSaved('+i+')">Delete</button></div>').join(''):'<span class="note">No saved results yet.</span>';
+  $('savedList').innerHTML=all.length?all.map((x,i)=>'<div class="savedrow"><div><strong>'+escapeHtml(localProjectKey(x.project))+' · '+escapeHtml(x.name)+'</strong><br><small>'+escapeHtml(x.vals)+' · '+escapeHtml(x.at)+'</small></div><button class="del" onclick="delSaved('+i+')">Delete</button></div>').join(''):'<span class="note">No saved results yet.</span>';
 }
-function delSaved(i){const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');all.splice(i,1);localStorage.setItem('cm_saved',JSON.stringify(all));renderSaved()}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function delCloudSaved(id){
+  if(!currentUser)return;
+  const {error}=await sb.from('field_project_calculations').delete().eq('id',id).eq('user_id',currentUser.id);
+  if(error)return alert('Could not delete cloud result.');
+  await renderSaved();
+}
+async function delSaved(i){
+  const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');
+  all.splice(i,1);
+  localStorage.setItem('cm_saved',JSON.stringify(all));
+  await renderSaved();
+}
 document.addEventListener('click',e=>{const a=e.target.closest('a[href*="etsy.com"]');if(a&&typeof gtag==='function')gtag('event','etsy_click',{product_name:'field_tools_app',link_url:a.href,link_text:(a.textContent||'').trim()})});
 function currentToolId(){const p=document.querySelector('.panel.active');return p?p.id:'cctv'}
 function pinCurrentTool(){
