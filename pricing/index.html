@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pricing | CableMint Tools</title>
 <meta name="description" content="CableMint Field Tools pricing.">
-<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--ink:#152733;--green:#18b979;--bg:#f4f7f6;--line:#dce6e1;--muted:#63717a}
 *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
@@ -67,26 +67,54 @@
 <p class="muted" style="margin:10px 0 0">By subscribing, you agree to the Terms of Service. Please review our Privacy Policy and Refund Policy before checkout.</p>
 </div>
 
-<div class="note"><strong>Sandbox test mode:</strong> checkout is currently configured for testing only. No real payment will be collected until CableMint switches Paddle to live mode.</div>
+<div class="note"><strong>Test mode:</strong> Dodo Payments checkout is currently configured for testing only. Sign in to your CableMint account before subscribing so Pro access can be matched automatically.</div>
 </main>
 
 <script>
-Paddle.Environment.set("sandbox");
-Paddle.Initialize({
-  token: "test_105fe6a7237d4d9857f18645353"
-});
+const SUPABASE_URL = "https://kgbrhdjbeosljpwghxte.supabase.co";
+const SUPABASE_KEY = "sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const MONTHLY_PRICE_ID = "pri_01m3fyhfnyp784ep1x44gsjxgm";
-const ANNUAL_PRICE_ID = "pri_01m3fyk8ydcnyfywx8x0adnrkv";
+async function openCheckout(plan){
+  const monthly = document.getElementById("buyMonthly");
+  const annual = document.getElementById("buyAnnual");
+  monthly.disabled = true;
+  annual.disabled = true;
 
-function openCheckout(priceId){
-  Paddle.Checkout.open({
-    items: [{ priceId: priceId, quantity: 1 }]
-  });
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session){
+      alert("Please sign in to your CableMint account first. You will be returned here to subscribe.");
+      window.location.href = "/field-tools/?upgrade=1";
+      return;
+    }
+
+    const response = await fetch(SUPABASE_URL + "/functions/v1/dodo-checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + session.access_token,
+        "apikey": SUPABASE_KEY
+      },
+      body: JSON.stringify({ plan })
+    });
+
+    const data = await response.json();
+    if(!response.ok || !data.checkout_url){
+      throw new Error(data.error || "Unable to start checkout.");
+    }
+
+    window.location.href = data.checkout_url;
+  }catch(error){
+    alert(error.message || "Unable to start checkout. Please try again.");
+  }finally{
+    monthly.disabled = false;
+    annual.disabled = false;
+  }
 }
 
-document.getElementById("buyMonthly").addEventListener("click",()=>openCheckout(MONTHLY_PRICE_ID));
-document.getElementById("buyAnnual").addEventListener("click",()=>openCheckout(ANNUAL_PRICE_ID));
+document.getElementById("buyMonthly").addEventListener("click",()=>openCheckout("monthly"));
+document.getElementById("buyAnnual").addEventListener("click",()=>openCheckout("annual"));
 </script>
 </body>
 </html>
