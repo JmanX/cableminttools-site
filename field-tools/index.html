@@ -483,26 +483,65 @@ async function ensureCaptureProject(){
   }
   return proj;
 }
+
+function normalizeMacCandidate(value){
+  let s=String(value||'').toUpperCase().trim();
+  s=s.replace(/[.\-:\s]/g,'');
+  if(/^[0-9A-F]{12}$/.test(s))return normalizeMac(s);
+  return '';
+}
+function repairLikelyMac(value){
+  let s=String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(s.length!==12)return '';
+  s=s.replace(/O/g,'0').replace(/[IL]/g,'1');
+  return /^[0-9A-F]{12}$/.test(s)?normalizeMac(s):'';
+}
 function findMacInText(text){
-  const s=String(text||'');
-  let m=s.match(/(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}/);
-  if(m)return normalizeMac(m[0]);
-  m=s.match(/\b[0-9A-Fa-f]{12}\b/);
-  return m?normalizeMac(m[0]):'';
+  const raw=String(text||'');
+  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const prioritized=[
+    ...lines.filter(x=>/\b(?:MAC|BSSID|ETHERNET|WLAN|LAN)\b/i.test(x)),
+    ...lines.filter(x=>!/\b(?:MAC|BSSID|ETHERNET|WLAN|LAN)\b/i.test(x))
+  ];
+  for(const line of prioritized){
+    const direct=line.match(/(?:[0-9A-Fa-f]{2}[\s:.\-]*){5}[0-9A-Fa-f]{2}/);
+    if(direct){
+      const m=normalizeMacCandidate(direct[0]);
+      if(m)return m;
+    }
+    const cisco=line.match(/\b[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\b/);
+    if(cisco){
+      const m=normalizeMacCandidate(cisco[0]);
+      if(m)return m;
+    }
+    const compact=line.match(/\b[0-9A-Fa-f]{12}\b/);
+    if(compact)return normalizeMac(compact[0]);
+
+    const label=line.match(/\b(?:MAC(?:\s*(?:ADDRESS|ADDR))?|BSSID|ETHERNET(?:\s+MAC)?|WLAN(?:\s+MAC)?|LAN(?:\s+MAC)?)\b\s*[:#=-]?\s*(.+)$/i);
+    if(label){
+      const after=label[1].trim();
+      const chunks=after.match(/[A-Z0-9][A-Z0-9:.\-\s]{9,24}/ig)||[];
+      for(const chunk of chunks){
+        const fixed=repairLikelyMac(chunk);
+        if(fixed)return fixed;
+      }
+    }
+  }
+  return '';
 }
 function findSerialInText(text){
   const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   for(const line of lines){
-    const m=line.match(/(?:S\/?N|SERIAL(?:\s*(?:NO|NUMBER))?)\s*[:#-]?\s*([A-Z0-9._-]{4,})/i);
-    if(m)return m[1].trim();
+    const m=line.match(/(?:S\/?N|SN|SERIAL(?:\s*(?:NO|NUMBER|NUM))?)\s*[:#=-]?\s*([A-Z0-9._/-]{4,})/i);
+    if(m)return m[1].replace(/[),;]+$/,'').trim();
   }
   return '';
 }
 function findModelInText(text){
   const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   for(const line of lines){
-    const m=line.match(/(?:MODEL|M\/N)\s*[:#-]?\s*([A-Z0-9._/-]{3,})/i);
-    if(m)return m[1].trim();
+    const m=line.match(/(?:MODEL|M\/N|MODEL\s*(?:NO|NUMBER))\s*[:#=-]?\s*([A-Z0-9._/-]{3,})/i);
+    if(m)return m[1].replace(/[),;]+$/,'').trim();
   }
   return '';
 }
@@ -512,61 +551,167 @@ function loadTesseract(){
   window._cmTesseractPromise=new Promise((resolve,reject)=>{
     const s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-    s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+    s.onload=()=>window.Tesseract?resolve():reject(new Error('OCR engine did not initialize'));
+    s.onerror=()=>reject(new Error('OCR engine failed to download'));
+    document.head.appendChild(s);
   });
   return window._cmTesseractPromise;
 }
-async function scanBarcodesFromImage(file){
-  if(!('BarcodeDetector' in window))return [];
-  try{
-    const supported=await BarcodeDetector.getSupportedFormats();
-    const wanted=['qr_code','code_128','code_39','code_93','data_matrix','ean_13','ean_8','itf','upc_a','upc_e'].filter(x=>supported.includes(x));
-    if(!wanted.length)return [];
-    const detector=new BarcodeDetector({formats:wanted});
-    const bmp=await createImageBitmap(file);
-    const results=await detector.detect(bmp);
-    if(bmp.close)bmp.close();
-    return results.map(x=>x.rawValue||'').filter(Boolean);
-  }catch(e){console.warn('Barcode scan failed',e);return[]}
+function loadZXing(){
+  if(window.ZXingBrowser)return Promise.resolve();
+  if(window._cmZXingPromise)return window._cmZXingPromise;
+  window._cmZXingPromise=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/@zxing/browser@0.2.1';
+    s.onload=()=>window.ZXingBrowser?resolve():reject(new Error('Barcode fallback did not initialize'));
+    s.onerror=()=>reject(new Error('Barcode fallback failed to download'));
+    document.head.appendChild(s);
+  });
+  return window._cmZXingPromise;
+}
+async function fileToCanvas(file){
+  let source=null,w=0,h=0,cleanup=()=>{};
+  if('createImageBitmap' in window){
+    source=await createImageBitmap(file,{imageOrientation:'from-image'});
+    w=source.width;h=source.height;
+    cleanup=()=>{try{source.close()}catch(e){}};
+  }else{
+    const url=URL.createObjectURL(file);
+    source=await new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=reject;
+      img.src=url;
+    });
+    w=source.naturalWidth||source.width;h=source.naturalHeight||source.height;
+    cleanup=()=>URL.revokeObjectURL(url);
+  }
+  const maxSide=2200;
+  const minSideTarget=1400;
+  let scale=Math.min(1,maxSide/Math.max(w,h));
+  if(Math.max(w,h)<minSideTarget)scale=Math.min(2,minSideTarget/Math.max(w,h));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(w*scale));
+  canvas.height=Math.max(1,Math.round(h*scale));
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(source,0,0,canvas.width,canvas.height);
+  cleanup();
+  return canvas;
+}
+function enhancedCanvas(source){
+  const canvas=document.createElement('canvas');
+  canvas.width=source.width;canvas.height=source.height;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(source,0,0);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    const gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    const contrast=Math.max(0,Math.min(255,(gray-128)*1.7+128));
+    d[i]=d[i+1]=d[i+2]=contrast;
+  }
+  ctx.putImageData(img,0,0);
+  return canvas;
+}
+async function scanBarcodesFromCanvas(canvas){
+  const found=[];
+  if('BarcodeDetector' in window){
+    try{
+      const supported=await BarcodeDetector.getSupportedFormats();
+      const wanted=['qr_code','code_128','code_39','code_93','data_matrix','ean_13','ean_8','itf','upc_a','upc_e'].filter(x=>supported.includes(x));
+      if(wanted.length){
+        const detector=new BarcodeDetector({formats:wanted});
+        const results=await detector.detect(canvas);
+        results.forEach(x=>{if(x.rawValue)found.push(x.rawValue)});
+      }
+    }catch(e){console.warn('Native barcode scan failed',e)}
+  }
+  if(!found.length){
+    try{
+      await loadZXing();
+      const reader=new ZXingBrowser.BrowserMultiFormatReader();
+      const result=await reader.decodeFromCanvas(canvas);
+      if(result&&result.getText)found.push(result.getText());
+      else if(result&&result.text)found.push(result.text);
+    }catch(e){console.warn('ZXing barcode scan found nothing',e)}
+  }
+  return [...new Set(found.filter(Boolean))];
+}
+async function runOcr(canvas,label){
+  await loadTesseract();
+  const result=await Tesseract.recognize(canvas,'eng',{
+    logger:m=>{
+      if(m.status==='recognizing text'){
+        $('scanStatus').textContent=label+' '+Math.round((m.progress||0)*100)+'%';
+      }
+    }
+  });
+  return (result&&result.data&&result.data.text)||'';
 }
 async function processDevicePhoto(file){
   if(!file)return;
-  $('scanStatus').textContent='Scanning barcode / QR codes…';
-  let combined='',mac='',serial='';
+  let mac='',serial='',ocrWorked=false,barcodeCount=0;
   try{
-    const codes=await scanBarcodesFromImage(file);
-    combined=codes.join('\n');
-    mac=findMacInText(combined);
+    $('scanStatus').textContent='Preparing image…';
+    const base=await fileToCanvas(file);
+    const enhanced=enhancedCanvas(base);
+
+    $('scanStatus').textContent='Scanning barcode / QR codes…';
+    let codes=await scanBarcodesFromCanvas(base);
+    if(!codes.length)codes=await scanBarcodesFromCanvas(enhanced);
+    barcodeCount=codes.length;
+    const codeText=codes.join('\n');
+    mac=findMacInText(codeText);
     if(codes.length){
       const nonMac=codes.find(x=>!findMacInText(x)&&/[A-Za-z0-9]/.test(x)&&x.length>=4);
       if(nonMac)serial=nonMac.trim();
     }
+
     if(!mac||!serial){
-      $('scanStatus').textContent='Reading printed label text… This can take a few seconds.';
       try{
-        await loadTesseract();
-        const result=await Tesseract.recognize(file,'eng',{
-          logger:m=>{if(m.status==='recognizing text')$('scanStatus').textContent='Reading label… '+Math.round((m.progress||0)*100)+'%'}
-        });
-        const text=(result&&result.data&&result.data.text)||'';
-        combined+='\n'+text;
-        if(!mac)mac=findMacInText(text);
-        if(!serial)serial=findSerialInText(text);
+        const text1=await runOcr(base,'Reading label…');
+        ocrWorked=true;
+        if(!mac)mac=findMacInText(text1);
+        if(!serial)serial=findSerialInText(text1);
         if(!$('capModel').value){
-          const model=findModelInText(text);
+          const model=findModelInText(text1);
           if(model)$('capModel').value=model;
         }
-      }catch(e){console.warn('OCR unavailable',e)}
+
+        if(!mac){
+          const text2=await runOcr(enhanced,'Trying enhanced label scan…');
+          if(!mac)mac=findMacInText(text2);
+          if(!serial)serial=findSerialInText(text2);
+          if(!$('capModel').value){
+            const model=findModelInText(text2);
+            if(model)$('capModel').value=model;
+          }
+        }
+      }catch(e){
+        console.error('OCR failed',e);
+        $('scanStatus').textContent='OCR could not start on this device. Barcode scan completed; try again or enter the MAC manually.';
+      }
     }
-    if(mac)$('capMac').value=mac;
+
+    if(mac)$('capMac').value=normalizeMac(mac);
     if(serial)$('capSerial').value=serial;
-    if(mac||serial){
-      $('scanStatus').textContent='Label read. Verify the highlighted MAC / serial fields before saving.';
-      if(!mac)$('capMac').focus();
-      else if(!serial)$('capSerial').focus();
+
+    if(mac){
+      $('scanStatus').textContent='MAC detected'+(serial?' and serial found':'')+'. Verify the values below, then save.';
+      $('capMac').focus();
+    }else if(serial){
+      $('scanStatus').textContent='Serial detected, but no MAC was found. Try a closer photo centered on the MAC address/barcode.';
+      $('capMac').focus();
+    }else if(ocrWorked){
+      $('scanStatus').textContent='The label was readable, but no MAC pattern was found. Move closer so the MAC address or its barcode fills more of the photo.';
+    }else if(barcodeCount){
+      $('scanStatus').textContent='A barcode was detected, but it did not contain a recognizable MAC address. Try a closer photo of the printed MAC text.';
     }else{
-      $('scanStatus').textContent='Could not confidently read the label. Try another photo closer to the MAC/serial label, or enter the values manually.';
+      $('scanStatus').textContent='No barcode or readable MAC was detected. Move closer, avoid glare, and center the MAC/serial section of the label.';
     }
+  }catch(e){
+    console.error('Device label scan failed',e);
+    $('scanStatus').textContent='The scanner hit an error on this image. Please retake the photo and try again.';
   }finally{
     $('devicePhoto').value='';
     file=null;
