@@ -48,7 +48,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <div class="field"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters"></div>
 <button id="signInBtn" class="acctprimary" type="button">Sign In</button>
 <button id="signUpBtn" class="acctsecondary" type="button">Create Account</button>
-</div><div class="authmsg" id="authMsg">Use the same email address you use at Paddle checkout so Pro access can be matched automatically.</div>
+</div><div class="authmsg" id="authMsg">Use the same email address you use at Dodo checkout so Pro access can be matched automatically.</div>
 </div>
 </div>
 <div class="appbar">
@@ -255,22 +255,13 @@ async function refreshAccount(){
   }
   meta.textContent=user.email+' · Checking subscription…';
   toggle.style.display='none'; out.style.display='';
-  // Prefer Dodo subscription state. Keep Paddle as a temporary fallback
-  // while the payment migration is being tested.
+  // Dodo is the single source of truth for Pro entitlement.
   const {data:dodoSubs}=await sb.from('dodo_subscriptions')
     .select('status')
     .ilike('customer_email',user.email)
     .in('status',['active','trialing'])
     .limit(1);
   if(dodoSubs&&dodoSubs.length) currentIsPro=true;
-
-  if(!currentIsPro){
-    const {data:customer}=await sb.from('paddle_customers').select('paddle_customer_id').ilike('email',user.email).maybeSingle();
-    if(customer){
-      const {data:subs}=await sb.from('paddle_subscriptions').select('status').eq('paddle_customer_id',customer.paddle_customer_id).in('status',['active','trialing']).limit(1);
-      if(subs&&subs.length) currentIsPro=true;
-    }
-  }
   if(currentIsPro){
     meta.textContent=user.email+' · Pro subscription active';
     chip.innerHTML='<span class="prochip">PRO</span>';
