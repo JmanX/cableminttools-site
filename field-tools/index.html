@@ -255,10 +255,21 @@ async function refreshAccount(){
   }
   meta.textContent=user.email+' · Checking subscription…';
   toggle.style.display='none'; out.style.display='';
-  const {data:customer}=await sb.from('paddle_customers').select('paddle_customer_id').ilike('email',user.email).maybeSingle();
-  if(customer){
-    const {data:subs}=await sb.from('paddle_subscriptions').select('status').eq('paddle_customer_id',customer.paddle_customer_id).in('status',['active','trialing']).limit(1);
-    if(subs&&subs.length) currentIsPro=true;
+  // Prefer Dodo subscription state. Keep Paddle as a temporary fallback
+  // while the payment migration is being tested.
+  const {data:dodoSubs}=await sb.from('dodo_subscriptions')
+    .select('status')
+    .ilike('customer_email',user.email)
+    .in('status',['active','trialing'])
+    .limit(1);
+  if(dodoSubs&&dodoSubs.length) currentIsPro=true;
+
+  if(!currentIsPro){
+    const {data:customer}=await sb.from('paddle_customers').select('paddle_customer_id').ilike('email',user.email).maybeSingle();
+    if(customer){
+      const {data:subs}=await sb.from('paddle_subscriptions').select('status').eq('paddle_customer_id',customer.paddle_customer_id).in('status',['active','trialing']).limit(1);
+      if(subs&&subs.length) currentIsPro=true;
+    }
   }
   if(currentIsPro){
     meta.textContent=user.email+' · Pro subscription active';
