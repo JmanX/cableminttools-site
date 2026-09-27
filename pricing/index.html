@@ -15,6 +15,7 @@
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.btn{border:0;border-radius:10px;padding:13px 17px;font-weight:900;cursor:pointer;font-size:15px}.btn.primary{background:var(--green);color:#fff}.btn.secondary{background:#e8f0ed;color:var(--ink)}
 .note{margin-top:22px;padding:14px 16px;border-radius:12px;background:#fff7df;border:1px solid #ead79d;color:#6b5715;font-size:14px}
 .features{padding-left:20px}.features li{margin:7px 0}
+.legalbox{margin-top:24px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}.legalbox strong{display:block;margin-bottom:8px}.legallinks{display:flex;gap:12px;flex-wrap:wrap}.legallinks a{color:var(--green);font-weight:800;text-decoration:none}
 @media(max-width:700px){.plans{grid-template-columns:1fr}.actions{display:grid}.btn{width:100%}}
 </style>
 </head>
@@ -53,6 +54,17 @@
 <button class="btn secondary" id="buyAnnual" type="button">Choose Annual — $39</button>
 </div>
 </section>
+</div>
+
+<div class="legalbox">
+<strong>Legal & customer information</strong>
+<div class="legallinks">
+<a href="https://www.cableminttools.com/terms/">Terms of Service</a>
+<a href="https://www.cableminttools.com/privacy/">Privacy Policy</a>
+<a href="https://www.cableminttools.com/refunds/">Refund Policy</a>
+<a href="https://cableminttools.etsy.com" target="_blank" rel="noopener noreferrer">Customer Support</a>
+</div>
+<p class="muted" style="margin:10px 0 0">By subscribing, you agree to the Terms of Service. Please review our Privacy Policy and Refund Policy before checkout.</p>
 </div>
 
 <div class="note"><strong>Sandbox test mode:</strong> checkout is currently configured for testing only. No real payment will be collected until CableMint switches Paddle to live mode.</div>
