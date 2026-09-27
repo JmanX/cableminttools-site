@@ -201,7 +201,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
       <button class="scan" id="scanDeviceBtn" type="button">📷 Scan MAC / Serial</button>
       <input id="devicePhoto" type="file" accept="image/*" capture="environment" hidden>
     </div>
-    <div class="scanstatus" id="scanStatus">Take a clear photo of the device label. CableMint will try barcode/QR detection first, then text recognition if needed.</div>
+    <div class="scanstatus" id="scanStatus">Fill most of the photo with the device label. CableMint scans the printed barcodes first, then uses text recognition as a fallback.</div>
     <div class="privacyline">Privacy: the photo is processed temporarily on this device to read label data. It is not uploaded or stored by CableMint.</div>
   </div>
   <div class="capturegrid" style="margin-top:14px">
@@ -574,6 +574,76 @@ function loadTesseract(){
   });
   return window._cmTesseractPromise;
 }
+
+function loadQuagga(){
+  if(window.Quagga)return Promise.resolve();
+  if(window._cmQuaggaPromise)return window._cmQuaggaPromise;
+  window._cmQuaggaPromise=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.12.1/dist/quagga.min.js';
+    s.onload=()=>window.Quagga?resolve():reject(new Error('Quagga did not initialize'));
+    s.onerror=()=>reject(new Error('Quagga failed to download'));
+    document.head.appendChild(s);
+  });
+  return window._cmQuaggaPromise;
+}
+function cropCanvas(source,x,y,w,h,scale=1){
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(w*scale));
+  canvas.height=Math.max(1,Math.round(h*scale));
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(source,x,y,w,h,0,0,canvas.width,canvas.height);
+  return canvas;
+}
+function quaggaDecodeCanvas(canvas){
+  return new Promise(async resolve=>{
+    try{
+      await loadQuagga();
+      const src=canvas.toDataURL('image/jpeg',0.96);
+      Quagga.decodeSingle({
+        src,
+        numOfWorkers:0,
+        locate:true,
+        inputStream:{size:1400},
+        locator:{halfSample:false,patchSize:'medium'},
+        decoder:{
+          readers:[
+            'code_128_reader','code_39_reader','code_39_vin_reader',
+            'code_93_reader','codabar_reader','i2of5_reader','2of5_reader',
+            'ean_reader','ean_8_reader','upc_reader','upc_e_reader'
+          ],
+          multiple:false
+        }
+      },result=>{
+        const code=result&&result.codeResult&&result.codeResult.code;
+        resolve(code||'');
+      });
+    }catch(e){
+      console.warn('Quagga scan failed',e);
+      resolve('');
+    }
+  });
+}
+async function scanQuaggaRegions(canvas){
+  const regions=[];
+  const add=(x,y,w,h,scale=1)=>regions.push(cropCanvas(canvas,x,y,w,h,scale));
+  const w=canvas.width,h=canvas.height;
+  regions.push(canvas);
+
+  // Large center crop plus overlapping horizontal bands catch labels placed
+  // anywhere from upper-middle to lower-middle while keeping barcodes large.
+  add(w*.08,h*.12,w*.84,h*.76,1.35);
+  const bandH=h*.34;
+  [0,.16,.32,.48,.64].forEach(frac=>add(0,h*frac,w,Math.min(bandH,h-h*frac),1.55));
+
+  const found=[];
+  for(const region of regions){
+    const code=await quaggaDecodeCanvas(region);
+    if(code&&!found.includes(code))found.push(code);
+    if(found.length>=3)break;
+  }
+  return found;
+}
 function loadZXing(){
   if(window.ZXingBrowser)return Promise.resolve();
   if(window._cmZXingPromise)return window._cmZXingPromise;
@@ -691,16 +761,35 @@ async function processDevicePhoto(file){
     const enhanced=enhancedCanvas(base);
     const thresholded=thresholdCanvas(base);
 
-    $('scanStatus').textContent='Scanning barcode / QR codes…';
-    let codes=await scanBarcodesFromCanvas(base);
-    if(!codes.length)codes=await scanBarcodesFromCanvas(enhanced);
-    if(!codes.length)codes=await scanBarcodesFromCanvas(thresholded);
+    $('scanStatus').textContent='Scanning device barcodes…';
+    let codes=await scanQuaggaRegions(base);
+    const nativeCodes=await scanBarcodesFromCanvas(base);
+    codes=[...new Set([...codes,...nativeCodes])];
+    if(!codes.length){
+      const enhancedCodes=await scanBarcodesFromCanvas(enhanced);
+      codes=[...new Set([...codes,...enhancedCodes])];
+    }
+    if(!codes.length){
+      const thresholdCodes=await scanBarcodesFromCanvas(thresholded);
+      codes=[...new Set([...codes,...thresholdCodes])];
+    }
     barcodeCount=codes.length;
     const codeText=codes.join('\n');
     mac=findMacInText(codeText);
+
+    // Device labels often have one barcode for MAC and another for serial.
+    // Prefer a 12-character hexadecimal value for MAC, then keep the next
+    // useful alphanumeric barcode as the serial number.
+    if(!mac){
+      const macCode=codes.find(x=>normalizeMacCandidate(x)||repairLikelyMac(x));
+      if(macCode)mac=normalizeMacCandidate(macCode)||repairLikelyMac(macCode);
+    }
     if(codes.length){
-      const nonMac=codes.find(x=>!findMacInText(x)&&/[A-Za-z0-9]/.test(x)&&x.length>=4);
-      if(nonMac)serial=nonMac.trim();
+      const serialCode=codes.find(x=>{
+        const v=String(x||'').trim();
+        return v.length>=4 && !findMacInText(v) && /[A-Za-z0-9]/.test(v);
+      });
+      if(serialCode)serial=serialCode.trim();
     }
 
     if(!mac||!serial){
