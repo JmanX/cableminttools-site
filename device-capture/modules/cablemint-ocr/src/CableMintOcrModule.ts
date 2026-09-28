@@ -1,18 +1,11 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-export type OcrLine = {
-  text: string;
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-};
-
-export type OcrResult = { text: string; lines: OcrLine[] };
+import type { OcrResult, ImageBarcode } from './CableMintOcr.types';
+export type { OcrLine, OcrResult, ImageBarcode } from './CableMintOcr.types';
 
 declare class CableMintOcrModule extends NativeModule<{}> {
   recognizeAsync(imageUri: string): Promise<OcrResult>;
-  scanBarcodesAsync(imageUri: string): Promise<{ data: string; type: string }[]>;
+  scanBarcodesAsync(imageUri: string): Promise<ImageBarcode[]>;
 }
 
 export default requireNativeModule<CableMintOcrModule>('CableMintOcr');

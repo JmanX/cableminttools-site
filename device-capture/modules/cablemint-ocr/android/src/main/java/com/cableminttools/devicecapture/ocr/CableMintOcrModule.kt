@@ -1,6 +1,8 @@
 package com.cableminttools.devicecapture.ocr
 
 import android.net.Uri
+import android.graphics.Point
+import android.graphics.Rect
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.text.TextRecognition
@@ -10,6 +12,23 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class CableMintOcrModule : Module() {
+  private fun geometry(box: Rect?, points: Array<Point>?, image: InputImage): Map<String, Any?> {
+    val rotated = image.rotationDegrees % 180 != 0
+    return mapOf(
+      "boundingBox" to box?.let { mapOf("left" to it.left, "top" to it.top, "right" to it.right, "bottom" to it.bottom) },
+      "cornerPoints" to (points?.map { mapOf("x" to it.x, "y" to it.y) } ?: emptyList()),
+      "coordinateSpace" to "image",
+      "imageWidth" to if (rotated) image.height else image.width,
+      "imageHeight" to if (rotated) image.width else image.height
+    )
+  }
+
+  private fun barcodeType(format: Int): String = when (format) {
+    1 -> "code128"; 2 -> "code39"; 4 -> "code93"; 8 -> "codabar"
+    16 -> "datamatrix"; 32 -> "ean13"; 64 -> "ean8"; 128 -> "itf14"
+    256 -> "qr"; 512 -> "upc_a"; 1024 -> "upc_e"; 2048 -> "pdf417"; 4096 -> "aztec"
+    else -> "unknown"
+  }
   override fun definition() = ModuleDefinition {
     Name("CableMintOcr")
 
@@ -32,7 +51,9 @@ class CableMintOcrModule : Module() {
         .addOnSuccessListener { codes ->
           promise.resolve(codes.mapNotNull { code ->
             code.rawValue?.let { value ->
-              mapOf("data" to value, "type" to "mlkit-${code.format}")
+              geometry(code.boundingBox, code.cornerPoints, image) + mapOf(
+                "data" to value, "type" to barcodeType(code.format), "format" to code.format, "source" to "image"
+              )
             }
           })
         }
@@ -62,16 +83,22 @@ class CableMintOcrModule : Module() {
           val lines = result.textBlocks.flatMap { block ->
             block.lines.map { line ->
               val box = line.boundingBox
-              mapOf(
+              geometry(box, line.cornerPoints, image) + mapOf(
                 "text" to line.text,
                 "left" to (box?.left ?: 0),
                 "top" to (box?.top ?: 0),
                 "right" to (box?.right ?: 0),
-                "bottom" to (box?.bottom ?: 0)
+                "bottom" to (box?.bottom ?: 0),
+                "elements" to line.elements.map { element ->
+                  geometry(element.boundingBox, element.cornerPoints, image) + mapOf("text" to element.text)
+                }
               )
             }
           }
-          promise.resolve(mapOf("text" to result.text, "lines" to lines))
+          val rotated = image.rotationDegrees % 180 != 0
+          promise.resolve(mapOf("text" to result.text, "lines" to lines,
+            "imageWidth" to if (rotated) image.height else image.width,
+            "imageHeight" to if (rotated) image.width else image.height))
         }
         .addOnFailureListener { error ->
           promise.reject("OCR_FAILED", error.message ?: "Text recognition failed", error)

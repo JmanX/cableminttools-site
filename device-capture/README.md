@@ -8,7 +8,7 @@ This is **milestone 1** from `../CABLEMINT_CONTEXT.md`: a minimal Android scanne
 - Uses a local Expo Android module with Google's **bundled** ML Kit Latin text-recognition model (`com.google.mlkit:text-recognition:16.0.1`) on the same captured image.
 - Shows printed-label MAC and serial candidates, all decoded barcode values, raw OCR text, and editable technician-check fields.
 - Does not treat an unlabelled 12-character hexadecimal barcode as an authoritative MAC. A serial-only label is valid for the scanner test.
-- Deletes the temporary camera photo after recognition. Captured values exist only in memory and are cleared by **Scan another label** or closing the app.
+- Keeps **Scan with Camera** primary and **Choose Existing Photo** secondary. Both use the same on-device native pipeline. Temporary app-cache photos are deleted after recognition; original gallery photos are preserved. Captured values exist only in memory.
 
 The barcode and OCR models run on the device. No device-label image or scan result is sent to CableMint or another server by this app.
 
@@ -64,3 +64,11 @@ GitHub Actions run [36362683802](https://github.com/JmanX/cableminttools-site/ac
 Live decoded values are visible below the camera; Review read codes opens them without taking a photo. Capture is bounded to 10 seconds, then barcode and OCR recognition each to 12 seconds. Failures identify the stage and preserve live values for review. This removes the Expo Camera still-image URL scanner dependency on an absent optional image-loader service. Version code 2 installs over the first prototype when signed with the same generated debug key. Phone verification remains required.
 
 Replacement build 1.0.1 passed [GitHub Actions run 36364777329](https://github.com/JmanX/cableminttools-site/actions/runs/36364777329); [APK ZIP artifact](https://github.com/JmanX/cableminttools-site/actions/runs/36364777329/artifacts/10946539958). Extract and install app-release.apk over the first prototype. Verify live-code visibility, Review read codes, and Capture label on a real phone.
+
+## Version 1.0.2 spatial classification and gallery
+
+Native OCR words/lines and barcodes retain bounding boxes, corner points, and image dimensions. Printed anchors determine MAC and serial ownership by spatial proximity, including tilted labels. Unique associated barcodes override nearby OCR typos; ambiguous detections remain unassigned. The Akuvox synthetic regression resolves MAC `0C:11:05:33:D7:33` and serial `P1U922QJ00465` even when OCR reads `DC110533D733` and returns shuffled lines. Geometry, raw codes, assignment reasons, and technician edit fields remain available in review.
+
+Choose Existing Photo grants access through the system picker without broad storage permissions. It scans a temporary cache copy, deletes that copy, and preserves the original. Gallery scans never inherit live barcodes from a previous label. Flashlight controls are Turn On Flashlight / Turn Off Flashlight. No image or result is uploaded or saved to a backend.
+
+Typecheck, recognition/timeout/privacy regression checks, and Android prebuild passed. Phone validation remains required: scan the Akuvox label using camera and gallery, confirm both fields and their assignment reasons, test ambiguous labels, cancel gallery selection, toggle the flashlight, and verify a gallery original remains available afterward.

@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
-import { File } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import CableMintOcr from './modules/cablemint-ocr/src/CableMintOcrModule';
-import { analyzeScan, normalizeMac, type ScanReview, type ValueCandidate } from './src/recognition';
+import { analyzeScan, normalizeMac, type ScanReview, type ValueCandidate, type BarcodeCandidate } from './src/recognition';
 import { withTimeout } from './src/withTimeout';
+import { isAppCachePhoto } from './src/photoPrivacy';
 
 const BLUE = '#102B4B';
 const GREEN = '#26B67A';
@@ -22,7 +24,7 @@ function CandidateList({ title, candidates, onChoose }: { title: string; candida
     {candidates.length === 0 ? <Text style={styles.muted}>No value tied to a printed label. Check the barcode list and enter it manually if needed.</Text> :
       candidates.map((candidate) => <Pressable key={candidate.value} style={styles.candidate} onPress={() => onChoose(candidate.value)}>
         <Text style={styles.candidateValue}>{candidate.value}</Text>
-        <Text style={styles.candidateMeta}>{candidate.source}{candidate.corroboratedByBarcode ? ' · also found in barcode' : ''} · tap to use</Text>
+        <Text style={styles.candidateMeta}>{candidate.source} · tap to use</Text>
       </Pressable>)}
   </View>;
 }
@@ -63,8 +65,36 @@ export default function App() {
   }
 
   function removePhoto(uri: string) {
-    try { new File(uri).delete(); }
+    if (!isAppCachePhoto(uri, Paths.cache.uri)) return;
+    try { const file = new File(uri); if (file.exists) file.delete(); }
     catch { setCleanupWarning('The temporary photo could not be removed. Clear this app’s cache before sharing the phone.'); }
+  }
+
+  function liveValues(): BarcodeCandidate[] {
+    // Preview coordinates and image coordinates describe different frames.
+    return [...liveBarcodes.current.values()].map(({ data, type, cornerPoints, bounds: boundingBox }) => ({
+      data, type, source: 'live', coordinateSpace: 'preview', cornerPoints,
+      boundingBox: boundingBox ? { left: boundingBox.origin.x, top: boundingBox.origin.y,
+        right: boundingBox.origin.x + boundingBox.size.width, bottom: boundingBox.origin.y + boundingBox.size.height } : null,
+    }));
+  }
+
+  async function scanPhoto(photoUri: string, fallbackCodes: BarcodeCandidate[] = []) {
+    setCaptureStatus('Reading barcode and printed text…');
+    const [barcodeResult, ocrResult] = await Promise.allSettled([
+      withTimeout(CableMintOcr.scanBarcodesAsync(photoUri), 12000, 'Still-image barcode recognition timed out.'),
+      withTimeout(CableMintOcr.recognizeAsync(photoUri), 12000, 'Text recognition timed out.'),
+    ]);
+    const stillBarcodes = barcodeResult.status === 'fulfilled' ? barcodeResult.value : [];
+    const ocr = ocrResult.status === 'fulfilled' ? ocrResult.value : null;
+    if (barcodeResult.status === 'rejected' && ocrResult.status === 'rejected' && !fallbackCodes.length) {
+      throw new Error('Barcode and text recognition both failed. Choose another photo or try a sharply focused camera scan.');
+    }
+    showReview(analyzeScan(ocr, [...fallbackCodes, ...stillBarcodes]));
+    if (barcodeResult.status === 'rejected' || ocrResult.status === 'rejected') {
+      setError([barcodeResult, ocrResult].filter(item => item.status === 'rejected')
+        .map(item => item.status === 'rejected' ? String(item.reason?.message ?? item.reason) : '').join(' ') + ' Review the available codes manually.');
+    }
   }
 
   async function captureLabel() {
@@ -81,29 +111,57 @@ export default function App() {
         latePhoto => { if (latePhoto?.uri) removePhoto(latePhoto.uri); });
       if (!photo?.uri) throw new Error('The camera did not return a photo.');
       photoUri = photo.uri;
-      setCaptureStatus('Reading barcode and printed text…');
-      const [barcodeResult, ocrResult] = await Promise.allSettled([
-        withTimeout(CableMintOcr.scanBarcodesAsync(photoUri), 12000, 'Still-image barcode recognition timed out.'),
-        withTimeout(CableMintOcr.recognizeAsync(photoUri), 12000, 'Text recognition timed out.'),
-      ]);
-      const stillBarcodes = barcodeResult.status === 'fulfilled' ? barcodeResult.value : [];
-      const ocr = ocrResult.status === 'fulfilled' ? ocrResult.value : null;
-      if (barcodeResult.status === 'rejected' && ocrResult.status === 'rejected' && liveBarcodes.current.size === 0) {
-        throw new Error('Barcode and text recognition both failed. Try a closer, sharply focused label.');
-      }
-      const result = analyzeScan(ocr, [...liveBarcodes.current.values(), ...stillBarcodes]);
-      showReview(result);
-      if (barcodeResult.status === 'rejected' || ocrResult.status === 'rejected') {
-        setError([barcodeResult, ocrResult].filter(item => item.status === 'rejected')
-          .map(item => item.status === 'rejected' ? String(item.reason?.message ?? item.reason) : '').join(' ') + ' Review the available codes manually.');
-      }
+      await scanPhoto(photoUri, liveValues());
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Capture failed. Please try again.');
-      if (liveBarcodes.current.size) showReview(analyzeScan(null, [...liveBarcodes.current.values()]));
+      if (liveBarcodes.current.size) showReview(analyzeScan(null, liveValues()));
     } finally {
       if (photoUri) {
         removePhoto(photoUri);
       }
+      captureInProgress.current = false;
+      setBusy(false);
+      setCaptureStatus('');
+    }
+  }
+
+  async function chooseExistingPhoto() {
+    if (captureInProgress.current) return;
+    captureInProgress.current = true;
+    setBusy(true);
+    setError('');
+    setCleanupWarning('');
+    setCaptureStatus('Choose a photo…');
+    setTorch(false);
+    let photoUri: string | undefined;
+    try {
+      // System picker grants access to only the selected image. No broad
+      // gallery permission, image upload, base64 copy, or permanent save.
+      const selected = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], allowsEditing: false, allowsMultipleSelection: false,
+        quality: 1, exif: false, base64: false,
+      });
+      if (selected.canceled || !selected.assets[0]) return;
+      const asset = selected.assets[0];
+      if (isAppCachePhoto(asset.uri, Paths.cache.uri)) photoUri = asset.uri;
+      else {
+        const extension = asset.fileName?.match(/\.[a-z0-9]+$/i)?.[0] ?? '.jpg';
+        const temporary = new File(Paths.cache, `cablemint-scan-${Date.now()}${extension}`);
+        photoUri = temporary.uri;
+        await new File(asset.uri).copy(temporary);
+      }
+      // A selected photo never inherits barcodes from a previous live label.
+      liveBarcodes.current.clear();
+      setLiveCodes([]);
+      setBarcodeCount(0);
+      setReview(null);
+      setMac('');
+      setSerial('');
+      await scanPhoto(photoUri);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Cannot scan this photo. Choose another image.');
+    } finally {
+      if (photoUri) removePhoto(photoUri);
       captureInProgress.current = false;
       setBusy(false);
       setCaptureStatus('');
@@ -119,6 +177,8 @@ export default function App() {
     setMac('');
     setSerial('');
     setError('');
+    setCleanupWarning('');
+    setTorch(false);
     setStage('camera');
   }
 
@@ -126,11 +186,15 @@ export default function App() {
     return <SafeAreaView style={styles.center}><Text style={styles.darkTitle}>CableMint Device Capture</Text><Text style={styles.muted}>This first prototype targets Android only.</Text></SafeAreaView>;
   }
   if (!permission) return <SafeAreaView style={styles.center}><ActivityIndicator color={GREEN} /></SafeAreaView>;
-  if (!permission.granted) {
+  if (stage === 'camera' && !permission.granted) {
     return <SafeAreaView style={styles.center}>
       <Text style={styles.darkTitle}>Camera access</Text>
       <Text style={styles.body}>CableMint uses the camera to read equipment labels on this phone. Photos are processed locally and removed after each scan.</Text>
-      <Action label="Allow camera" onPress={() => { void requestPermission(); }} />
+      <Action label="Scan with Camera" disabled={busy} onPress={() => { void requestPermission(); }} />
+      <Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} />
+      {busy && <><ActivityIndicator color={GREEN} /><Text style={styles.body}>{captureStatus}</Text></>}
+      {!!error && <Text style={styles.error}>{error}</Text>}
+      {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
     </SafeAreaView>;
   }
 
@@ -154,32 +218,33 @@ export default function App() {
           {liveCodes.map(code => <Text selectable key={`${code.type}:${code.data}`} style={styles.ocrText}>{code.type}: {code.data}</Text>)}
         </ScrollView>}
         <View style={styles.controlRow}>
-          <View style={styles.flex}><Action label={torch ? 'Torch off' : 'Torch on'} onPress={() => setTorch(!torch)} outline /></View>
+          <View style={styles.flex}><Action label={torch ? 'Turn Off Flashlight' : 'Turn On Flashlight'} disabled={busy} onPress={() => setTorch(!torch)} outline /></View>
           <View style={styles.flex}><Action label="Clear codes" disabled={busy} onPress={() => { liveBarcodes.current.clear(); setBarcodeCount(0); setLiveCodes([]); }} outline /></View>
         </View>
-        {!!liveCodes.length && <Action label="Review read codes" disabled={busy} outline onPress={() => showReview(analyzeScan(null, [...liveBarcodes.current.values()]))} />}
-        <Action label={busy ? captureStatus : 'Capture label'} onPress={() => { void captureLabel(); }} disabled={busy || !cameraReady} />
+        <Action label={busy ? captureStatus : 'Scan with Camera'} onPress={() => { void captureLabel(); }} disabled={busy || !cameraReady} />
+        <Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} />
+        {!!liveCodes.length && <Action label="Review read codes" disabled={busy} outline onPress={() => showReview(analyzeScan(null, liveValues()))} />}
         {busy && <ActivityIndicator color={GREEN} />}
         {!!error && <Text style={styles.error}>{error}</Text>}
         {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
       </View>
     </View> : <ScrollView contentContainerStyle={styles.reviewPage}>
       <Text style={styles.darkTitle}>Review scan</Text>
-      <Text style={styles.muted}>Only values beside a printed MAC or S/N label are suggested. Other barcodes remain unassigned until you identify them.</Text>
+      <Text style={styles.muted}>Candidates are associated with nearby printed MAC or SN labels. Barcode values take priority over OCR in the same field. Confirm every value against the label.</Text>
       {!!error && <Text style={styles.error}>{error}</Text>}
       {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
       <CandidateList title="Printed MAC candidates" candidates={review?.macs ?? []} onChoose={setMac} />
       <CandidateList title="Printed serial candidates" candidates={review?.serials ?? []} onChoose={setSerial} />
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>All barcode values</Text>
-        {review?.barcodes.length ? review.barcodes.map((code) => <View key={`${code.type}:${code.data}`} style={styles.codeRow}>
-          <Text selectable style={styles.candidateValue}>{code.data}</Text><Text style={styles.candidateMeta}>{code.type} · unassigned</Text>
+        {review?.barcodes.length ? review.barcodes.map((code, index) => <View key={`${code.type}:${code.data}:${index}`} style={styles.codeRow}>
+          <Text selectable style={styles.candidateValue}>{code.data}</Text><Text style={styles.candidateMeta}>{code.type} · {code.assignmentReason ?? 'unassigned — confirm manually'}</Text>
         </View>) : <Text style={styles.muted}>No barcode decoded.</Text>}
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Technician check</Text>
         <Text style={styles.label}>MAC address (leave blank if none is printed)</Text>
-        <TextInput value={mac} onChangeText={setMac} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
+        <TextInput value={mac} onChangeText={setMac} onBlur={() => { const normalized = normalizeMac(mac); if (normalized) setMac(normalized); }} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
         <Text style={styles.label}>Serial number</Text>
         <TextInput value={serial} onChangeText={setSerial} autoCapitalize="characters" placeholder="Enter or choose a serial" style={styles.input} />
         {!!mac && !normalizeMac(mac) && <Text style={styles.error}>This does not look like a 12-digit MAC address.</Text>}
@@ -189,7 +254,9 @@ export default function App() {
         <Text style={styles.sectionTitle}>Raw OCR text</Text>
         <Text selectable style={styles.ocrText}>{review?.ocrText || 'No printed text recognized.'}</Text>
       </View>
-      <Action label="Scan another label" onPress={scanAgain} />
+      <Action label="Scan with Camera" disabled={busy} onPress={scanAgain} />
+      <Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} />
+      {busy && <><ActivityIndicator color={GREEN} /><Text style={styles.body}>{captureStatus}</Text></>}
     </ScrollView>}
   </SafeAreaView>;
 }

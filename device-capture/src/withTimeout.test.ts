@@ -1,10 +1,16 @@
 import { withTimeout } from './withTimeout';
+import { isAppCachePhoto } from './photoPrivacy';
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
 }
 
 export async function runTimeoutChecks() {
+  const cache = 'file:///data/user/0/com.cablemint/cache/';
+  assert(isAppCachePhoto(cache + 'ImagePicker/photo.jpg', cache), 'picker cache copy is eligible for cleanup');
+  assert(!isAppCachePhoto('content://media/external/images/12', cache), 'original gallery content URI is never deleted');
+  assert(!isAppCachePhoto('file:///storage/emulated/0/DCIM/photo.jpg', cache), 'original library file is never deleted');
+  assert(!isAppCachePhoto(cache + '../files/photo.jpg', cache), 'cache traversal is rejected');
   assert(await withTimeout(Promise.resolve('codes'), 100, 'timeout') === 'codes', 'completed recognition returns values');
   let message = '';
   try { await withTimeout(new Promise(() => {}), 5, 'Barcode pass timed out'); }
