@@ -86,3 +86,11 @@ Phone check: choose the two Akuvox barcodes explicitly, verify normalized MAC an
 Tests also approximate the supplied Omada/TP-Link stacked-barcode layouts and the serial-only UNV layout. A uniquely associated printed row can corroborate its matching barcode above; it takes priority over another field's barcode below. Device-key QR and distant retail barcodes stay unassigned. These are parser fixtures, not a claim that native ML Kit recognition succeeded on the actual photos; test the supplied images using Choose Existing Photo on the phone.
 
 Version 1.0.3 passed [GitHub Actions run 36482994129](https://github.com/JmanX/cableminttools-site/actions/runs/36482994129) and produced artifact 10998186374. Download the ZIP, extract it, and install app-release.apk. SHA-256: `150aac800a0214753f45e9ae2000f18c7e632939c3d61efbb56e5cdc9f4650d9`. Bundled JavaScript and ML Kit model assets were inspected. Real-phone verification remains pending.
+
+## Version 1.0.4 confirmation navigation
+
+Confirm Fields opens a separate Scan Complete screen with the confirmed values. Scan Next Device clears the result and opens the camera; Edit Fields returns to review with the values preserved and requires confirmation again. The keyboard closes on confirmation. Results remain in memory and are not saved to a project. Phone feedback says scanning works, sometimes on the second attempt, and gallery recognition appears more accurate. Camera consistency still needs improvement and measurement.
+
+Verify on the phone: confirm valid MAC/serial and serial-only scans, see the completion screen, edit and re-confirm, then start the next device and check that old fields/codes are cleared. Invalid or empty input must remain in review with an error.
+
+Enter the optional Installation Location in Technician check (for example, Building A, Floor 2, Room 204). It appears on Scan Complete, is retained while editing, and clears for a new device. Location is kept only in memory with this scan; project saving and the structured location workflow remain outside milestone 1.

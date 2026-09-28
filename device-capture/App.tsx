@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
@@ -34,7 +34,7 @@ export default function App() {
   const liveBarcodes = useRef(new Map<string, BarcodeScanningResult>());
   const captureInProgress = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const [stage, setStage] = useState<'camera' | 'review'>('camera');
+  const [stage, setStage] = useState<'camera' | 'review' | 'complete'>('camera');
   const [torch, setTorch] = useState(false);
   const [busy, setBusy] = useState(false);
   const [barcodeCount, setBarcodeCount] = useState(0);
@@ -44,7 +44,7 @@ export default function App() {
   const [review, setReview] = useState<ScanReview | null>(null);
   const [mac, setMac] = useState('');
   const [serial, setSerial] = useState('');
-  const [confirmed, setConfirmed] = useState(false);
+  const [installationLocation, setInstallationLocation] = useState('');
   const [confirmationError, setConfirmationError] = useState('');
   const [error, setError] = useState('');
   const [cleanupWarning, setCleanupWarning] = useState('');
@@ -59,7 +59,7 @@ export default function App() {
   }
 
   function showReview(result: ScanReview) {
-    setConfirmed(false);
+    setInstallationLocation('');
     setConfirmationError('');
     setReview(result);
     setMac(result.macs.length === 1 ? result.macs[0].value : '');
@@ -70,13 +70,11 @@ export default function App() {
 
   function chooseMac(value: string) {
     setMac(value);
-    setConfirmed(false);
     setConfirmationError('');
   }
 
   function chooseSerial(value: string) {
     setSerial(value);
-    setConfirmed(false);
     setConfirmationError('');
   }
 
@@ -88,8 +86,10 @@ export default function App() {
     if (serialText.length > 160) { setConfirmationError('The serial number must be 160 characters or fewer.'); return; }
     setMac(normalized);
     setSerial(serialText);
+    setInstallationLocation(installationLocation.trim());
     setConfirmationError('');
-    setConfirmed(true);
+    Keyboard.dismiss();
+    setStage('complete');
   }
 
   function removePhoto(uri: string) {
@@ -183,10 +183,10 @@ export default function App() {
       setLiveCodes([]);
       setBarcodeCount(0);
       setReview(null);
-      setConfirmed(false);
       setConfirmationError('');
       setMac('');
       setSerial('');
+      setInstallationLocation('');
       await scanPhoto(photoUri);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Cannot scan this photo. Choose another image.');
@@ -199,7 +199,7 @@ export default function App() {
   }
 
   function scanAgain() {
-    setConfirmed(false);
+    setInstallationLocation('');
     setConfirmationError('');
     liveBarcodes.current.clear();
     setBarcodeCount(0);
@@ -260,7 +260,21 @@ export default function App() {
         {!!error && <Text style={styles.error}>{error}</Text>}
         {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
       </View>
-    </View> : <ScrollView contentContainerStyle={styles.reviewPage}>
+    </View> : stage === 'complete' ? <ScrollView key="complete" contentContainerStyle={styles.reviewPage}>
+      <View accessibilityLiveRegion="polite" style={styles.section}>
+        <Text style={styles.darkTitle}>Scan Complete</Text>
+        <Text style={styles.muted}>You confirmed these fields against the label.</Text>
+        <Text style={styles.label}>Installation location</Text>
+        <Text selectable style={styles.candidateValue}>{installationLocation || 'Not entered'}</Text>
+        <Text style={styles.label}>MAC address</Text>
+        <Text selectable style={styles.candidateValue}>{mac || 'None printed'}</Text>
+        <Text style={styles.label}>Serial number</Text>
+        <Text selectable style={styles.candidateValue}>{serial || 'None entered'}</Text>
+        <Text style={styles.muted}>Scanner test only. This result is held in memory and has not been saved to a project. Starting the next scan clears it.</Text>
+      </View>
+      <Action label="Scan Next Device" onPress={scanAgain} />
+      <Action label="Edit Fields" outline onPress={() => { setConfirmationError(''); setStage('review'); }} />
+    </ScrollView> : <ScrollView key="review" keyboardShouldPersistTaps="handled" contentContainerStyle={styles.reviewPage}>
       <Text style={styles.darkTitle}>Review scan</Text>
       <Text style={styles.muted}>Candidates are associated with nearby printed MAC or SN labels. Barcode values take priority over OCR in the same field. Confirm every value against the label.</Text>
       {!!error && <Text style={styles.error}>{error}</Text>}
@@ -280,6 +294,9 @@ export default function App() {
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Technician check</Text>
+        <Text style={styles.label}>Installation Location (optional)</Text>
+        <TextInput value={installationLocation} onChangeText={setInstallationLocation} maxLength={240}
+          placeholder="Building A, Floor 2, Room 204" style={styles.input} />
         <Text style={styles.label}>MAC address (leave blank if none is printed)</Text>
         <TextInput value={mac} onChangeText={chooseMac} onBlur={() => { const normalized = normalizeMac(mac); if (normalized) setMac(normalized); }} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
         <Text style={styles.label}>Serial number</Text>
@@ -287,13 +304,7 @@ export default function App() {
         {!!mac && !normalizeMac(mac) && <Text style={styles.error}>This does not look like a 12-digit MAC address.</Text>}
         <Text style={styles.muted}>Compare these fields with the physical label, then confirm. This scanner test keeps the result only on this screen; no record is saved.</Text>
         {!!confirmationError && <Text accessibilityRole="alert" style={styles.error}>{confirmationError}</Text>}
-        <Action label={confirmed ? 'Fields Confirmed' : 'Confirm Fields'} disabled={busy || confirmed} onPress={confirmFields} />
-        {confirmed && <View accessibilityLiveRegion="polite" style={styles.candidate}>
-          <Text style={styles.sectionTitle}>Confirmed for this scanner test</Text>
-          <Text selectable style={styles.body}>MAC: {mac || 'None'}</Text>
-          <Text selectable style={styles.body}>Serial: {serial || 'None'}</Text>
-          <Text style={styles.muted}>Editing either field requires confirmation again.</Text>
-        </View>}
+        <Action label="Confirm Fields" disabled={busy} onPress={confirmFields} />
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Raw OCR text</Text>
