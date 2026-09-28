@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "CableMint Device Capture",
+    "slug": "cablemint-device-capture",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/CableMintToolsLogo.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.cableminttools.devicecapture.prototype",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/CableMintToolsLogo.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [["expo-camera", {
+      "cameraPermission": "Allow CableMint Device Capture to read equipment labels",
+      "recordAudioAndroid": false,
+      "barcodeScannerEnabled": true
+    }]]
+  }
+}

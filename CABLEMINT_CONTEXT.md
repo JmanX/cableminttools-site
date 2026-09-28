@@ -1,13 +1,15 @@
 # CableMint Device Capture: technical context
 
-**Status:** planning handoff for an Android-first native prototype. Last checked September 27, 2026. Use this file as the source of truth for the Device Capture build. Recheck live services before implementing against them; the database snapshot below is read-only evidence, not a migration.
+**Status:** Android milestone 1 source implemented; standalone APK compilation and field accuracy pending CI and phone testing. Last checked September 27, 2026. Use this file as the source of truth for the Device Capture build. Recheck live services before implementing against them; the database snapshot below is read-only evidence, not a migration.
+
+**Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. A GitHub Actions standalone prototype APK build is configured because no Expo account is available; native compilation and real-label accuracy remain unverified until that workflow and a phone test complete.
 
 ## Sources and precedence
 
 - The open ChatGPT conversation [“Check Etsy Traffic”](https://chatgpt.com/g/g-p-6a933f65f48c8191bda776ab70aedca3/c/6aaefb8f-a950-83e9-9b83-ce4f04bcec7d) contains the product history and decisions. Later decisions in that conversation supersede earlier experiments.
 - The live Supabase project `kgbrhdjbeosljpwghxte` was inspected read-only on September 27, 2026 for public table columns, RLS policies, and Edge Function names. Those observations take precedence over older chat claims about the *current* schema.
 - `CABLEMINT_CHANNEL.md` governs CableMint video production and locked brand assets. Device Capture is an app, but it should still use the established CableMint Tools identity and keep JayroVibe separate.
-- This local `CableMint` folder is currently **not a Git checkout** (`git rev-parse` reports no `.git`). The file is saved here; publishing it to a GitHub repository requires locating or initializing the intended checkout separately.
+- This file is in the root of `JmanX/cableminttools-site`. The Android prototype lives in `device-capture/`; its presence does not change the production website.
 - Never copy keys, passwords, webhook secrets, user data, or contents of `Supabase.txt` into app code, Git, documentation, logs, or client bundles. Existing secrets must be rotated if their exposure is suspected.
 
 ## Product boundary

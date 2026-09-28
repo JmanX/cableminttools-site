@@ -1,0 +1,45 @@
+name: Device Capture Android prototype
+
+on:
+  pull_request:
+    paths:
+      - 'device-capture/**'
+      - '.github/workflows/device-capture-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-prototype-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: device-capture
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: device-capture/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install dependencies
+        run: npm ci
+      - name: Check TypeScript and label parsing
+        run: |
+          npm run typecheck
+          npm run test:recognition
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+      - name: Build standalone prototype APK
+        run: ./gradlew :app:assembleRelease --no-daemon
+        working-directory: device-capture/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cablemint-device-capture-prototype-apk
+          path: device-capture/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
