@@ -94,3 +94,5 @@ Confirm Fields opens a separate Scan Complete screen with the confirmed values. 
 Verify on the phone: confirm valid MAC/serial and serial-only scans, see the completion screen, edit and re-confirm, then start the next device and check that old fields/codes are cleared. Invalid or empty input must remain in review with an error.
 
 Enter the optional Installation Location in Technician check (for example, Building A, Floor 2, Room 204). It appears on Scan Complete, is retained while editing, and clears for a new device. Location is kept only in memory with this scan; project saving and the structured location workflow remain outside milestone 1.
+
+Version 1.0.4 passed [GitHub Actions run 36489054159](https://github.com/JmanX/cableminttools-site/actions/runs/36489054159), producing APK artifact 11001386946. Download the ZIP, extract it, and install app-release.apk. SHA-256: `0407d6f2837c576d92a86e0964ec640df9be8998ca69e9cad4b93754f581ab45`. New navigation and location behavior await phone validation.
