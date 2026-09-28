@@ -30,7 +30,7 @@ npx eas-cli@latest build --platform android --profile preview
 
 The `preview` profile in `eas.json` requests an internally distributed APK. EAS prompts for initial project setup and Android signing if needed. Install the APK from the build link on an Android phone and grant camera access. The app does **not** need a Metro server for the `preview` build. For iterative debugging, use the `development` profile, install its APK, then run `npx expo start --dev-client` on the same network.
 
-An Expo account was not available in this workspace during authoring. The GitHub Actions prototype build is the account-free route. Real-label accuracy still requires an Android phone test. Expo Go cannot load the custom OCR module.
+Chrome and the local EAS CLI are now signed in to the CableMint Tools Expo account. This app is not yet linked to that existing EAS project. The GitHub Actions prototype build is the account-free route. Real-label accuracy still requires an Android phone test. Expo Go cannot load the custom OCR module.
 
 ## Field test
 
@@ -54,3 +54,7 @@ Test a fresh close-up capture with good light and focus. A missed value is accep
 - Generated `android/`, `node_modules/`, and `.test/` are ignored. `npm ci` uses the checked-in lockfile.
 
 Before milestone 2, confirm scanner performance on real labels. Only then implement account access, project/location workflow, `field_devices` writes, Pro gating, and duplicate checks using the context file.
+
+## First successful APK
+
+GitHub Actions run [36362683802](https://github.com/JmanX/cableminttools-site/actions/runs/36362683802) passed native compilation and uploaded [the prototype APK artifact](https://github.com/JmanX/cableminttools-site/actions/runs/36362683802/artifacts/10946452017). Extract the ZIP and install app-release.apk. The archive was inspected and contains assets/index.android.bundle plus bundled barcode and Latin OCR models. Physical-device launch and recognition accuracy remain to be tested.
