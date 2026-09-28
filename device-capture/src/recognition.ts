@@ -228,7 +228,11 @@ export function analyzeScan(ocr: OcrResult | null, barcodeResults: ImageBarcode[
       }
     }
     const raw = 'data' in evidence ? evidence.data : evidence.text;
-    const value = anchor.kind === 'mac' ? normalizeMac(raw) : serialValue(raw);
+    // Detached OCR words such as a vendor logo are insufficient serial
+    // evidence. Alphabetic-only serials remain available via manual review
+    // or decoded barcodes; do not guess them from nearby printed prose.
+    const value = anchor.kind === 'mac' ? normalizeMac(raw)
+      : !fromBarcode && !/\d/.test(raw) ? null : serialValue(raw);
     if (!value) continue;
     const label = anchor.kind === 'mac' ? 'MAC' : 'serial';
     const source = `${fromBarcode ? 'Barcode' : 'OCR value'} near printed ${label} label`;

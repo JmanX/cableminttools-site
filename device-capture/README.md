@@ -74,3 +74,11 @@ Choose Existing Photo grants access through the system picker without broad stor
 Typecheck, recognition/timeout/privacy regression checks, and Android prebuild passed. Phone validation remains required: scan the Akuvox label using camera and gallery, confirm both fields and their assignment reasons, test ambiguous labels, cancel gallery selection, toggle the flashlight, and verify a gallery original remains available afterward.
 
 Version 1.0.2 passed native compilation in [GitHub Actions run 36479027245](https://github.com/JmanX/cableminttools-site/actions/runs/36479027245), producing APK artifact 10996536046. Extract the downloaded ZIP and install `app-release.apk`. The APK includes its JavaScript bundle and bundled ML Kit assets. SHA-256: `8674b54da289645d57d94268ce5e7218e544fcac7a556ce45d8334688aebbbde3`.
+
+## Version 1.0.3 explicit assignment and confirmation
+
+Each barcode has Use as MAC and Use as Serial buttons. Selecting a valid MAC normalizes it; barcode selection is an explicit technician decision even when printed-anchor association fails. Edit the two fields and press Confirm Fields to see a local confirmation summary. At least one value is required; serial-only devices are supported. Changes reset confirmation. This milestone does not save any record.
+
+Nearby alphabetic-only OCR words such as AKUVOX no longer qualify as automatic serial suggestions. Alphabetic serials can still be selected from barcodes or entered manually. The real-label spatial failure shown in the user's 1.0.2 screenshot remains pending reproduction with the original photo; synthetic parser tests are not proof of actual-label accuracy.
+
+Phone check: choose the two Akuvox barcodes explicitly, verify normalized MAC and unchanged serial, confirm, edit one field and verify confirmation resets. Test a blank form, invalid MAC, serial-only confirmation, and an unlabelled barcode. Recheck camera, gallery, and flashlight.

@@ -44,6 +44,8 @@ export default function App() {
   const [review, setReview] = useState<ScanReview | null>(null);
   const [mac, setMac] = useState('');
   const [serial, setSerial] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  const [confirmationError, setConfirmationError] = useState('');
   const [error, setError] = useState('');
   const [cleanupWarning, setCleanupWarning] = useState('');
 
@@ -57,11 +59,37 @@ export default function App() {
   }
 
   function showReview(result: ScanReview) {
+    setConfirmed(false);
+    setConfirmationError('');
     setReview(result);
     setMac(result.macs.length === 1 ? result.macs[0].value : '');
     setSerial(result.serials.length === 1 ? result.serials[0].value : '');
     setStage('review');
     setCameraReady(false);
+  }
+
+  function chooseMac(value: string) {
+    setMac(value);
+    setConfirmed(false);
+    setConfirmationError('');
+  }
+
+  function chooseSerial(value: string) {
+    setSerial(value);
+    setConfirmed(false);
+    setConfirmationError('');
+  }
+
+  function confirmFields() {
+    const normalized = mac.trim() ? normalizeMac(mac) : '';
+    const serialText = serial.trim();
+    if (normalized === null) { setConfirmationError('Check the MAC address: enter 12 hexadecimal digits or leave it blank.'); return; }
+    if (!normalized && !serialText) { setConfirmationError('Choose or enter a MAC address or serial number first.'); return; }
+    if (serialText.length > 160) { setConfirmationError('The serial number must be 160 characters or fewer.'); return; }
+    setMac(normalized);
+    setSerial(serialText);
+    setConfirmationError('');
+    setConfirmed(true);
   }
 
   function removePhoto(uri: string) {
@@ -155,6 +183,8 @@ export default function App() {
       setLiveCodes([]);
       setBarcodeCount(0);
       setReview(null);
+      setConfirmed(false);
+      setConfirmationError('');
       setMac('');
       setSerial('');
       await scanPhoto(photoUri);
@@ -169,6 +199,8 @@ export default function App() {
   }
 
   function scanAgain() {
+    setConfirmed(false);
+    setConfirmationError('');
     liveBarcodes.current.clear();
     setBarcodeCount(0);
     setLiveCodes([]);
@@ -233,22 +265,35 @@ export default function App() {
       <Text style={styles.muted}>Candidates are associated with nearby printed MAC or SN labels. Barcode values take priority over OCR in the same field. Confirm every value against the label.</Text>
       {!!error && <Text style={styles.error}>{error}</Text>}
       {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
-      <CandidateList title="Printed MAC candidates" candidates={review?.macs ?? []} onChoose={setMac} />
-      <CandidateList title="Printed serial candidates" candidates={review?.serials ?? []} onChoose={setSerial} />
+      <CandidateList title="Printed MAC candidates" candidates={review?.macs ?? []} onChoose={chooseMac} />
+      <CandidateList title="Printed serial candidates" candidates={review?.serials ?? []} onChoose={chooseSerial} />
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>All barcode values</Text>
         {review?.barcodes.length ? review.barcodes.map((code, index) => <View key={`${code.type}:${code.data}:${index}`} style={styles.codeRow}>
           <Text selectable style={styles.candidateValue}>{code.data}</Text><Text style={styles.candidateMeta}>{code.type} · {code.assignmentReason ?? 'unassigned — confirm manually'}</Text>
+          <View style={styles.controlRow}>
+            <View style={styles.flex}><Action label="Use as MAC" disabled={busy || !normalizeMac(code.data)} outline onPress={() => chooseMac(normalizeMac(code.data)!)} /></View>
+            <View style={styles.flex}><Action label="Use as Serial" disabled={busy || code.data.length > 160} outline onPress={() => chooseSerial(code.data)} /></View>
+          </View>
+          {!normalizeMac(code.data) && <Text style={styles.muted}>This code is not a valid 12-hex MAC. It can still be selected as a serial.</Text>}
         </View>) : <Text style={styles.muted}>No barcode decoded.</Text>}
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Technician check</Text>
         <Text style={styles.label}>MAC address (leave blank if none is printed)</Text>
-        <TextInput value={mac} onChangeText={setMac} onBlur={() => { const normalized = normalizeMac(mac); if (normalized) setMac(normalized); }} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
+        <TextInput value={mac} onChangeText={chooseMac} onBlur={() => { const normalized = normalizeMac(mac); if (normalized) setMac(normalized); }} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
         <Text style={styles.label}>Serial number</Text>
-        <TextInput value={serial} onChangeText={setSerial} autoCapitalize="characters" placeholder="Enter or choose a serial" style={styles.input} />
+        <TextInput value={serial} onChangeText={chooseSerial} autoCapitalize="characters" placeholder="Enter or choose a serial" style={styles.input} />
         {!!mac && !normalizeMac(mac) && <Text style={styles.error}>This does not look like a 12-digit MAC address.</Text>}
-        <Text style={styles.muted}>No record is saved in this milestone. Compare these fields with the physical label and note any wrong or missed value.</Text>
+        <Text style={styles.muted}>Compare these fields with the physical label, then confirm. This scanner test keeps the result only on this screen; no record is saved.</Text>
+        {!!confirmationError && <Text accessibilityRole="alert" style={styles.error}>{confirmationError}</Text>}
+        <Action label={confirmed ? 'Fields Confirmed' : 'Confirm Fields'} disabled={busy || confirmed} onPress={confirmFields} />
+        {confirmed && <View accessibilityLiveRegion="polite" style={styles.candidate}>
+          <Text style={styles.sectionTitle}>Confirmed for this scanner test</Text>
+          <Text selectable style={styles.body}>MAC: {mac || 'None'}</Text>
+          <Text selectable style={styles.body}>Serial: {serial || 'None'}</Text>
+          <Text style={styles.muted}>Editing either field requires confirmation again.</Text>
+        </View>}
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Raw OCR text</Text>
