@@ -178,54 +178,56 @@ export function analyzeScan(ocr: OcrResult | null, barcodeResults: ImageBarcode[
     if (!seen.has(key)) { barcodes.push({ ...code, data }); seen.add(key); }
   }
   const imageCodes = barcodes.filter(b => b.source !== 'live' && b.coordinateSpace !== 'preview' && points(b).length);
+  const textFor = new Map<number, TextValue>();
+  const barcodeChoices = new Map<number, { node: BarcodeCandidate; score: number }[]>();
+  const printedBarcodeOwners = new Map<BarcodeCandidate, Set<number>>();
+  for (const anchor of anchors) {
+    const textChoices = [...ranked(anchor, values.filter(v => v.inlineAnchor === undefined), anchors),
+      ...values.filter(v => v.inlineAnchor === anchor.id).map(node => ({ node, score: -1 }))].sort((a, b) => a.score - b.score);
+    const text = uniqueNearest(textChoices);
+    if (text) {
+      const owners = anchors.flatMap(a => text.inlineAnchor !== undefined
+        ? a.id === text.inlineAnchor ? [{ node: a, score: -1 }] : []
+        : ranked(a, [text], anchors).map(item => ({ node: a, score: item.score }))).sort((a, b) => a.score - b.score);
+      if (uniqueNearest(owners)?.id === anchor.id) textFor.set(anchor.id, text);
+    }
+    const direct = ranked(anchor, imageCodes, anchors);
+    const ownedText = textFor.get(anchor.id);
+    const a = localBox(anchor, anchor), t = ownedText && localBox(anchor, ownedText);
+    const explicitRow = ownedText?.inlineAnchor === anchor.id || (a && t &&
+      Math.min(a.bottom, t.bottom) - Math.max(a.top, t.top) >= Math.min(a.bottom - a.top, t.bottom - t.top) * 0.3);
+    // On TP-Link/UNV labels a barcode is ABOVE its printed field/value.
+    // A unique printed row and matching nearby decoded data are stronger
+    // evidence than an unrelated barcode below the anchor.
+    const matching = ownedText && (explicitRow || !direct.length) ? imageCodes.flatMap(node => {
+      const score = matchingPrintedValue(anchor, ownedText, node);
+      return score === null ? [] : [{ node, score }];
+    }).sort((a, b) => a.score - b.score) : [];
+    for (const item of matching) {
+      const owners = printedBarcodeOwners.get(item.node) ?? new Set<number>();
+      owners.add(anchor.id);
+      printedBarcodeOwners.set(item.node, owners);
+    }
+    barcodeChoices.set(anchor.id, matching.length
+      ? matching.map(item => ({ ...item, score: -10 + item.score })) : direct);
+  }
   const macs = new Map<string, ValueCandidate>(), serials = new Map<string, ValueCandidate>();
   for (const anchor of anchors) {
-    const candidates = ranked(anchor, imageCodes, anchors);
-    const barcode = uniqueNearest(candidates);
+    const candidates = barcodeChoices.get(anchor.id)!;
     let evidence: ImageBarcode | TextValue | null = null;
     let fromBarcode = false;
     if (candidates.length) {
-      // A barcode must have one nearest anchor AND that anchor must have one
-      // nearest barcode. Ties stay unassigned; OCR cannot override ambiguity.
+      const barcode = uniqueNearest(candidates);
       if (!barcode) continue;
-      const owners = anchors.flatMap(a => ranked(a, [barcode], anchors).map(item => ({ node: a, score: item.score })));
-      owners.sort((a, b) => a.score - b.score);
+      if ((printedBarcodeOwners.get(barcode)?.size ?? 0) > 1) continue;
+      const owners = anchors.flatMap(a => barcodeChoices.get(a.id)!.filter(item => item.node === barcode)
+        .map(item => ({ node: a, score: item.score }))).sort((a, b) => a.score - b.score);
       if (uniqueNearest(owners)?.id !== anchor.id) continue;
       evidence = barcode;
       fromBarcode = true;
     } else {
-      const nearbyText = values.filter(v => v.inlineAnchor === undefined);
-      const textChoices = [...ranked(anchor, nearbyText, anchors),
-        ...values.filter(v => v.inlineAnchor === anchor.id).map(node => ({ node, score: -1 }))];
-      textChoices.sort((a, b) => a.score - b.score);
-      const textValue = uniqueNearest(textChoices);
-      if (!textValue) continue;
-      const owners = anchors.flatMap(a => a.id === textValue.inlineAnchor
-        ? [{ node: a, score: -1 }]
-        : ranked(a, [textValue], anchors).map(item => ({ node: a, score: item.score })));
-      owners.sort((a, b) => a.score - b.score);
-      if (uniqueNearest(owners)?.id !== anchor.id) continue;
-      evidence = textValue;
-      // Some labels print the human-readable value immediately under its
-      // barcode. The anchor-to-text link must be unique before considering
-      // that barcode; this also handles MAC:VALUE recognized as one word.
-      const matching = imageCodes.flatMap(node => {
-        const score = matchingPrintedValue(anchor, textValue, node);
-        return score === null ? [] : [{ node, score }];
-      }).sort((a, b) => a.score - b.score);
-      if (matching.length) {
-        const decoded = uniqueNearest(matching);
-        if (!decoded) continue;
-        const competingTextOwner = anchors.some(other => other.id !== anchor.id && values.some(v => {
-          if (v.inlineAnchor !== undefined && v.inlineAnchor !== other.id) return false;
-          return (v.inlineAnchor === other.id || proximity(other, v) !== null) && matchingPrintedValue(other, v, decoded) !== null;
-        }));
-        if (competingTextOwner) continue;
-        const directOwners = anchors.flatMap(a => ranked(a, [decoded], anchors).map(item => ({ node: a, score: item.score })));
-        if (directOwners.some(owner => owner.node.id !== anchor.id)) continue;
-        evidence = decoded;
-        fromBarcode = true;
-      }
+      evidence = textFor.get(anchor.id) ?? null;
+      if (!evidence) continue;
     }
     const raw = 'data' in evidence ? evidence.data : evidence.text;
     // Detached OCR words such as a vendor logo are insufficient serial
