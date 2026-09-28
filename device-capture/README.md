@@ -4,7 +4,7 @@ This is **milestone 1** from `../CABLEMINT_CONTEXT.md`: a minimal Android scanne
 
 ## What it does
 
-- Uses `expo-camera`'s Android ML Kit barcode scanner during live preview and on a captured still image.
+- Uses `expo-camera`'s Android ML Kit barcode scanner during live preview, plus direct local-file ML Kit barcode scanning in the custom module for captured images.
 - Uses a local Expo Android module with Google's **bundled** ML Kit Latin text-recognition model (`com.google.mlkit:text-recognition:16.0.1`) on the same captured image.
 - Shows printed-label MAC and serial candidates, all decoded barcode values, raw OCR text, and editable technician-check fields.
 - Does not treat an unlabelled 12-character hexadecimal barcode as an authoritative MAC. A serial-only label is valid for the scanner test.
@@ -58,3 +58,7 @@ Before milestone 2, confirm scanner performance on real labels. Only then implem
 ## First successful APK
 
 GitHub Actions run [36362683802](https://github.com/JmanX/cableminttools-site/actions/runs/36362683802) passed native compilation and uploaded [the prototype APK artifact](https://github.com/JmanX/cableminttools-site/actions/runs/36362683802/artifacts/10946452017). Extract the ZIP and install app-release.apk. The archive was inspected and contains assets/index.android.bundle plus bundled barcode and Latin OCR models. Physical-device launch and recognition accuracy remain to be tested.
+
+## Version 1.0.1 loading fix
+
+Live decoded values are visible below the camera; Review read codes opens them without taking a photo. Capture is bounded to 10 seconds, then barcode and OCR recognition each to 12 seconds. Failures identify the stage and preserve live values for review. This removes the Expo Camera still-image URL scanner dependency on an absent optional image-loader service. Version code 2 installs over the first prototype when signed with the same generated debug key. Phone verification remains required.

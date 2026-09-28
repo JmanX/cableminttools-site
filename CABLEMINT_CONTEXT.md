@@ -105,3 +105,7 @@ Use EAS configuration for an internal Android build. On September 27, 2026, Chro
 - Select and test an actual Expo-compatible native ML Kit integration. “Expo Camera barcode scanning” and “native ML Kit OCR” are distinct capabilities; confirm both in an Android development build.
 - Avoid shipping real device-label photos or identifiable equipment data in the repository. Use consented/redacted test assets or on-device test cases.
 - This context file is the planning baseline. Update it when implementation evidence or later user decisions supersede a statement, noting the date and source.
+
+## Milestone 1 phone feedback and correction — September 27, 2026
+
+The user installed the first APK and reported that Reading label stayed loading although two live barcodes had been counted. Inspection found Expo Camera scanFromURLAsync depends on an optional ImageLoaderInterface service; no implementation is installed, and its absent-service path does not settle the promise. Version 1.0.1 replaces that still-image call with direct local-file ML Kit scanning in the local native module, shows live barcode values immediately, adds Review read codes, bounds photo capture to 10 seconds and recognition calls to 12 seconds, and falls back to available live codes on failure. Late photos are deleted. Regression checks cover never-settling calls and late-photo cleanup. Replacement APK compilation and phone verification are pending.

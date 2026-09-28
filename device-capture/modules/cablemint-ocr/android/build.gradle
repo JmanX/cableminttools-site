@@ -18,6 +18,7 @@ android {
 }
 
 dependencies {
+  implementation 'com.google.mlkit:barcode-scanning:17.3.0'
   // Bundled Latin-script model: OCR is available on first launch without a download.
   implementation 'com.google.mlkit:text-recognition:16.0.1'
 }

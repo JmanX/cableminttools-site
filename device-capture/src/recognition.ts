@@ -1,4 +1,3 @@
-import type { BarcodeScanningResult } from 'expo-camera';
 import type { OcrLine, OcrResult } from '../modules/cablemint-ocr/src/CableMintOcrModule';
 
 export type ValueCandidate = {
@@ -59,7 +58,7 @@ function barcodeMatches(value: string, barcodes: BarcodeCandidate[], isMac: bool
     : barcode.data.trim().toUpperCase() === value);
 }
 
-export function analyzeScan(ocr: OcrResult | null, barcodeResults: BarcodeScanningResult[]): ScanReview {
+export function analyzeScan(ocr: OcrResult | null, barcodeResults: BarcodeCandidate[]): ScanReview {
   const barcodes = Array.from(
     new Map(barcodeResults.filter((item) => item.data.trim()).map((item) =>
       [`${item.type}:${item.data.trim()}`, { type: item.type, data: item.data.trim() }])).values(),

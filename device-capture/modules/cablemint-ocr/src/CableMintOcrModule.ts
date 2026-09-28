@@ -12,6 +12,7 @@ export type OcrResult = { text: string; lines: OcrLine[] };
 
 declare class CableMintOcrModule extends NativeModule<{}> {
   recognizeAsync(imageUri: string): Promise<OcrResult>;
+  scanBarcodesAsync(imageUri: string): Promise<{ data: string; type: string }[]>;
 }
 
 export default requireNativeModule<CableMintOcrModule>('CableMintOcr');

@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Camera, CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { File } from 'expo-file-system';
 import CableMintOcr from './modules/cablemint-ocr/src/CableMintOcrModule';
 import { analyzeScan, normalizeMac, type ScanReview, type ValueCandidate } from './src/recognition';
+import { withTimeout } from './src/withTimeout';
 
 const BLUE = '#102B4B';
 const GREEN = '#26B67A';
@@ -35,6 +36,9 @@ export default function App() {
   const [torch, setTorch] = useState(false);
   const [busy, setBusy] = useState(false);
   const [barcodeCount, setBarcodeCount] = useState(0);
+  const [liveCodes, setLiveCodes] = useState<BarcodeScanningResult[]>([]);
+  const [captureStatus, setCaptureStatus] = useState('');
+  const [cameraReady, setCameraReady] = useState(false);
   const [review, setReview] = useState<ScanReview | null>(null);
   const [mac, setMac] = useState('');
   const [serial, setSerial] = useState('');
@@ -42,26 +46,45 @@ export default function App() {
   const [cleanupWarning, setCleanupWarning] = useState('');
 
   function onBarcodeScanned(result: BarcodeScanningResult) {
+    if (captureInProgress.current) return;
     const key = `${result.type}:${result.data.trim()}`;
     if (!result.data.trim() || liveBarcodes.current.has(key)) return;
     liveBarcodes.current.set(key, result);
     setBarcodeCount(liveBarcodes.current.size);
+    setLiveCodes([...liveBarcodes.current.values()]);
+  }
+
+  function showReview(result: ScanReview) {
+    setReview(result);
+    setMac(result.macs.length === 1 ? result.macs[0].value : '');
+    setSerial(result.serials.length === 1 ? result.serials[0].value : '');
+    setStage('review');
+    setCameraReady(false);
+  }
+
+  function removePhoto(uri: string) {
+    try { new File(uri).delete(); }
+    catch { setCleanupWarning('The temporary photo could not be removed. Clear this app’s cache before sharing the phone.'); }
   }
 
   async function captureLabel() {
-    if (captureInProgress.current || !camera.current) return;
+    if (captureInProgress.current || !camera.current || !cameraReady) return;
     captureInProgress.current = true;
     setBusy(true);
     setError('');
     setCleanupWarning('');
     let photoUri: string | undefined;
     try {
-      const photo = await camera.current.takePictureAsync({ quality: 1, skipProcessing: false });
+      setCaptureStatus('Taking photo…');
+      const photo = await withTimeout(camera.current.takePictureAsync({ quality: 1, skipProcessing: false }),
+        10000, 'Photo capture timed out. Review the live codes or try again.',
+        latePhoto => { if (latePhoto?.uri) removePhoto(latePhoto.uri); });
       if (!photo?.uri) throw new Error('The camera did not return a photo.');
       photoUri = photo.uri;
+      setCaptureStatus('Reading barcode and printed text…');
       const [barcodeResult, ocrResult] = await Promise.allSettled([
-        Camera.scanFromURLAsync(photoUri, [...BARCODE_TYPES]),
-        CableMintOcr.recognizeAsync(photoUri),
+        withTimeout(CableMintOcr.scanBarcodesAsync(photoUri), 12000, 'Still-image barcode recognition timed out.'),
+        withTimeout(CableMintOcr.recognizeAsync(photoUri), 12000, 'Text recognition timed out.'),
       ]);
       const stillBarcodes = barcodeResult.status === 'fulfilled' ? barcodeResult.value : [];
       const ocr = ocrResult.status === 'fulfilled' ? ocrResult.value : null;
@@ -69,28 +92,29 @@ export default function App() {
         throw new Error('Barcode and text recognition both failed. Try a closer, sharply focused label.');
       }
       const result = analyzeScan(ocr, [...liveBarcodes.current.values(), ...stillBarcodes]);
-      setReview(result);
-      setMac(result.macs.length === 1 ? result.macs[0].value : '');
-      setSerial(result.serials.length === 1 ? result.serials[0].value : '');
-      setStage('review');
+      showReview(result);
       if (barcodeResult.status === 'rejected' || ocrResult.status === 'rejected') {
-        setError(`${barcodeResult.status === 'rejected' ? 'Still-image barcode pass failed. ' : ''}${ocrResult.status === 'rejected' ? 'OCR failed. ' : ''}Review the available candidates manually.`);
+        setError([barcodeResult, ocrResult].filter(item => item.status === 'rejected')
+          .map(item => item.status === 'rejected' ? String(item.reason?.message ?? item.reason) : '').join(' ') + ' Review the available codes manually.');
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Capture failed. Please try again.');
+      if (liveBarcodes.current.size) showReview(analyzeScan(null, [...liveBarcodes.current.values()]));
     } finally {
       if (photoUri) {
-        try { new File(photoUri).delete(); }
-        catch { setCleanupWarning('The temporary photo could not be removed. Clear this app’s cache before sharing the phone.'); }
+        removePhoto(photoUri);
       }
       captureInProgress.current = false;
       setBusy(false);
+      setCaptureStatus('');
     }
   }
 
   function scanAgain() {
     liveBarcodes.current.clear();
     setBarcodeCount(0);
+    setLiveCodes([]);
+    setCameraReady(false);
     setReview(null);
     setMac('');
     setSerial('');
@@ -120,16 +144,21 @@ export default function App() {
     {stage === 'camera' ? <View style={styles.cameraPage}>
       <View style={styles.cameraFrame}>
         <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" mode="picture" enableTorch={torch}
-          barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }} onBarcodeScanned={onBarcodeScanned} />
+          barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }} onBarcodeScanned={onBarcodeScanned}
+          onCameraReady={() => setCameraReady(true)} onMountError={event => setError(event.message)} />
         <View pointerEvents="none" style={styles.guide} />
       </View>
       <View style={styles.controls}>
         <Text style={styles.body}>Fill the guide with a sharp label. Native ML Kit has seen {barcodeCount} distinct barcode{barcodeCount === 1 ? '' : 's'}.</Text>
+        {!!liveCodes.length && <ScrollView style={{ maxHeight: 100 }}>
+          {liveCodes.map(code => <Text selectable key={`${code.type}:${code.data}`} style={styles.ocrText}>{code.type}: {code.data}</Text>)}
+        </ScrollView>}
         <View style={styles.controlRow}>
           <View style={styles.flex}><Action label={torch ? 'Torch off' : 'Torch on'} onPress={() => setTorch(!torch)} outline /></View>
-          <View style={styles.flex}><Action label="Clear codes" onPress={() => { liveBarcodes.current.clear(); setBarcodeCount(0); }} outline /></View>
+          <View style={styles.flex}><Action label="Clear codes" disabled={busy} onPress={() => { liveBarcodes.current.clear(); setBarcodeCount(0); setLiveCodes([]); }} outline /></View>
         </View>
-        <Action label={busy ? 'Reading label…' : 'Capture label'} onPress={() => { void captureLabel(); }} disabled={busy} />
+        {!!liveCodes.length && <Action label="Review read codes" disabled={busy} outline onPress={() => showReview(analyzeScan(null, [...liveBarcodes.current.values()]))} />}
+        <Action label={busy ? captureStatus : 'Capture label'} onPress={() => { void captureLabel(); }} disabled={busy || !cameraReady} />
         {busy && <ActivityIndicator color={GREEN} />}
         {!!error && <Text style={styles.error}>{error}</Text>}
         {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
@@ -144,7 +173,7 @@ export default function App() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>All barcode values</Text>
         {review?.barcodes.length ? review.barcodes.map((code) => <View key={`${code.type}:${code.data}`} style={styles.codeRow}>
-          <Text style={styles.candidateValue}>{code.data}</Text><Text style={styles.candidateMeta}>{code.type} · unassigned</Text>
+          <Text selectable style={styles.candidateValue}>{code.data}</Text><Text style={styles.candidateMeta}>{code.type} · unassigned</Text>
         </View>) : <Text style={styles.muted}>No barcode decoded.</Text>}
       </View>
       <View style={styles.section}>
@@ -166,7 +195,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F8FA' },
+  container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0, backgroundColor: BLUE },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 26, gap: 16, backgroundColor: '#F4F8FA' },
   header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, backgroundColor: BLUE },
   brand: { color: GREEN, fontWeight: '800', letterSpacing: 2, fontSize: 12 },

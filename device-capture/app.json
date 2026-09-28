@@ -2,7 +2,7 @@
   "expo": {
     "name": "CableMint Device Capture",
     "slug": "cablemint-device-capture",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/CableMintToolsLogo.png",
     "userInterfaceStyle": "light",
@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "versionCode": 2,
       "package": "com.cableminttools.devicecapture.prototype",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
