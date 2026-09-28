@@ -49,7 +49,7 @@ Test a fresh close-up capture with good light and focus. A missed value is accep
 
 - `App.tsx` owns the camera and review UI.
 - `src/recognition.ts` keeps label parsing and candidate association separate from the camera. Its checks run with `npm run test:recognition`.
-- `modules/cablemint-ocr` is an Android-only local Expo module generated from the official Expo module template, then reduced to one OCR method. Expo autolinking includes it during prebuild/EAS Build.
+- `modules/cablemint-ocr` is an Android-only local Expo module generated from the official Expo module template, with native local-file barcode and OCR methods. Expo autolinking includes it during prebuild/EAS Build.
 - `assets/CableMintToolsLogo.png` is an **unchanged copy** of the approved locked CableMint logo. Do not redraw or modify it.
 - Generated `android/`, `node_modules/`, and `.test/` are ignored. `npm ci` uses the checked-in lockfile.
 
@@ -72,3 +72,5 @@ Native OCR words/lines and barcodes retain bounding boxes, corner points, and im
 Choose Existing Photo grants access through the system picker without broad storage permissions. It scans a temporary cache copy, deletes that copy, and preserves the original. Gallery scans never inherit live barcodes from a previous label. Flashlight controls are Turn On Flashlight / Turn Off Flashlight. No image or result is uploaded or saved to a backend.
 
 Typecheck, recognition/timeout/privacy regression checks, and Android prebuild passed. Phone validation remains required: scan the Akuvox label using camera and gallery, confirm both fields and their assignment reasons, test ambiguous labels, cancel gallery selection, toggle the flashlight, and verify a gallery original remains available afterward.
+
+Version 1.0.2 passed native compilation in [GitHub Actions run 36479027245](https://github.com/JmanX/cableminttools-site/actions/runs/36479027245), producing APK artifact 10996536046. Extract the downloaded ZIP and install `app-release.apk`. The APK includes its JavaScript bundle and bundled ML Kit assets. SHA-256: `8674b54da289645d57d94268ce5e7218e544fcac7a556ce45d8334688aebbbde3`.
