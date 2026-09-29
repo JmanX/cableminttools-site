@@ -1,17 +1,22 @@
-# CableMint Device Capture — Android scanner prototype
+# CableMint Device Capture — Android Milestone 2
 
-This is **milestone 1** from `../CABLEMINT_CONTEXT.md`: a minimal Android scanner for testing real equipment labels. It has no Supabase client, login, Dodo code, project selection, record save, image upload, or offline queue. The production website and backend are not dependencies of this scanner test.
+Version 1.1.0 connects the existing native scanner to the existing CableMint Supabase backend. Use `../CABLEMINT_CONTEXT.md` as the technical source of truth. The sections for 1.0.x below are historical.
 
-## What it does
+## Current workflow
 
-- Uses `expo-camera`'s Android ML Kit barcode scanner during live preview, plus direct local-file ML Kit barcode scanning in the custom module for captured images.
-- Uses a local Expo Android module with Google's **bundled** ML Kit Latin text-recognition model (`com.google.mlkit:text-recognition:16.0.1`) on the same captured image.
-- Shows printed-label MAC and serial candidates, all decoded barcode values, raw OCR text, and editable technician-check fields.
-- Does not treat an unlabelled 12-character hexadecimal barcode as an authoritative MAC. A serial-only label is valid for the scanner test.
-- Keeps **Scan with Camera** primary and **Choose Existing Photo** secondary. Both use the same on-device native pipeline. Temporary app-cache photos are deleted after recognition; original gallery photos are preserved. Captured values exist only in memory.
+Sign in with your existing CableMint email/password → select your own project → set Building, Floor/Area, Device Type, Manufacturer, Model and Unit/Room/Location → Scan with Camera or Choose Existing Photo → select/correct MAC and serial → check technician verification → Save & Next. Serial-only devices are valid. Batch settings persist per account/project on this phone; optional numbering advances only after a confirmed save. Current Project Devices supports refresh and confirmed delete.
 
-The barcode and OCR models run on the device. No device-label image or scan result is sent to CableMint or another server by this app.
+The app reads existing active/trialing Pro entitlement from Supabase. It contains no checkout or Dodo API integration. Auth sessions are encrypted in SecureStore. The public Supabase client configuration relies on signed-in sessions and existing RLS. No production website, backend schema/policy, billing setup, or Edge Function changes are included.
 
+Native ML Kit barcode/OCR and conservative spatial matching are preserved. Unlabelled hex codes are not automatically MACs. Ambiguous values remain selectable candidates, with assignment reasons and editable fields. Photos are processed locally and temporary cache copies are removed; original gallery photos remain. Only verified device text records are sent to Supabase.
+
+Saving needs internet. MAC and serial duplicates are checked within the selected project, including normalized MAC and case-insensitive serial comparison. Existing schema has no atomic uniqueness constraint, so concurrent clients can still race. Uncertain saves retain the same UUID and locked fields for safe retry while the app remains open. There is no offline queue; after closing during an uncertain save, inspect project devices before rescanning.
+
+## Implementation and verification
+
+`src/MobileApp.tsx` owns auth/projects/batch/list screens; `src/DeviceScanner.tsx` preserves camera/gallery/review. `src/deviceService.ts` handles session-scoped access, existing entitlement reads, duplicates, insert reconciliation and delete. `src/sessionStorage.ts` provides encrypted chunked session persistence. `src/deviceWorkflow.ts` contains validation and numbering. Scanner parsing remains in `src/recognition.ts`; bundled Android ML Kit integration remains in `modules/cablemint-ocr`.
+
+Run `npm run typecheck` and `npm run test:recognition`. Service tests use a mock, not production writes. Native compile/packaging uses the existing GitHub Actions workflow. Actual-account sign-in, token refresh/restart, ownership/RLS writes/deletes, Pro transitions, batch persistence, connection failure/retry, and camera/gallery accuracy still need phone testing in a designated test project. Test serial-only save, both duplicate identifiers, number advancement and gallery-original preservation. Do not treat synthetic parser tests as a measured field accuracy rate.
 ## Build a test APK with GitHub Actions (no Expo account)
 
 The pull request workflow `.github/workflows/device-capture-android.yml` compiles an installable **standalone prototype APK** from this directory and uploads it as `cablemint-device-capture-prototype-apk` on the workflow run. Download that artifact from the GitHub Actions run, extract `app-release.apk`, and install it on an Android phone. The release variant embeds JavaScript and uses the generated debug signing key for prototype testing only; it is not a Play Store release. It needs no Expo account or running Metro server.
