@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Keyboard, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, BackHandler, Keyboard, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { randomUUID } from 'expo-crypto';
-import { cleanDraft, type Batch, type Project, type SaveAttempt } from './deviceWorkflow';
-import { SavePreflightError } from './deviceService';
+import { cleanDraft, type Batch, type Device, type Project, type SaveAttempt } from './deviceWorkflow';
+import { DuplicateDeviceError, SavePreflightError } from './deviceService';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,15 +32,16 @@ function CandidateList({ title, candidates, onChoose }: { title: string; candida
   </View>;
 }
 
-export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevices, savedMessage, batchStorageError }: {
+export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, onExit, onDevices, savedMessage, batchStorageError }: {
   project: Project; userId: string; batch: Batch; onSave: (attempt: SaveAttempt) => Promise<string>;
   onExit: () => void; onDevices: () => void; savedMessage: string; batchStorageError: string;
+  onBatchChange: (field: keyof Batch, value: string | boolean) => void;
 }) {
   const camera = useRef<CameraView>(null);
   const liveBarcodes = useRef(new Map<string, BarcodeScanningResult>());
   const captureInProgress = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const [stage, setStage] = useState<'camera' | 'review'>('camera');
+  const [stage, setStage] = useState<'camera' | 'review' | 'location'>('camera');
   const [torch, setTorch] = useState(false);
   const [busy, setBusy] = useState(false);
   const [barcodeCount, setBarcodeCount] = useState(0);
@@ -57,6 +58,14 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
   const [confirmationError, setConfirmationError] = useState('');
   const [error, setError] = useState('');
   const [cleanupWarning, setCleanupWarning] = useState('');
+  const [duplicates, setDuplicates] = useState<Device[]>([]);
+  function back() {
+    if (busy || saving.current) return;
+    if (stage === 'location' && !pendingAttempt) { setStage('review'); return; }
+    if (stage === 'review') { leaveScan(() => scanAgain()); return; }
+    leaveScan(onExit);
+  }
+  useEffect(() => { const sub = BackHandler.addEventListener('hardwareBackPress', () => { back(); return true; }); return () => sub.remove(); }, [stage, busy, pendingAttempt]);
 
   function onBarcodeScanned(result: BarcodeScanningResult) {
     if (captureInProgress.current) return;
@@ -68,6 +77,7 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
   }
 
   function showReview(result: ScanReview) {
+    setDuplicates([]);
     setVerified(false);
     setPendingAttempt(null);
     setConfirmationError('');
@@ -105,6 +115,7 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
       const nextLocation = await onSave(attempt);
       scanAgain(nextLocation);
     } catch (failure) {
+      if (failure instanceof DuplicateDeviceError) setDuplicates(failure.records);
       if (!pendingAttempt && failure instanceof SavePreflightError) setPendingAttempt(null);
       setConfirmationError((failure as Error).message || 'Save failed. Keep this scan and retry when connected.');
     }
@@ -113,7 +124,7 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
 
   function leaveScan(next: () => void) {
     if (busy || saving.current) return;
-    if (stage === 'review') Alert.alert(pendingAttempt ? 'Leave this save?' : 'Leave this scan?',
+    if (stage !== 'camera') Alert.alert(pendingAttempt ? 'Leave this save?' : 'Leave this scan?',
       pendingAttempt ? 'A save may already have reached the project. Check Current Project Devices before scanning this device again.' : 'Unsaved scan values will be discarded. Batch settings are retained.',
       [{ text: 'Stay', style: 'cancel' }, { text: 'Continue', onPress: next }]);
     else next();
@@ -227,6 +238,7 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
   }
 
   function scanAgain(nextLocation = installationLocation) {
+    setDuplicates([]);
     setInstallationLocation(nextLocation);
     setVerified(false);
     setPendingAttempt(null);
@@ -253,11 +265,11 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
       <Text style={styles.darkTitle}>Camera access</Text>
       <Text style={styles.body}>CableMint uses the camera to read equipment labels on this phone. Photos are processed locally and removed after each scan.</Text>
       <Action label="Scan with Camera" disabled={busy} onPress={() => { void requestPermission(); }} />
-      <Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} />
+      <Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} /><Action label="Enter MAC / Serial Manually" disabled={busy} outline onPress={() => showReview(analyzeScan(null, []))} />
       {busy && <><ActivityIndicator color={GREEN} /><Text style={styles.body}>{captureStatus}</Text></>}
       {!!error && <Text style={styles.error}>{error}</Text>}
       {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
-      <Action label="Batch Setup" disabled={busy} outline onPress={() => leaveScan(onExit)} />
+      <Action label="← Back" disabled={busy} outline onPress={back} />
     </SafeAreaView>;
   }
 
@@ -267,7 +279,7 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
       <Text style={styles.brand}>CABLEMINT TOOLS</Text>
       <Text style={styles.title}>Device Capture</Text>
       <Text style={styles.headerSub}>{project.name} · {batch.device_type} · {[batch.building, batch.floor_area, installationLocation].filter(Boolean).join(' / ')}</Text>
-      <Action label="Batch Setup" disabled={busy} outline onPress={() => leaveScan(onExit)} />
+      <Action label="← Back" disabled={busy} outline onPress={back} />
       {!!batchStorageError && <Text style={{ color: '#FFDDCC' }}>{batchStorageError}</Text>}
     </View>
     {stage === 'camera' ? <View style={styles.cameraPage}>
@@ -295,10 +307,12 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
         {!!savedMessage && <Text accessibilityLiveRegion="polite" style={styles.body}>{savedMessage}</Text>}
       </View>
     </View> : <ScrollView key="review" keyboardShouldPersistTaps="handled" contentContainerStyle={styles.reviewPage}>
-      <Text style={styles.darkTitle}>Review scan</Text>
+      <Text style={styles.darkTitle}>{stage === 'location' ? 'Installation Location & Save' : 'Identify Device'}</Text>
       <Text style={styles.muted}>Candidates are associated with nearby printed MAC or SN labels. Barcode values take priority over OCR in the same field. Confirm every value against the label.</Text>
       {!!error && <Text style={styles.error}>{error}</Text>}
       {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
+      {stage === 'review' && <>
+      <Text style={styles.muted}>Confidence: {review?.macs.some(c => c.corroboratedByBarcode) || review?.serials.some(c => c.corroboratedByBarcode) ? 'Barcode corroborates a printed label; verify before saving.' : 'Manual review required. Ambiguous values remain unassigned.'}</Text>
       <CandidateList title="Printed MAC candidates" candidates={review?.macs ?? []} onChoose={chooseMac} />
       <CandidateList title="Printed serial candidates" candidates={review?.serials ?? []} onChoose={chooseSerial} />
       <View style={styles.section}>
@@ -311,23 +325,27 @@ export function DeviceScanner({ project, userId, batch, onSave, onExit, onDevice
           </View>
           {!normalizeMac(code.data) && <Text style={styles.muted}>This code is not a valid 12-hex MAC. It can still be selected as a serial.</Text>}
         </View>) : <Text style={styles.muted}>No barcode decoded.</Text>}
-      </View>
+      </View></>}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Technician check</Text>
         <Text style={styles.muted}>{[batch.building, batch.floor_area, batch.device_type, batch.manufacturer, batch.model].filter(Boolean).join(' / ')}</Text>
+        {stage === 'location' && <>
+        {([['building','Building',100],['floor_area','Floor / Area',100]] as const).map(([field,label,limit]) => <View key={field}><Text style={styles.label}>{label}</Text><TextInput style={styles.input} value={batch[field]} maxLength={limit} editable={!busy && !pendingAttempt} onChangeText={value => { onBatchChange(field,value); setVerified(false); }} /></View>)}
         <Text style={styles.label}>Unit / Room / Location</Text>
         <TextInput value={installationLocation} editable={!busy && !pendingAttempt} onChangeText={value => { setInstallationLocation(value); setVerified(false); setConfirmationError(''); }} maxLength={120}
-          placeholder="Room 204" style={styles.input} />
-        <Text style={styles.label}>MAC address (leave blank if none is printed)</Text>
+          placeholder="Room 204" style={styles.input} /></>}
+        <Text style={styles.label}>Wrong? Edit MAC (blank for serial-only devices)</Text>
         <TextInput value={mac} editable={!busy && !pendingAttempt} onChangeText={chooseMac} onBlur={() => { const normalized = normalizeMac(mac); if (normalized) setMac(normalized); }} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
-        <Text style={styles.label}>Serial number</Text>
+        <Text style={styles.label}>Wrong? Edit Serial</Text>
         <TextInput value={serial} editable={!busy && !pendingAttempt} onChangeText={chooseSerial} autoCapitalize="characters" placeholder="Enter or choose a serial" style={styles.input} />
         {!!mac && !normalizeMac(mac) && <Text style={styles.error}>This does not look like a 12-digit MAC address.</Text>}
-        <Text style={styles.muted}>I checked the MAC, serial, and location against this device.</Text>
+        {stage === 'location' ? <><Text style={styles.muted}>I checked the MAC, serial, and location against this device.</Text>
         <Switch accessibilityLabel="Technician verified device fields" value={verified} disabled={busy || !!pendingAttempt} onValueChange={setVerified} />
         {!!pendingAttempt && <Text style={styles.muted}>These fields are held for a safe retry. Retry the same save or inspect Current Project Devices before leaving this scan.</Text>}
         {!!confirmationError && <Text accessibilityRole="alert" style={styles.error}>{confirmationError}</Text>}
-        <Action label={busy ? 'Saving…' : pendingAttempt ? 'Retry Save & Next' : 'Save & Next'} disabled={busy || !verified} onPress={() => { void saveAndNext(); }} />
+        {duplicates.map(d => <View key={d.id} style={styles.candidate}><Text style={styles.candidateValue}>Existing {d.device_type} · {d.unit_location}</Text><Text selectable style={styles.muted}>{d.mac_address}{'\n'}{d.serial_number}{'\n'}{d.building} / {d.floor_area}</Text></View>)}
+        <Action label={busy ? 'Saving to Supabase…' : pendingAttempt ? 'Retry Save Device' : 'Save Device & Next'} disabled={busy || !verified} onPress={() => { void saveAndNext(); }} /></>
+        : <><Text style={styles.muted}>Confirm identification, then enter the installation location.</Text><Action label="Continue to Location" disabled={busy || (!mac.trim() && !serial.trim()) || (!!mac && !normalizeMac(mac))} onPress={() => { setStage('location'); setVerified(false); Keyboard.dismiss(); }} /></>}
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Raw OCR text</Text>

@@ -3,6 +3,12 @@ import { duplicateFields, hasProStatus, sameSavedAttempt, type Device, type Proj
 
 const DEVICE_COLUMNS = 'id,project_id,user_id,building,floor_area,unit_location,device_type,manufacturer,model,mac_address,serial_number,verified,captured_at';
 export class SavePreflightError extends Error {}
+export class DuplicateDeviceError extends SavePreflightError {
+  constructor(public records: Device[]) { super('This MAC or serial already exists in this project. Review the existing record below.'); }
+}
+export function serverError(operation: string, error: { message?: string; code?: string; details?: string; hint?: string }) {
+  return new Error(`${operation}: ${[error.message, error.code && `Code: ${error.code}`, error.details && `Details: ${error.details}`, error.hint && `Hint: ${error.hint}`].filter(Boolean).join('\n')}`);
+}
 export class ProjectCreateError extends Error {
   constructor(message: string, public uncertain = false) { super(message); }
 }
@@ -39,7 +45,8 @@ export async function createProject(userId: string, input: string, id: string): 
 }
 export async function requireUser(expectedId: string) {
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user || data.user.id !== expectedId) throw new Error('Please sign in again before accessing this project.');
+  if (error) throw serverError('Session verification failed', error);
+  if (!data.user || data.user.id !== expectedId) throw new Error('Please sign in again before accessing this project.');
   return data.user;
 }
 export async function readPro(userId: string) {
@@ -47,7 +54,7 @@ export async function readPro(userId: string) {
   if (!user.email) return false;
   const { data, error } = await supabase.from('dodo_subscriptions').select('status')
     .ilike('customer_email', user.email.replace(/[\\%_]/g, '\\$&')).in('status', ['active', 'trialing']).limit(1);
-  if (error) throw new Error('Unable to verify Pro access. Check your connection and retry.');
+  if (error) throw serverError('Unable to verify Pro access', error);
   return hasProStatus(data ?? []);
 }
 export async function loadProjects(userId: string): Promise<Project[]> {
@@ -56,14 +63,15 @@ export async function loadProjects(userId: string): Promise<Project[]> {
   for (let offset = 0;; offset += 500) {
     const { data, error } = await supabase.from('field_projects').select('id,name,user_id').eq('user_id', userId)
       .order('updated_at', { ascending: false }).order('id').range(offset, offset + 499);
-    if (error) throw new Error('Unable to load your projects. Check your connection and retry.');
+    if (error) throw serverError('Unable to load your projects', error);
     projects.push(...(data ?? []));
     if (!data || data.length < 500) return projects;
   }
 }
 async function requireProject(userId: string, projectId: string) {
   const { data, error } = await supabase.from('field_projects').select('id').eq('id', projectId).eq('user_id', userId).maybeSingle();
-  if (error || !data) throw new Error('This project is no longer available to your account. Select another project.');
+  if (error) throw serverError('Project verification failed', error);
+  if (!data) throw new Error('This project is no longer available to your account. Select another project.');
 }
 export async function loadDevices(userId: string, projectId: string): Promise<Device[]> {
   await requireUser(userId);
@@ -72,7 +80,19 @@ export async function loadDevices(userId: string, projectId: string): Promise<De
   for (let offset = 0;; offset += 500) {
     const { data, error } = await supabase.from('field_devices').select(DEVICE_COLUMNS).eq('user_id', userId).eq('project_id', projectId)
       .order('captured_at', { ascending: false }).order('id').range(offset, offset + 499);
-    if (error) throw new Error('Unable to load project devices. Check your connection and retry.');
+    if (error) throw serverError('Unable to load project devices', error);
+    rows.push(...((data ?? []) as Device[]));
+    if (!data || data.length < 500) return rows;
+  }
+}
+
+export async function loadHistory(userId: string): Promise<Device[]> {
+  await requireUser(userId);
+  const rows: Device[] = [];
+  for (let offset = 0;; offset += 500) {
+    const { data, error } = await supabase.from('field_devices').select(DEVICE_COLUMNS).eq('user_id', userId)
+      .order('captured_at', { ascending: false }).order('id').range(offset, offset + 499);
+    if (error) throw serverError('Unable to load capture history', error);
     rows.push(...((data ?? []) as Device[]));
     if (!data || data.length < 500) return rows;
   }
@@ -87,20 +107,22 @@ export async function saveDevice(attempt: SaveAttempt): Promise<Device> {
   // a second insert or silently overwrite the first capture.
   const previous = await supabase.from('field_devices').select(DEVICE_COLUMNS).eq('id', attempt.id)
     .eq('user_id', attempt.user_id).eq('project_id', attempt.project_id).maybeSingle();
-  if (previous.error) throw new Error('Could not check the previous save. Keep this scan and retry when connected.');
+  if (previous.error) throw serverError('Could not check the previous save', previous.error);
   if (previous.data) {
     if (sameSavedAttempt(previous.data as Device, attempt)) return previous.data as Device;
     throw new Error('The previous save differs from these fields. Check Current Project Devices before saving again.');
   }
-  const duplicates = duplicateFields(await loadDevices(attempt.user_id, attempt.project_id), attempt.draft);
-  if (duplicates.length) throw new Error(`Already in this project: ${duplicates.map(d => `${d.fields.join(' and ')}${d.location ? ` at ${d.location}` : ''}`).join('; ')}. Review Current Project Devices or correct the fields.`);
+  const existing = await loadDevices(attempt.user_id, attempt.project_id);
+  const duplicates = duplicateFields(existing, attempt.draft);
+  if (duplicates.length) throw new DuplicateDeviceError(existing.filter(d => duplicates.some(match => match.id === d.id)));
   writing = true;
   const { data, error } = await supabase.from('field_devices').insert({ id: attempt.id, user_id: attempt.user_id,
     project_id: attempt.project_id, ...attempt.draft, verified: true }).select(DEVICE_COLUMNS).single();
-  if (error || !data) throw new Error('Save was not confirmed. Your scan is retained. Retry Save & Next to check this same save, or inspect Current Project Devices.');
+  if (error) throw serverError('Supabase device insert failed', error);
+  if (!data || !sameSavedAttempt(data as Device, attempt)) throw new Error('Supabase did not confirm these device fields. Your scan is retained; retry the same save.');
   return data as Device;
   } catch (error) {
-    if (!writing) throw new SavePreflightError((error as Error).message);
+    if (!writing && !(error instanceof SavePreflightError)) throw new SavePreflightError((error as Error).message);
     throw error;
   }
 }
@@ -109,5 +131,6 @@ export async function deleteDevice(userId: string, projectId: string, id: string
   if (!await readPro(userId)) throw new Error('CableMint Pro access is required. Refresh account access.');
   await requireProject(userId, projectId);
   const { data, error } = await supabase.from('field_devices').delete().eq('id', id).eq('user_id', userId).eq('project_id', projectId).select('id');
-  if (error || data?.length !== 1) throw new Error('Delete was not confirmed. Refresh the list before trying again.');
+  if (error) throw serverError('Supabase device delete failed', error);
+  if (data?.length !== 1) throw new Error('Delete was not confirmed. Refresh the list before trying again.');
 }

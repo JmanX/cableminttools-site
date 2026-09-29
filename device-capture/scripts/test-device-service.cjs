@@ -36,8 +36,9 @@ const mock = {
         else if (q.operation === 'insert') {
           assert.equal(q.payload.verified, true); assert.equal(q.payload.user_id, authId); assert.equal(q.payload.project_id, 'project-a');
           assert.equal('photo' in q.payload, false); assert.equal('autoAdvance' in q.payload, false);
+          if (mode === 'insertError') return Promise.resolve({data:null,error:{message:'new row violates row-level security policy',code:'42501',details:'ownership check',hint:'verify project'}}).then(resolve,reject);
           idCommitted = true; response = { data: mode === 'uncertain' ? null : saved, error: mode === 'uncertain' ? { message: 'timeout' } : null };
-        } else if (q.operation === 'delete') response = { data: [{ id: attempt.id }], error: null };
+        } else if (q.operation === 'delete') response = mode === 'deleteError' ? {data:null,error:{message:'delete denied',code:'42501'}} : { data: [{ id: attempt.id }], error: null };
         else if (q.single) response = { data: idCommitted ? saved : null, error: null };
         else response = { data: rows, error: mode === 'listError' ? { message: 'network' } : null };
         return Promise.resolve(response).then(resolve, reject);
@@ -77,7 +78,7 @@ async function checks() {
   await service.saveDevice(attempt);
   assert.equal(calls.filter(q => q.operation === 'insert').length, 1, 'retry acknowledges same record without another insert');
   idCommitted = false; calls = []; rows = [{ ...saved, id: 'existing', serial_number: 'sn123' }];
-  await assert.rejects(service.saveDevice(attempt), /Already in this project/);
+  await assert.rejects(service.saveDevice(attempt), error => error instanceof service.DuplicateDeviceError && error.records[0].id === 'existing');
   assert.equal(calls.some(q => q.operation === 'insert'), false, 'duplicate prevents insert');
   rows = []; pro = false; calls = [];
   await assert.rejects(service.saveDevice(attempt), /Pro access is required/);
@@ -86,8 +87,11 @@ async function checks() {
   await assert.rejects(service.saveDevice(attempt), /Unable to verify Pro/);
   mode = 'listError';
   await assert.rejects(service.saveDevice(attempt), /Unable to load project devices/);
+  mode = 'insertError'; calls = [];
+  await assert.rejects(service.saveDevice(attempt), /Supabase device insert failed: new row violates row-level security policy\nCode: 42501\nDetails: ownership check\nHint: verify project/);
+  assert.equal(idCommitted, false);
   mode = 'uncertain'; calls = [];
-  await assert.rejects(service.saveDevice(attempt), /Save was not confirmed/);
+  await assert.rejects(service.saveDevice(attempt), /Supabase device insert failed: timeout/);
   mode = 'normal'; await service.saveDevice(attempt);
   assert.equal(calls.filter(q => q.operation === 'insert').length, 1, 'uncertain insert response recovered by ID on retry');
   authId = 'user-b'; calls = [];
@@ -99,6 +103,9 @@ async function checks() {
     assert(q.filters.some(([k, v]) => k === 'project_id' && v === 'project-a'), 'device query scoped to project');
   }
   const deletion = calls.find(q => q.operation === 'delete'); assert(deletion.filters.some(([k, v]) => k === 'id' && v === attempt.id));
+  mode='deleteError'; await assert.rejects(service.deleteDevice('user-a','project-a',attempt.id), /delete denied\nCode: 42501/);
+  mode='normal'; calls=[]; await service.loadHistory('user-a');
+  assert(calls.filter(q=>q.table==='field_devices').every(q=>q.filters.some(([k,v])=>k==='user_id' && v==='user-a')));
   console.log('device service ownership, duplicate, entitlement, and uncertain-save checks passed');
 }
 checks().catch(error => { console.error(error); process.exitCode = 1; });

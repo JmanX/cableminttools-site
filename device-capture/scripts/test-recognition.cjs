@@ -5,12 +5,13 @@ const appRoot = path.resolve(__dirname, '..');
 const compiler = require.resolve('typescript/bin/tsc');
 const result = spawnSync(process.execPath, [
   compiler, '--ignoreConfig', '--target', 'ES2020', '--module', 'commonjs',
-  '--skipLibCheck', '--outDir', '.test', 'src/recognition.test.ts', 'src/recognition.ts', 'src/withTimeout.test.ts', 'src/withTimeout.ts', 'src/deviceWorkflow.test.ts', 'src/deviceService.ts',
+  '--skipLibCheck', '--outDir', '.test', 'src/recognition.test.ts', 'src/recognition.ts', 'src/withTimeout.test.ts', 'src/withTimeout.ts', 'src/deviceWorkflow.test.ts', 'src/deviceService.ts', 'src/historyModel.test.ts',
 ], { cwd: appRoot, stdio: 'inherit' });
 
 if (result.status !== 0) process.exit(result.status || 1);
 require(path.join(appRoot, '.test', 'src', 'recognition.test.js')).runRecognitionChecks();
 require(path.join(appRoot, '.test', 'src', 'deviceWorkflow.test.js')).runWorkflowChecks();
+require(path.join(appRoot, '.test', 'src', 'historyModel.test.js')).runHistoryChecks();
 const serviceChecks = spawnSync(process.execPath, [path.join(__dirname, 'test-device-service.cjs')], { cwd: appRoot, stdio: 'inherit' });
 if (serviceChecks.status !== 0) process.exit(serviceChecks.status || 1);
 const sessionChecks = spawnSync(process.execPath, [path.join(__dirname, 'test-session-storage.cjs')], { cwd: appRoot, stdio: 'inherit' });
