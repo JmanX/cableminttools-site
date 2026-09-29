@@ -3,6 +3,40 @@ import { duplicateFields, hasProStatus, sameSavedAttempt, type Device, type Proj
 
 const DEVICE_COLUMNS = 'id,project_id,user_id,building,floor_area,unit_location,device_type,manufacturer,model,mac_address,serial_number,verified,captured_at';
 export class SavePreflightError extends Error {}
+export class ProjectCreateError extends Error {
+  constructor(message: string, public uncertain = false) { super(message); }
+}
+export async function createProject(userId: string, input: string, id: string): Promise<Project> {
+  const name = input.trim();
+  if (!name) throw new ProjectCreateError('Enter a project/site name.');
+  if ([...name].length > 80) throw new ProjectCreateError('Project/site name must be 80 characters or fewer.');
+  await requireUser(userId);
+  let previous;
+  try {
+    previous = await supabase.from('field_projects').select('id,name,user_id').eq('id', id).eq('user_id', userId).maybeSingle();
+  } catch { throw new ProjectCreateError('Could not check the project. Check your connection and retry.'); }
+  if (previous.error) throw new ProjectCreateError('Could not check the project. Check your connection and retry.');
+  if (previous.data) {
+    if (previous.data.name === name && previous.data.user_id === userId) return previous.data as Project;
+    throw new ProjectCreateError('This creation attempt belongs to another project. Refresh your projects before continuing.');
+  }
+  const projects = await loadProjects(userId);
+  if (projects.some(p => p.name.trim().toLowerCase() === name.toLowerCase())) {
+    throw new ProjectCreateError('You already have a project with this name. Select it from the list or use a different name.');
+  }
+  let result;
+  try {
+    result = await supabase.from('field_projects').insert({ id, user_id: userId, name }).select('id,name,user_id').single();
+  } catch { throw new ProjectCreateError('Project creation was not confirmed. Check your connection and retry this same project, or refresh the list.', true); }
+  if (result.error) {
+    if (result.error.code === '23505') throw new ProjectCreateError('A project with this name already exists, or this creation already reached the server. Refresh the list or retry this same project.');
+    if (result.error.code === '42501') throw new ProjectCreateError('Your account could not create this project. Sign in again and retry.');
+    if (result.error.code === '23514' || result.error.code === '23503') throw new ProjectCreateError('Project creation was rejected. Check the name and sign in again before retrying.');
+    throw new ProjectCreateError('Project creation was not confirmed. Check your connection and retry this same project, or refresh the list.', true);
+  }
+  if (!result.data) throw new ProjectCreateError('Project creation was not confirmed. Retry this same project or refresh the list.', true);
+  return result.data as Project;
+}
 export async function requireUser(expectedId: string) {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user || data.user.id !== expectedId) throw new Error('Please sign in again before accessing this project.');

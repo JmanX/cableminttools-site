@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Platform, SafeAreaView, ScrollView, StatusBar, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Keyboard, Platform, SafeAreaView, ScrollView, StatusBar, Switch, Text, View } from 'react-native';
+import { randomUUID } from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import { deleteDevice, loadDevices, loadProjects, readPro, saveDevice } from './deviceService';
+import { createProject, ProjectCreateError, deleteDevice, loadDevices, loadProjects, readPro, saveDevice } from './deviceService';
 import { batchStorageKey, emptyBatch, nextUnit, restoreBatch, type Batch, type Device, type Project, type SaveAttempt } from './deviceWorkflow';
 import { Button, colors, Field, ui } from './ui';
 import { DeviceScanner } from './DeviceScanner';
@@ -68,6 +69,9 @@ function SignedIn({ session }: { session: Session }) {
   const [batchReadyKey, setBatchReadyKey] = useState('');
   const [storageRetry, setStorageRetry] = useState(0);
   const [savedMessage, setSavedMessage] = useState('');
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [projectAttempt, setProjectAttempt] = useState<{ id: string; name: string } | null>(null);
   const requestGeneration = useRef(0);
   const mounted = useRef(true);
   const persistence = useRef(Promise.resolve());
@@ -90,6 +94,31 @@ function SignedIn({ session }: { session: Session }) {
     }
   }
   useEffect(() => { void refreshAccess(); }, [userId]);
+  async function submitProject() {
+    if (operation.current || access !== 'pro') return;
+    operation.current = true; setBusy(true); setError('');
+    const attempt = projectAttempt ?? { id: randomUUID(), name: projectName.trim() };
+    try {
+      const created = await createProject(userId, attempt.name, attempt.id);
+      let refreshed: Project[];
+      try { refreshed = await loadProjects(userId); }
+      catch {
+        refreshed = [created, ...projects.filter(p => p.id !== created.id)];
+        if (mounted.current) setError('Project created, but the list could not refresh. Your new project is open; refresh projects when connected.');
+      }
+      if (!mounted.current) return;
+      setProjects(refreshed.some(p => p.id === created.id) ? refreshed : [created, ...refreshed]);
+      setProject(created); setView('batch'); setSavedMessage('');
+      setCreatingProject(false); setProjectName(''); setProjectAttempt(null); Keyboard.dismiss();
+    } catch (failure) {
+      if (mounted.current) {
+        // Preserve an uncertain attempt even when a later read fails, so retry
+        // never changes its ID or name and accidentally creates another site.
+        if (projectAttempt || (failure instanceof ProjectCreateError && failure.uncertain)) setProjectAttempt(attempt);
+        setError((failure as Error).message || 'Unable to create project. Check your connection and retry.');
+      }
+    } finally { operation.current = false; if (mounted.current) setBusy(false); }
+  }
   // Refresh access on resume; operation guards avoid detaching an in-flight save.
   useEffect(() => { const sub = AppState.addEventListener('change', state => { if (state === 'active' && view !== 'scan') void refreshAccess(); }); return () => sub.remove(); }, [userId, project?.id, view]);
 
@@ -174,8 +203,20 @@ function SignedIn({ session }: { session: Session }) {
         <Button title="Refresh Access" disabled={access === 'loading' || busy} onPress={() => { void refreshAccess(); }} />
       </> : view === 'projects' ? <>
         <Text style={ui.heading}>Select Project</Text>
-        {!projects.length && <Text style={ui.body}>No projects found. Create a project on the CableMint website, then refresh here.</Text>}
-        {projects.map(p => <Button key={p.id} title={p.name} secondary disabled={busy} onPress={() => { setProject(p); setSavedMessage(''); setView('batch'); }} />)}
+        {!projects.length && <Text style={ui.body}>No projects yet. Create your first project below.</Text>}
+        {projects.map(p => <Button key={p.id} title={p.name} secondary disabled={busy} onPress={() => { setProject(p); setSavedMessage(''); setView('batch'); setCreatingProject(false); setProjectName(''); setProjectAttempt(null); setError(''); }} />)}
+        <Button title="Create New Project" disabled={busy} onPress={() => { setCreatingProject(true); setError(''); }} />
+        {creatingProject && <View style={ui.card}>
+          <Field label="Project / Site Name" value={projectName} onChange={setProjectName} maxLength={80} placeholder="Site or project name" disabled={busy || !!projectAttempt} />
+          {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
+          {!!projectAttempt && <Text style={ui.muted}>Creation was not confirmed. Retry the same project or refresh the list before starting another.</Text>}
+          <Button title={busy ? 'Creating Project…' : projectAttempt ? 'Retry Create Project' : 'Create Project & Open'} disabled={busy} onPress={() => { void submitProject(); }} />
+          <Button title="Cancel" secondary disabled={busy} onPress={() => {
+            const cancel = () => { setCreatingProject(false); setProjectName(''); setProjectAttempt(null); setError(''); };
+            if (projectAttempt) Alert.alert('Cancel this creation?', 'The project may already exist. Refresh your project list before creating it again.', [{ text: 'Stay', style: 'cancel' }, { text: 'Cancel Creation', onPress: cancel }]);
+            else cancel();
+          }} />
+        </View>}
         <Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refreshAccess(); }} />
       </> : project && view === 'devices' ? <>
         <Text style={ui.heading}>Current Project Devices</Text><Text style={ui.body}>{project.name}</Text>

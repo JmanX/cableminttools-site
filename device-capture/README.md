@@ -1,6 +1,6 @@
 # CableMint Device Capture — Android Milestone 2
 
-Version 1.1.0 connects the existing native scanner to the existing CableMint Supabase backend. Use `../CABLEMINT_CONTEXT.md` as the technical source of truth. The sections for 1.0.x below are historical.
+Version 1.1.1 adds in-app project creation and connects the existing native scanner to the existing CableMint Supabase backend. Use `../CABLEMINT_CONTEXT.md` as the technical source of truth. The sections for 1.0.x below are historical.
 
 ## Approved backend permission correction
 
@@ -109,3 +109,6 @@ Version 1.0.4 passed [GitHub Actions run 36489054159](https://github.com/JmanX/c
 ## Version 1.1.0 successful internal APK
 
 [GitHub Actions run 36632527078](https://github.com/JmanX/cableminttools-site/actions/runs/36632527078) succeeded from commit 7c34303b520ebfaab0aafbf8789092acc64237bb. APK artifact 11064075957 contains app-release.apk. SHA-256: `26067e88b7ee00bf81df1b1df49ab76fed75a338699bb0ab0af8dfd24b2807d8`. Standalone JS bundle and bundled ML Kit models were inspected. Local copy: `.artifacts/1.1.0/app-release.apk` (ignored). Extract the downloaded ZIP, install the APK, and use a designated test project for first save/delete checks. Real-account and physical-phone validation remain pending.
+## Version 1.1.1 — Create New Project
+
+Select Project now includes Create New Project and a Project / Site Name form. Create Project & Open validates a trimmed name (1–80 characters), checks your own project names, inserts with your authenticated user ID, refreshes the list and opens Batch Setup. Existing refresh and sign-out controls remain. Duplicate, permission and network errors are displayed. A retry of an uncertain insert uses the same UUID; refresh the project list after closing during an uncertain request. No backend/website/billing changes are included. Phone validation: create a project, verify it opens automatically, return to the list, reject blank/duplicate names, test a connection failure and retry, then sign out and verify another account cannot see it.

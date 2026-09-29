@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..', '.test', 'src');
 const { emptyBatch, cleanDraft } = require(path.join(root, 'deviceWorkflow.js'));
 let rows = [], pro = true, authId = 'user-a', calls = [], mode = 'normal', idCommitted = false;
+let projectRows = [{ id: 'project-a', user_id: 'user-a', name: 'Test' }], createdProject = null, projectMode = 'normal';
 const draft = cleanDraft({ ...emptyBatch, device_type: 'IP Camera' }, '', 'SN123', 'Room 101');
 const attempt = { id: 'device-a', user_id: 'user-a', project_id: 'project-a', draft };
 const saved = { ...draft, ...attempt, verified: true, captured_at: '', draft: undefined };
@@ -19,7 +20,19 @@ const mock = {
         calls.push(q);
         let response;
         if (table === 'dodo_subscriptions') response = { data: pro ? [{ status: 'active' }] : [], error: mode === 'proError' ? { message: 'network' } : null };
-        else if (table === 'field_projects') response = { data: q.single ? { id: 'project-a' } : [{ id: 'project-a', user_id: authId, name: 'Test' }], error: null };
+        else if (table === 'field_projects') {
+          if (q.operation === 'insert') {
+            assert.equal(q.payload.user_id, authId);
+            assert.deepEqual(Object.keys(q.payload).sort(), ['id', 'name', 'user_id']);
+            if (projectMode === 'permission') response = { data: null, error: { code: '42501' } };
+            else if (projectMode === 'duplicate') response = { data: null, error: { code: '23505' } };
+            else {
+              createdProject = q.payload;
+              response = { data: projectMode === 'uncertain' ? null : createdProject, error: projectMode === 'uncertain' ? { message: 'network' } : null };
+            }
+          } else if (q.single) response = { data: q.filters.some(([k, v]) => k === 'id' && v === 'new-project') ? createdProject : { id: 'project-a' }, error: null };
+          else response = { data: projectRows, error: projectMode === 'listError' ? { message: 'network' } : null };
+        }
         else if (q.operation === 'insert') {
           assert.equal(q.payload.verified, true); assert.equal(q.payload.user_id, authId); assert.equal(q.payload.project_id, 'project-a');
           assert.equal('photo' in q.payload, false); assert.equal('autoAdvance' in q.payload, false);
@@ -35,6 +48,30 @@ const mock = {
 require.cache[path.join(root, 'supabase.js')] = { id: path.join(root, 'supabase.js'), filename: path.join(root, 'supabase.js'), loaded: true, exports: { supabase: mock } };
 const service = require(path.join(root, 'deviceService.js'));
 async function checks() {
+  await assert.rejects(service.createProject('user-a', '   ', 'new-project'), /Enter a project/);
+  await assert.rejects(service.createProject('user-a', 'x'.repeat(81), 'new-project'), /80 characters/);
+  assert.equal(calls.length, 0);
+  await assert.rejects(service.createProject('user-a', ' test ', 'new-project'), /already have a project/);
+  assert.equal(calls.some(q => q.operation === 'insert'), false);
+  calls = []; projectMode = 'uncertain';
+  await assert.rejects(service.createProject('user-a', '  New Site  ', 'new-project'), error => error.uncertain && /not confirmed/.test(error.message));
+  projectMode = 'normal';
+  const created = await service.createProject('user-a', 'New Site', 'new-project');
+  assert.deepEqual(created, { id: 'new-project', user_id: 'user-a', name: 'New Site' });
+  assert.equal(calls.filter(q => q.operation === 'insert').length, 1, 'uncertain creation retry reconciles the same UUID');
+  for (const q of calls.filter(q => q.operation === 'select')) assert(q.filters.some(([k, v]) => k === 'user_id' && v === 'user-a'));
+  createdProject = null; calls = []; projectMode = 'duplicate';
+  await assert.rejects(service.createProject('user-a', 'New Site', 'new-project'), /already exists/);
+  projectMode = 'permission';
+  await assert.rejects(service.createProject('user-a', 'New Site', 'new-project'), /Sign in again/);
+  projectMode = 'listError'; calls = [];
+  await assert.rejects(service.createProject('user-a', 'New Site', 'new-project'), /Unable to load your projects/);
+  assert.equal(calls.some(q => q.operation === 'insert'), false);
+  projectMode = 'normal'; authId = 'user-b'; calls = [];
+  await assert.rejects(service.createProject('user-a', 'New Site', 'new-project'), /sign in again/);
+  assert.equal(calls.length, 0);
+  authId = 'user-a'; calls = [];
+  console.log('project creation validation, ownership, duplicate errors, and retry checks passed');
   await service.saveDevice(attempt);
   assert.equal(calls.filter(q => q.operation === 'insert').length, 1);
   await service.saveDevice(attempt);
