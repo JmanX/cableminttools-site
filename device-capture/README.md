@@ -2,6 +2,10 @@
 
 Version 1.1.0 connects the existing native scanner to the existing CableMint Supabase backend. Use `../CABLEMINT_CONTEXT.md` as the technical source of truth. The sections for 1.0.x below are historical.
 
+## Approved backend permission correction
+
+Read-only checks found missing authenticated SELECT/INSERT/DELETE privileges on field_devices. With explicit user approval, only those three privileges were granted. Follow-up checks confirm RLS and ownership policies remain unchanged, UPDATE remains unavailable, and anonymous reads remain denied. No table structure, billing, website, or Edge Function changes were made. Actual-account phone validation remains required.
+
 ## Current workflow
 
 Sign in with your existing CableMint email/password → select your own project → set Building, Floor/Area, Device Type, Manufacturer, Model and Unit/Room/Location → Scan with Camera or Choose Existing Photo → select/correct MAC and serial → check technician verification → Save & Next. Serial-only devices are valid. Batch settings persist per account/project on this phone; optional numbering advances only after a confirmed save. Current Project Devices supports refresh and confirmed delete.
@@ -101,3 +105,7 @@ Verify on the phone: confirm valid MAC/serial and serial-only scans, see the com
 Enter the optional Installation Location in Technician check (for example, Building A, Floor 2, Room 204). It appears on Scan Complete, is retained while editing, and clears for a new device. Location is kept only in memory with this scan; project saving and the structured location workflow remain outside milestone 1.
 
 Version 1.0.4 passed [GitHub Actions run 36489054159](https://github.com/JmanX/cableminttools-site/actions/runs/36489054159), producing APK artifact 11001386946. Download the ZIP, extract it, and install app-release.apk. SHA-256: `0407d6f2837c576d92a86e0964ec640df9be8998ca69e9cad4b93754f581ab45`. New navigation and location behavior await phone validation.
+
+## Version 1.1.0 successful internal APK
+
+[GitHub Actions run 36632527078](https://github.com/JmanX/cableminttools-site/actions/runs/36632527078) succeeded from commit 7c34303b520ebfaab0aafbf8789092acc64237bb. APK artifact 11064075957 contains app-release.apk. SHA-256: `26067e88b7ee00bf81df1b1df49ab76fed75a338699bb0ab0af8dfd24b2807d8`. Standalone JS bundle and bundled ML Kit models were inspected. Local copy: `.artifacts/1.1.0/app-release.apk` (ignored). Extract the downloaded ZIP, install the APK, and use a designated test project for first save/delete checks. Real-account and physical-phone validation remain pending.
