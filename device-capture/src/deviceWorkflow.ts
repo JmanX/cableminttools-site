@@ -1,11 +1,11 @@
 import { normalizeMac } from './recognition';
 
-export type Batch = { building: string; floor_area: string; device_type: string; manufacturer: string; model: string; unit_location: string; autoAdvance: boolean };
-export const emptyBatch: Batch = { building: '', floor_area: '', device_type: '', manufacturer: '', model: '', unit_location: '', autoAdvance: false };
+export type Batch = { building: string; floor_area: string; device_type: string; manufacturer: string; model: string; unit_location: string; autoAdvance: boolean; requireInstalledPhoto: boolean };
+export const emptyBatch: Batch = { building: '', floor_area: '', device_type: '', manufacturer: '', model: '', unit_location: '', autoAdvance: false, requireInstalledPhoto:false };
 export type Project = { id: string; name: string; user_id: string };
-export type DeviceDraft = Omit<Batch, 'autoAdvance'> & { mac_address: string; serial_number: string };
+export type DeviceDraft = Omit<Batch, 'autoAdvance' | 'requireInstalledPhoto'> & { mac_address: string; serial_number: string };
 export type Device = DeviceDraft & { id: string; project_id: string; user_id: string; captured_at: string; verified: boolean };
-export type SaveAttempt = { id: string; project_id: string; user_id: string; draft: DeviceDraft };
+export type SaveAttempt = { id: string; project_id: string; user_id: string; draft: DeviceDraft; captured_at?: string };
 
 export function cleanDraft(batch: Batch, mac: string, serial: string, unit: string): DeviceDraft {
   const normalized = mac.trim() ? normalizeMac(mac) : '';
@@ -59,7 +59,7 @@ export function restoreBatch(raw: string | null): Batch {
     for (const field of ['building', 'floor_area', 'device_type', 'manufacturer', 'model', 'unit_location'] as const) {
       if (typeof input[field] === 'string') result[field] = input[field];
     }
-    result.autoAdvance = input.autoAdvance === true;
+    result.autoAdvance = input.autoAdvance === true; result.requireInstalledPhoto=input.requireInstalledPhoto===true;
     return result;
   } catch { return { ...emptyBatch }; }
 }

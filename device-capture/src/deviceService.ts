@@ -117,7 +117,7 @@ export async function saveDevice(attempt: SaveAttempt): Promise<Device> {
   if (duplicates.length) throw new DuplicateDeviceError(existing.filter(d => duplicates.some(match => match.id === d.id)));
   writing = true;
   const { data, error } = await supabase.from('field_devices').insert({ id: attempt.id, user_id: attempt.user_id,
-    project_id: attempt.project_id, ...attempt.draft, verified: true }).select(DEVICE_COLUMNS).single();
+    project_id: attempt.project_id, ...attempt.draft, ...(attempt.captured_at ? {captured_at:attempt.captured_at} : {}), verified: true }).select(DEVICE_COLUMNS).single();
   if (error) throw serverError('Supabase device insert failed', error);
   if (!data || !sameSavedAttempt(data as Device, attempt)) throw new Error('Supabase did not confirm these device fields. Your scan is retained; retry the same save.');
   return data as Device;
