@@ -41,6 +41,8 @@ jobs:
       - name: Package versioned APK
         id: package
         run: node scripts/package-android.cjs
+      - name: Verify APK version and native zoom commands
+        run: python3 scripts/verify-android-apk.py "android/app/build/outputs/apk/release/${{ steps.package.outputs.filename }}"
       - uses: actions/upload-artifact@v4
         with:
           name: CableMint-Device-Capture-v${{ steps.package.outputs.version }}

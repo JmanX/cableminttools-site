@@ -128,3 +128,5 @@ Phone checks: sign in with your existing account; create/select a test project; 
 - Point the camera at a textured scene: Zoom In/Out and pinch must change the actual preview, with the displayed ratio following native acknowledgement. Retake/new capture should return to 1×.
 - Present a small centered barcode: automatic steps should be gradual. Decode or a manual zoom adjustment must stop auto-zoom for that capture; retake enables it again. No potential barcode geometry means no automatic zoom.
 - Native camera changes require a freshly compiled internal APK. The versioned delivery file is created by scripts/package-android.cjs after assembleRelease; its metadata must match app.json. See root RELEASES.md.
+
+The camera must appear as a source module (without the 📦 marker) in Gradle output. package.json forces expo-camera to build from source. The CI binary check rejects an APK without the custom zoom command names, even if Gradle itself succeeds.

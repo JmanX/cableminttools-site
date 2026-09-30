@@ -7,6 +7,8 @@ function patch(file,from,to){
  fs.writeFileSync(file,source.replace(from,to));
 }
 function apply(root){
+ const sourceModules=require(path.join(root,'package.json')).expo?.autolinking?.android?.buildFromSource;
+ if(!sourceModules?.includes('expo-camera'))throw Error('Camera patches require expo.autolinking.android.buildFromSource: [\"expo-camera\"]. A precompiled camera ignores the Kotlin changes.');
  const pkg=path.dirname(require.resolve('expo-camera/package.json',{paths:[root]}));
  if(require(path.join(pkg,'package.json')).version!=='57.0.5')throw Error('Review smart barcode patch for the new expo-camera version.');
  const java=path.join(pkg,'android/src/main/java/expo/modules/camera');

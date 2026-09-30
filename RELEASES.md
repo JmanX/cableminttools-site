@@ -4,13 +4,14 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.2.2 — September 30, 2026
 
-Android versionCode: **11**. Native build verification pending. Build 10 was superseded during final review to cover interrupted local status writes.
+Android versionCode: **12**. Native build and binary verification pending. Build 10 was superseded by interrupted-sync recovery; binary inspection rejected build 11 because Expo linked an unmodified precompiled camera library. Both candidates are excluded from delivery.
 
 - Explicit Sync Now / Syncing… / Synced ✓ / Sync Failed — Retry states, spinner, disabled repeated presses, and 2.5-second success feedback.
 - Pending/uploading/failed counts, explicit empty-queue feedback, upload errors, and retries using the existing stable record IDs, including recovery after a local status write fails. Success requires server-confirmed captures.
 - Manual buttons and pinch control the actual CameraX zoom ratio, clamped to hardware limits; the displayed ratio follows CameraX acknowledgement.
 - Independent native scanner-state command supplies ML Kit bounding boxes/corners. Centered small barcodes trigger gradual zoom, with cooldown and a 4×/hardware cap; decode or manual control stops automatic zoom until reset.
 - Normal zoom restored for each new capture/retake. Development logs include current/requested zoom, target size, trigger, and decode success.
+- Camera module forced to build from source so Kotlin geometry/zoom patches reach the APK; binary verification rejects builds without the new native commands.
 - Versioned APK packaging validates native metadata against Expo config and preserves the original build output.
 
 Known issues: Real-phone v1.2.2 zoom and sync feedback still require field verification. Auto-zoom needs ML Kit to detect a potential barcode; absent geometry does not trigger zoom. Uploads run while the app is open. Installed photos remain temporary and are not uploaded. Internal APK uses prototype signing; it is not a store release.

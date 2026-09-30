@@ -29,5 +29,14 @@
     "typecheck": "tsc --noEmit",
     "test:recognition": "node scripts/test-recognition.cjs"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "android": {
+        "buildFromSource": [
+          "expo-camera"
+        ]
+      }
+    }
+  }
 }
