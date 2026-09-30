@@ -50,9 +50,9 @@ export function FieldWorkspace({ session }: { session: Session }) {
     const q=queue.current;
     if (!q || syncWork.current || uploadPaused.current) return;
     const items=q.read().items;
-    const hasWork=items.some(i=>(!onlyId || i.attempt.id===onlyId) && (i.state==='pending' || (i.state==='failed' && (manual || (i.nextRetry!==undefined && i.nextRetry<=Date.now())))));
+    const hasWork=items.some(i=>(!onlyId || i.attempt.id===onlyId) && ((i.state==='pending' || i.state==='uploading') || (i.state==='failed' && (manual || (i.nextRetry!==undefined && i.nextRetry<=Date.now())))));
     if(!hasWork){
-      if(manual){setSyncPhase('idle');setSyncMessage('Everything is synced');}
+      if(manual){const result=syncFeedback({confirmed:0,attempted:0,failed:0},q.read());setSyncPhase(result.phase);setSyncMessage(result.message);}
       return;
     }
     syncWork.current=true;

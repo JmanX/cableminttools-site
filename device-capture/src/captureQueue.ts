@@ -53,7 +53,7 @@ export class CaptureQueue {
  private async runSync(save:(attempt:SaveAttempt)=>Promise<Device>,refresh:(projectId:string)=>Promise<Device[]>,active:()=>boolean,options:{retryFailed?:boolean;onlyId?:string}):Promise<SyncReport>{
   this.syncing=true;const report:SyncReport={confirmed:0,failed:0,attempted:0};
   try{
-   const pending=this.read().items.filter(i=>(!options.onlyId || i.attempt.id===options.onlyId) && (i.state==='pending' || (i.state==='failed' && (options.retryFailed || (i.nextRetry!==undefined && i.nextRetry<=Date.now())))));
+   const pending=this.read().items.filter(i=>(!options.onlyId || i.attempt.id===options.onlyId) && ((i.state==='pending' || i.state==='uploading') || (i.state==='failed' && (options.retryFailed || (i.nextRetry!==undefined && i.nextRetry<=Date.now())))));
    for(const item of pending){
     if(!active())break;
     await this.change(s=>{const i=s.items.find(i=>i.attempt.id===item.attempt.id)!;i.state='uploading';i.retries++;i.updatedAt=new Date().toISOString();});

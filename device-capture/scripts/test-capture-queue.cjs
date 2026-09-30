@@ -52,6 +52,22 @@ const {emptyBatch,cleanDraft}=require('../.test/src/deviceWorkflow.js');
  await feedbackQueue.enqueue({...attempt,id:'background'});
  const paused=await feedbackQueue.sync(slowSave,async()=>[],()=>false);
  assert.equal(paused.confirmed,0);assert.equal(syncFeedback(paused,feedbackQueue.read()).phase,'idle');
+
+ // If local status publication fails after a server commit, the same worker can
+ // reconcile the stranded Uploading item without falsely reporting an empty queue.
+ memory.value=null;
+ const stranded=new CaptureQueue(memory,'u');await stranded.open();
+ await stranded.enqueue({...attempt,id:'stranded'});
+ const originalWrite=memory.setItem;
+ let blockJournal=false;
+ memory.setItem=async(k,v)=>{if(blockJournal)throw Error('journal write failed');return originalWrite(k,v);};
+ await assert.rejects(stranded.sync(async a=>{blockJournal=true;return {...a.draft,...a,verified:true};},async()=>[]),/journal write failed/);
+ assert.equal(stranded.read().items.find(i=>i.attempt.id==='stranded').state,'uploading');
+ assert.notEqual(syncFeedback({confirmed:0,attempted:0,failed:0},stranded.read()).message,'Everything is synced');
+ blockJournal=false;
+ const reconciled=await stranded.sync(async a=>({...a.draft,...a,verified:true}),async()=>[]);
+ assert.equal(reconciled.confirmed,1);
+ assert.equal(stranded.read().items.find(i=>i.attempt.id==='stranded').state,'uploaded');
  console.log('sync feedback checks: delayed confirmation, single worker, counts, empty queue, visible errors, explicit retry and paused sync passed');
 
  console.log('durable queue restart, interrupted upload, lost-response retry, single worker, write failure and account isolation checks passed');

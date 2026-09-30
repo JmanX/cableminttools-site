@@ -4,10 +4,10 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.2.2 — September 30, 2026
 
-Android versionCode: **10**. Native build verification pending.
+Android versionCode: **11**. Native build verification pending. Build 10 was superseded during final review to cover interrupted local status writes.
 
 - Explicit Sync Now / Syncing… / Synced ✓ / Sync Failed — Retry states, spinner, disabled repeated presses, and 2.5-second success feedback.
-- Pending/uploading/failed counts, explicit empty-queue feedback, upload errors, and retries using the existing stable record IDs. Success requires server-confirmed captures.
+- Pending/uploading/failed counts, explicit empty-queue feedback, upload errors, and retries using the existing stable record IDs, including recovery after a local status write fails. Success requires server-confirmed captures.
 - Manual buttons and pinch control the actual CameraX zoom ratio, clamped to hardware limits; the displayed ratio follows CameraX acknowledgement.
 - Independent native scanner-state command supplies ML Kit bounding boxes/corners. Centered small barcodes trigger gradual zoom, with cooldown and a 4×/hardware cap; decode or manual control stops automatic zoom until reset.
 - Normal zoom restored for each new capture/retake. Development logs include current/requested zoom, target size, trigger, and decode success.
