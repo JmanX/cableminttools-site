@@ -47,8 +47,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   function applyZoom(ratio:number){setZoomRatio(ratio);setZoom(ratio===1 ? 0 : ratio/zoomControl.current.max);}
   function resetZoom(){zoomControl.current.reset();applyZoom(1);}
   function onBarcodeFrame(event:{nativeEvent:BarcodeFrame}){
-    if(stage!=='camera'||captureInProgress.current)return;
     const now=Date.now(),frame=event.nativeEvent;
+    if(Number.isFinite(frame.maxZoom))zoomControl.current.max=Math.max(1,frame.maxZoom);
+    if(stage!=='camera'||captureInProgress.current)return;
     const decodedBefore=zoomControl.current.decoded;
     const result=zoomControl.current.frame(frame,previewSize.current,now);
     if(frame.decodedCount>0 && !decodedBefore)console.info('[CableMint scanner] decode success; auto-zoom stopped', {decodedCount:frame.decodedCount,zoom:zoomControl.current.ratio});
@@ -101,6 +102,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   }
 
   function showReview(result: ScanReview) {
+    if(installedPhoto.current)removePhoto(installedPhoto.current);installedPhoto.current=null;setInstalledUri('');
     setDuplicates([]);
     setVerified(false);
     setPendingAttempt(null);
@@ -351,7 +353,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
         {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
         {!!savedMessage && <Text accessibilityLiveRegion="polite" style={styles.body}>{savedMessage}</Text>}
       </ScrollView>
-    </View> : <ScrollView key="review" keyboardShouldPersistTaps="handled" contentContainerStyle={styles.reviewPage}>
+    </View> : <ScrollView key="review" style={{backgroundColor:'#F4F8FA'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.reviewPage}>
       <Text style={styles.darkTitle}>{stage === 'location' ? 'Installation Location & Save' : 'Identify Device'}</Text>
       <Text style={styles.muted}>Candidates are associated with nearby printed MAC or SN labels. Barcode values take priority over OCR in the same field. Confirm every value against the label.</Text>
       {!!error && <Text style={styles.error}>{error}</Text>}
@@ -390,7 +392,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
         {!!confirmationError && <Text accessibilityRole="alert" style={styles.error}>{confirmationError}</Text>}
         {duplicates.map(d => <View key={d.id} style={styles.candidate}><Text style={styles.candidateValue}>Existing {d.device_type} · {d.unit_location}</Text><Text selectable style={styles.muted}>{d.mac_address}{'\n'}{d.serial_number}{'\n'}{d.building} / {d.floor_area}</Text></View>)}
         {!!installedUri && <><Image source={{uri:installedUri}} style={{height:180,borderRadius:10}} resizeMode="contain"/><Text style={styles.muted}>Temporary installed photo · not uploaded or retained.</Text><Action label="Retake Installed Photo" disabled={busy || !!pendingAttempt} outline onPress={()=>{setCameraReady(false);resetZoom();setStage('installed');}}/></>}
-        <Action label={busy ? 'Saving capture…' : batch.requireInstalledPhoto && !installedUri ? 'Next: Installed Photo' : pendingAttempt ? 'Retry Save Device' : 'Save Device & Next'} disabled={busy || !verified} onPress={() => { if(batch.requireInstalledPhoto && !installedUri){setCameraReady(false);setStage('installed');}else void saveAndNext(); }} /></>
+        <Action label={busy ? 'Saving capture…' : batch.requireInstalledPhoto && !installedUri ? 'Next: Installed Photo' : pendingAttempt ? 'Retry Save Device' : 'Save Device & Next'} disabled={busy || !verified} onPress={() => { if(batch.requireInstalledPhoto && !installedUri){setCameraReady(false);resetZoom();setStage('installed');}else void saveAndNext(); }} /></>
         : <><Text style={styles.muted}>Confirm identification, then enter the installation location.</Text><Action label="Continue to Location" disabled={busy || (!mac.trim() && !serial.trim()) || (!!mac && !normalizeMac(mac))} onPress={() => { setStage('location'); setVerified(false); Keyboard.dismiss(); }} /></>}
       </View>
       <View style={styles.section}>

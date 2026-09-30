@@ -45,7 +45,7 @@ export function duplicateFields(rows: Pick<Device, 'id' | 'mac_address' | 'seria
 }
 
 export function sameSavedAttempt(row: Device, attempt: SaveAttempt): boolean {
-  return row.id === attempt.id && row.user_id === attempt.user_id && row.project_id === attempt.project_id && row.verified &&
+  return row.id === attempt.id && row.user_id === attempt.user_id && row.project_id === attempt.project_id && row.verified && (!attempt.captured_at || Date.parse(row.captured_at)===Date.parse(attempt.captured_at)) &&
     (Object.keys(attempt.draft) as (keyof DeviceDraft)[]).every(field => row[field] === attempt.draft[field]);
 }
 

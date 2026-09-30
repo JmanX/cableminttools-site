@@ -27,6 +27,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
   const [error, setError] = useState('');
   const [storageError, setStorageError] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
+  const [serverFresh,setServerFresh]=useState(false);
   const [serverTime, setServerTime] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'All' | 'Synced' | 'Pending' | 'Failed'>('All');
@@ -36,10 +37,11 @@ export function FieldWorkspace({ session }: { session: Session }) {
   const [creation, setCreation] = useState<{ id: string; name: string } | null>(null);
   const op = useRef(false), alive = useRef(true), writes = useRef(Promise.resolve());
   const [journal, setJournal] = useState<Snapshot | null>(null);
+  const uploadPaused=useRef(false);
   const queue = useRef<CaptureQueue | null>(null);
   async function syncQueue() {
     if (!queue.current) return;
-    try { await queue.current.sync(saveDevice, id => loadDevices(userId,id), () => alive.current && AppState.currentState === 'active'); }
+    try { await queue.current.sync(saveDevice, id => loadDevices(userId,id), () => alive.current && !uploadPaused.current && AppState.currentState === 'active'); }
     catch (failure) { if(alive.current)setStorageError('Upload journal could not be updated: '+(failure as Error).message); }
   }
   useEffect(() => {
@@ -68,13 +70,14 @@ export function FieldWorkspace({ session }: { session: Session }) {
     op.current = true; setBusy(true); setError('');
     try {
       const entitlement = await readPro(userId);
+      if(!alive.current)return;setPro(entitlement);await queue.current?.entitlement(entitlement);
       const own = await loadProjects(userId);
       const captures = await loadHistory(userId);
       if (!alive.current) return;
-      setPro(entitlement); setProjects(own); setRows(captures); setServerTime(new Date().toLocaleString());
+      setServerFresh(true);setPro(entitlement); setProjects(own); setRows(captures); setServerTime(new Date().toLocaleString());
       await queue.current?.cache(own,captures,entitlement); void syncQueue();
       if (project && !own.some(p => p.id === project.id)) { setProject(null); setStack(['projects']); }
-    } catch (failure) { if (alive.current) setError((failure as Error).message); }
+    } catch (failure) { if (alive.current) {setServerFresh(false);setError((failure as Error).message);} }
     finally { op.current = false; if (alive.current) setBusy(false); }
   }
   
@@ -119,9 +122,10 @@ export function FieldWorkspace({ session }: { session: Session }) {
     op.current = true;
     try {
       if(!queue.current || !journal) throw new Error('Capture storage is not ready. Keep this scan and retry.');
-      const previous=journal.items.find(i=>i.attempt.id===attempt.id);
+      const latest=queue.current.read();
+      const previous=latest.items.find(i=>i.attempt.id===attempt.id);
       if(!previous){
-        const candidates=[...rows.filter(d=>d.project_id===project.id),...journal.items.filter(i=>i.attempt.project_id===project.id && i.state!=='uploaded').map(i=>({...i.attempt.draft,...i.attempt,verified:true,captured_at:i.attempt.captured_at ?? ''}))];
+        const candidates=[...rows.filter(d=>d.project_id===project.id),...latest.items.filter(i=>i.attempt.project_id===project.id && i.state!=='uploaded').map(i=>({...i.attempt.draft,...i.attempt,verified:true,captured_at:i.attempt.captured_at ?? ''}))];
         const conflicts=duplicateFields(candidates,attempt.draft);
         if(conflicts.length)throw new DuplicateDeviceError(candidates.filter(d=>conflicts.some(c=>c.id===d.id)));
       }
@@ -138,12 +142,13 @@ export function FieldWorkspace({ session }: { session: Session }) {
     if (op.current) return;
     op.current = true; setBusy(true); setError('');
     try {
+      uploadPaused.current=true;await queue.current?.idle();
       await deleteDevice(userId, device.project_id, device.id);
       await queue.current?.forgetDeleted(device.id);
       const server = await loadHistory(userId);
       if (alive.current) { setRows(server); setServerTime(new Date().toLocaleTimeString()); await queue.current?.cache(projects,server,pro===true); }
     } catch (failure) { if (alive.current) setError((failure as Error).message + '\nRefresh the server list before trying again.'); }
-    finally { op.current = false; if (alive.current) setBusy(false); }
+    finally { uploadPaused.current=false;op.current = false; if (alive.current) setBusy(false); }
   }
   function confirmDelete(device: Device) { Alert.alert('Delete from Supabase?', `${device.device_type} · ${device.unit_location}\n${device.mac_address || device.serial_number}`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => { void remove(device); } }]); }
   async function signOut() {
@@ -160,7 +165,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
   }
   if (screen === 'scan' && project && batchReady === key) return <DeviceScanner project={project} userId={userId} batch={batch} onSave={save}
     onBatchChange={(field,value) => setBatch(b => ({ ...b, [field]: value }))}
-    onExit={() => setStack(previousScreen)} onDevices={() => { setHistoryProject(project.id); push('history'); }} savedMessage={savedMessage} batchStorageError={storageError} />;
+    onExit={() => setStack(previousScreen)} onDevices={() => { setHistoryProject(project.id); push('history'); }} savedMessage={(journal?.items.some(i=>i.state==='failed') ? 'Upload failed: '+journal.items.filter(i=>i.state==='failed').at(-1)?.error+'\nOpen Current Project Devices → Sync & Uploads to retry.\n' : '')+savedMessage} batchStorageError={storageError} />;
   const localItems=(journal?.items ?? []).filter(i=>i.state!=='uploaded' && !rows.some(d=>d.id===i.attempt.id));
   const localDevices=localItems.map(i=>({...i.attempt.draft,id:i.attempt.id,project_id:i.attempt.project_id,user_id:i.attempt.user_id,captured_at:i.attempt.captured_at ?? '',verified:true}));
   const localFiltered=filter==='Synced' ? [] : searchHistory(localDevices,projects,search,historyProject).filter(d=>filter==='All' || (filter==='Failed' ? localItems.find(i=>i.attempt.id===d.id)?.state==='failed' : localItems.find(i=>i.attempt.id===d.id)?.state!=='failed'));
@@ -169,13 +174,14 @@ export function FieldWorkspace({ session }: { session: Session }) {
     <View style={ui.header}><Text style={ui.brand}>CABLEMINT TOOLS</Text><Text style={ui.white}>Device Capture</Text>{stack.length > 1 && <Button title="← Back" secondary disabled={busy} onPress={back} />}</View>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
       {!!storageError && <Text style={ui.error}>{storageError}</Text>}
+      {!!journal?.items.some(i=>i.state==='failed') && <Text style={ui.error}>{journal.items.filter(i=>i.state==='failed').length} upload(s) failed. Open Sync & Uploads for the exact error and retry.</Text>}
       <Button title="Sync & Uploads" secondary disabled={busy} onPress={()=>push('sync')} />
       {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}{busy && <ActivityIndicator color={colors.green} />}
       {screen === 'projects' ? <><Text style={ui.heading}>{picking ? 'Choose Capture Project' : 'Projects'}</Text>
-        <Text style={ui.muted}>{serverTime ? `Server list last checked ${serverTime}` : 'Server list not loaded'}{error ? ' · Refresh needed' : ''}</Text>
+        <Text style={ui.muted}>{serverTime ? `Server list last checked ${serverTime}` : 'Server list not loaded'}{serverFresh ? ' · Live server checked' : ' · Cached / refresh needed'}</Text>
         {!projects.length && !busy && <Text style={ui.body}>Create a project to start capturing devices.</Text>}
         {projects.map(p => { const captured = rows.filter(d => d.project_id === p.id); const last = captured.reduce((latest, d) => d.captured_at > latest ? d.captured_at : latest, ''); return <View key={p.id} style={ui.card}>
-          <Text style={ui.heading}>{p.name}</Text><Text style={ui.body}>{captured.length} server-confirmed devices</Text><Text style={ui.muted}>{last ? `Last capture ${new Date(last).toLocaleString()}` : 'No server captures yet'} · {serverTime && !error ? 'Server checked' : 'Needs refresh'}</Text>
+          <Text style={ui.heading}>{p.name}</Text><Text style={ui.body}>{captured.length} server-confirmed devices · {journal?.items.filter(i=>i.attempt.project_id===p.id && i.state!=='uploaded').length ?? 0} awaiting upload</Text><Text style={ui.muted}>{last ? `Last capture ${new Date(last).toLocaleString()}` : 'No server captures yet'} · {serverFresh ? 'Server checked' : 'Cached / needs refresh'}</Text>
           <Button title={picking ? 'Capture in This Project' : 'Open Project'} disabled={busy} onPress={() => chooseProject(p)} /></View>; })}
         <Button title="Create New Project" disabled={busy} onPress={() => push('create')} /><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refresh(); }} />
         <Button title="Sign Out" secondary disabled={busy} onPress={() => { void signOut(); }} />
@@ -205,7 +211,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
       {(journal?.items ?? []).slice().reverse().map(item=><View key={item.attempt.id} style={ui.card}><Text style={ui.label}>{item.attempt.draft.device_type} · {item.attempt.draft.unit_location}</Text><Text selectable style={ui.body}>{item.attempt.draft.mac_address || item.attempt.draft.serial_number}</Text><Text style={ui.muted}>{item.state} · attempts {item.retries}</Text>{!!item.error && <Text selectable style={ui.error}>{item.error}</Text>}{item.state==='failed' && <Button title="Retry Upload" onPress={()=>{void queue.current?.retry(item.attempt.id).then(syncQueue).catch(f=>setStorageError(f.message));}}/>}</View>)}
       <Button title="Upload Pending Captures" onPress={()=>{void syncQueue();}}/></>
       : screen === 'account' ? <><Text style={ui.heading}>Account</Text><Text style={ui.body}>{session.user.email}</Text><Text style={ui.body}>CableMint Pro: {pro === null ? 'Not verified' : pro ? 'Active at last check' : 'Not active at last check'}</Text>
-        <Text style={ui.muted}>Access last checked: {journal?.checkedAt ? new Date(journal.checkedAt).toLocaleString() : 'Not yet verified'}</Text><Text style={ui.muted}>Version {appConfig.expo.version} · Android</Text><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refresh(); }} />
+        <Text style={ui.muted}>Access last checked: {journal?.proCheckedAt ? new Date(journal.proCheckedAt).toLocaleString() : 'Not yet verified'}</Text><Text style={ui.muted}>Version {appConfig.expo.version} · Android</Text><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refresh(); }} />
         <Text style={ui.muted}>Manage your subscription on the CableMint website. No billing or checkout is included here.</Text><Button title="Sign Out" secondary disabled={busy} onPress={() => { void signOut(); }} />
       </> : null}
     </ScrollView>

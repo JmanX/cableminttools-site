@@ -35,7 +35,7 @@ const mock = {
         }
         else if (q.operation === 'insert') {
           assert.equal(q.payload.verified, true); assert.equal(q.payload.user_id, authId); assert.equal(q.payload.project_id, 'project-a');
-          assert.equal('photo' in q.payload, false); assert.equal('autoAdvance' in q.payload, false);
+          assert.equal('photo' in q.payload, false); assert.equal('autoAdvance' in q.payload, false); assert.equal('requireInstalledPhoto' in q.payload,false);
           if (mode === 'insertError') return Promise.resolve({data:null,error:{message:'new row violates row-level security policy',code:'42501',details:'ownership check',hint:'verify project'}}).then(resolve,reject);
           idCommitted = true; response = { data: mode === 'uncertain' ? null : saved, error: mode === 'uncertain' ? { message: 'timeout' } : null };
         } else if (q.operation === 'delete') response = mode === 'deleteError' ? {data:null,error:{message:'delete denied',code:'42501'}} : { data: [{ id: attempt.id }], error: null };

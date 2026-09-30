@@ -18,6 +18,12 @@ const {emptyBatch,cleanDraft}=require('../.test/src/deviceWorkflow.js');
  restarted=new CaptureQueue(storage,'u');await restarted.open();assert.equal(restarted.read().items[0].state,'pending');
  const other=new CaptureQueue(storage,'other');await other.open();assert.equal(other.read().items.length,0);
  await assert.rejects(other.enqueue(attempt),/owner changed/);
+ const unopened=new CaptureQueue(storage,'unopened');await assert.rejects(unopened.enqueue({...attempt,user_id:'unopened'}),/not opened/);
+ await storage.setItem('cablemint.capture-journal.v1.corrupt','{bad');const broken=new CaptureQueue(storage,'corrupt');await assert.rejects(broken.open());await assert.rejects(broken.cache([],[],true),/not opened/);assert.equal(await storage.getItem('cablemint.capture-journal.v1.corrupt'),'{bad');
+ await restarted.sync(async a=>({...cloud,user_id:'wrong'}),async()=>[]);assert.equal(restarted.read().items[0].state,'failed');assert.match(restarted.read().items[0].error,/did not confirm/);
+ await restarted.retry('stable-a');await restarted.sync(async()=>cloud,async()=>{throw Error('refresh offline');});assert.equal(restarted.read().items[0].state,'uploaded');assert.match(restarted.read().items[0].error,/refresh offline/);
+ await restarted.forgetDeleted('stable-a');assert.equal(restarted.read().items.length,0);assert.equal(restarted.read().devices.length,0);
+
  console.log('durable queue restart, interrupted upload, lost-response retry, single worker, write failure and account isolation checks passed');
  }finally{await fs.rm(dir,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
