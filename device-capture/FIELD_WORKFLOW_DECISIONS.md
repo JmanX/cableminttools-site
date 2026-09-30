@@ -32,3 +32,11 @@ CableMint retains its navy/green identity. Its generic device types are WAP, Int
 ## Verification
 TypeScript and parser/workflow/service/session-storage checks passed. Added exact insert/delete errors, owner scope, history search/Back stack, real file persistence restart tests, lost server response reconciliation, single-worker concurrency, disk write failures, account isolation and zoom controller checks.
 Live read-only query confirmed field_devices remains empty with authenticated SELECT/INSERT/DELETE privileges. No real account test record was inserted by the agent; actual phone save/delete, permissions, image cleanup, connectivity changes, camera zoom smoothness and barcode accuracy still require field validation.
+
+
+## September 30, 2026 — verified internal Android builds
+- Steps 1–4 build: version 1.2.0 / code 8, source f114f027dc40df0fb2f2fa0e88dbfd4d1d29c58a, GitHub run 36647777234, artifact 11068968574. APK SHA-256: b4bf2ae2043871c4e1fa99165993c3245abd3dfe6e78c299f0f632b52aff0342.
+- Full field workflow build: version 1.2.1 / code 9, source 315899b8c98d289e2aa38141b5cf30fe6ff0b9ae, GitHub run 36780357498, artifact 11127616948. APK SHA-256: 400dcd4b4727525e33c682e6bd74f368ccdc5ec2d435b81c6f091759b9b0ef8c.
+- CI install, TypeScript, recognition/workflow/service/session/queue/zoom regression checks, native prebuild and Android release compilation all succeeded. Final APK manifest confirms com.cableminttools.devicecapture.prototype, version 1.2.1, code 9. Standalone Hermes bundle contains the smart barcode event integration; 24 bundled ML Kit asset entries are present.
+- Final APK is saved locally in device-capture/.artifacts/1.2.1/app-release.apk. Prototype/debug signing; not a store release.
+- Live read-only Supabase check on September 30 confirmed device count 0, RLS enabled and authenticated SELECT/INSERT/DELETE privileges present. The agent did not make an authenticated test-device write. Phone validation of real saves/deletes, camera/pinch/zoom, Back, offline recovery and temporary-photo cleanup remains required.
