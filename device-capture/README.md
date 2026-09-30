@@ -119,3 +119,12 @@ Version 1.1.1 APK passed [GitHub Actions run 36640421843](https://github.com/Jma
 See [FIELD_WORKFLOW_DECISIONS.md](FIELD_WORKFLOW_DECISIONS.md) for the new tabs, History, durable foreground upload queue, temporary installed-photo option, smart barcode zoom and backend decisions. Internal APK is a field-test build. Photos are not uploaded. A successful local save remains Pending/Failed until a matching Supabase row is confirmed. Do not clear app data while captures are pending.
 
 Phone checks: sign in with your existing account; create/select a test project; save a verified serial-only device; verify Uploaded and the server-backed list; try the same identifier again; delete and refresh. Repeat a capture in airplane mode, close/reopen the app, restore signal and verify one row with the same ID. Check Android Back from each step, gallery/manual correction, installed-photo on/off/retake, center vs edge barcodes, pinch during auto-zoom and default zoom on retake. No actual account save/delete was performed by the agent.
+
+
+### v1.2.2 field checks
+
+- Confirm Account reports 1.2.2. With no queued captures, Sync Now should say Everything is synced.
+- Save offline: pending/failed counts and meaningful errors must remain visible. Reconnect and press Sync Failed — Retry; repeated presses must be disabled during Syncing…. Synced ✓ should appear only after server confirmation and remain for about 2.5 seconds.
+- Point the camera at a textured scene: Zoom In/Out and pinch must change the actual preview, with the displayed ratio following native acknowledgement. Retake/new capture should return to 1×.
+- Present a small centered barcode: automatic steps should be gradual. Decode or a manual zoom adjustment must stop auto-zoom for that capture; retake enables it again. No potential barcode geometry means no automatic zoom.
+- Native camera changes require a freshly compiled internal APK. The versioned delivery file is created by scripts/package-android.cjs after assembleRelease; its metadata must match app.json. See root RELEASES.md.

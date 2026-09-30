@@ -10,6 +10,8 @@ import { previousScreen, searchHistory, type Screen } from './historyModel';
 import { DeviceScanner } from './DeviceScanner';
 import { Button, colors, Field, ui } from './ui';
 import { CaptureQueue, type Snapshot } from './captureQueue';
+import { SyncStatus } from './SyncStatus';
+import { SYNC_SUCCESS_MS, syncFeedback, uploadCounts, type SyncPhase } from './syncFeedback';
 import appConfig from '../app.json';
 
 const TYPES = ['WAP', 'Intercom', 'Network Switch', 'Security Camera', 'Access Control', 'Fiber / Other'];
@@ -39,10 +41,32 @@ export function FieldWorkspace({ session }: { session: Session }) {
   const [journal, setJournal] = useState<Snapshot | null>(null);
   const uploadPaused=useRef(false);
   const queue = useRef<CaptureQueue | null>(null);
-  async function syncQueue() {
-    if (!queue.current) return;
-    try { await queue.current.sync(saveDevice, id => loadDevices(userId,id), () => alive.current && !uploadPaused.current && AppState.currentState === 'active'); }
-    catch (failure) { if(alive.current)setStorageError('Upload journal could not be updated: '+(failure as Error).message); }
+  const syncWork=useRef(false);
+  const successTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const [syncPhase,setSyncPhase]=useState<SyncPhase>('idle');
+  const [syncMessage,setSyncMessage]=useState('');
+  useEffect(()=>()=>{if(successTimer.current)clearTimeout(successTimer.current);},[]);
+  async function syncQueue(manual=false,onlyId?:string) {
+    const q=queue.current;
+    if (!q || syncWork.current || uploadPaused.current) return;
+    const items=q.read().items;
+    const hasWork=items.some(i=>(!onlyId || i.attempt.id===onlyId) && (i.state==='pending' || (i.state==='failed' && (manual || (i.nextRetry!==undefined && i.nextRetry<=Date.now())))));
+    if(!hasWork){
+      if(manual){setSyncPhase('idle');setSyncMessage('Everything is synced');}
+      return;
+    }
+    syncWork.current=true;
+    if(successTimer.current){clearTimeout(successTimer.current);successTimer.current=null;}
+    setSyncPhase('syncing');setSyncMessage('Uploading saved captures…');
+    try {
+      const report=await q.sync(saveDevice,id=>loadDevices(userId,id),()=>alive.current && !uploadPaused.current && AppState.currentState==='active',{retryFailed:manual,onlyId});
+      if(!alive.current)return;
+      const result=syncFeedback(report,q.read());
+      setSyncPhase(result.phase);setSyncMessage(result.message);
+      if(result.phase==='success')successTimer.current=setTimeout(()=>{if(alive.current){setSyncPhase('idle');setSyncMessage('Everything is synced');}successTimer.current=null;},SYNC_SUCCESS_MS);
+    } catch (failure) {
+      if(alive.current){setSyncPhase('failure');setSyncMessage('Sync could not be confirmed: '+(failure as Error).message);}
+    } finally {syncWork.current=false;}
   }
   useEffect(() => {
     const q=new CaptureQueue(AsyncStorage,userId,s=>{if(alive.current){setJournal(s);setRows(s.devices);}});
@@ -175,7 +199,8 @@ export function FieldWorkspace({ session }: { session: Session }) {
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
       {!!storageError && <Text style={ui.error}>{storageError}</Text>}
       {!!journal?.items.some(i=>i.state==='failed') && <Text style={ui.error}>{journal.items.filter(i=>i.state==='failed').length} upload(s) failed. Open Sync & Uploads for the exact error and retry.</Text>}
-      <Button title="Sync & Uploads" secondary disabled={busy} onPress={()=>push('sync')} />
+      <SyncStatus phase={syncPhase} message={syncMessage} counts={uploadCounts(journal)} disabled={!journal || busy} onSync={()=>{void syncQueue(true);}} />
+      {screen!=='sync' && <Button title="Sync & Uploads" secondary disabled={busy} onPress={()=>push('sync')} />}
       {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}{busy && <ActivityIndicator color={colors.green} />}
       {screen === 'projects' ? <><Text style={ui.heading}>{picking ? 'Choose Capture Project' : 'Projects'}</Text>
         <Text style={ui.muted}>{serverTime ? `Server list last checked ${serverTime}` : 'Server list not loaded'}{serverFresh ? ' · Live server checked' : ' · Cached / refresh needed'}</Text>
@@ -208,8 +233,8 @@ export function FieldWorkspace({ session }: { session: Session }) {
       </> : screen === 'tasks' ? <><Text style={ui.heading}>Tasks</Text><Text style={ui.body}>Project tasks and Record a Gap are planned CableMint features. No tasks or punch-list backend is connected.</Text></>
       : screen === 'sync' ? <><Text style={ui.heading}>Sync & Uploads</Text><Text style={ui.muted}>Only Uploaded has server confirmation. Uploads run while the app is open; failed attempts retain the same ID.</Text>
       <View style={ui.card}>{(['pending','uploading','uploaded','failed'] as const).map(state=><Text key={state} style={ui.body}>{state.toUpperCase()}: {journal?.items.filter(i=>i.state===state).length ?? 0}</Text>)}</View>
-      {(journal?.items ?? []).slice().reverse().map(item=><View key={item.attempt.id} style={ui.card}><Text style={ui.label}>{item.attempt.draft.device_type} · {item.attempt.draft.unit_location}</Text><Text selectable style={ui.body}>{item.attempt.draft.mac_address || item.attempt.draft.serial_number}</Text><Text style={ui.muted}>{item.state} · attempts {item.retries}</Text>{!!item.error && <Text selectable style={ui.error}>{item.error}</Text>}{item.state==='failed' && <Button title="Retry Upload" onPress={()=>{void queue.current?.retry(item.attempt.id).then(syncQueue).catch(f=>setStorageError(f.message));}}/>}</View>)}
-      <Button title="Upload Pending Captures" onPress={()=>{void syncQueue();}}/></>
+      {(journal?.items ?? []).slice().reverse().map(item=><View key={item.attempt.id} style={ui.card}><Text style={ui.label}>{item.attempt.draft.device_type} · {item.attempt.draft.unit_location}</Text><Text selectable style={ui.body}>{item.attempt.draft.mac_address || item.attempt.draft.serial_number}</Text><Text style={ui.muted}>{item.state} · attempts {item.retries}</Text>{!!item.error && <Text selectable style={ui.error}>{item.error}</Text>}{item.state==='failed' && <Button title="Retry Upload" disabled={syncPhase==='syncing' || busy} onPress={()=>{void syncQueue(true,item.attempt.id);}}/>}</View>)}
+      </>
       : screen === 'account' ? <><Text style={ui.heading}>Account</Text><Text style={ui.body}>{session.user.email}</Text><Text style={ui.body}>CableMint Pro: {pro === null ? 'Not verified' : pro ? 'Active at last check' : 'Not active at last check'}</Text>
         <Text style={ui.muted}>Access last checked: {journal?.proCheckedAt ? new Date(journal.proCheckedAt).toLocaleString() : 'Not yet verified'}</Text><Text style={ui.muted}>Version {appConfig.expo.version} · Android</Text><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refresh(); }} />
         <Text style={ui.muted}>Manage your subscription on the CableMint website. No billing or checkout is included here.</Text><Button title="Sign Out" secondary disabled={busy} onPress={() => { void signOut(); }} />

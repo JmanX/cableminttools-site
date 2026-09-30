@@ -38,8 +38,11 @@ jobs:
       - name: Build standalone prototype APK
         run: ./gradlew :app:assembleRelease --no-daemon
         working-directory: device-capture/android
+      - name: Package versioned APK
+        id: package
+        run: node scripts/package-android.cjs
       - uses: actions/upload-artifact@v4
         with:
-          name: cablemint-device-capture-prototype-apk
-          path: device-capture/android/app/build/outputs/apk/release/app-release.apk
+          name: CableMint-Device-Capture-v${{ steps.package.outputs.version }}
+          path: ${{ steps.package.outputs.path }}
           if-no-files-found: error

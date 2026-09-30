@@ -10,6 +10,7 @@ function apply(root){
  const pkg=path.dirname(require.resolve('expo-camera/package.json',{paths:[root]}));
  if(require(path.join(pkg,'package.json')).version!=='57.0.5')throw Error('Review smart barcode patch for the new expo-camera version.');
  const java=path.join(pkg,'android/src/main/java/expo/modules/camera');
+ if(fs.readFileSync(path.join(java,'ExpoCameraView.kt'),'utf8').includes('// CableMint zoom bridge v1.2.2'))return;
  const analyzer=path.join(java,'analyzers/BarcodeAnalyzer.kt');
  patch(analyzer,'class BarcodeAnalyzer(formats: List<BarcodeType>, val onComplete: (BarCodeScannerResult) -> Unit)',
  'class BarcodeAnalyzer(formats: List<BarcodeType>, val onFrame: (Int, Int, List<com.google.mlkit.vision.barcode.common.Barcode>, Boolean) -> Unit, val onComplete: (BarCodeScannerResult) -> Unit)');
@@ -24,6 +25,46 @@ function apply(root){
  patch(view,'              BarcodeAnalyzer(barcodeFormats) {','              BarcodeAnalyzer(barcodeFormats, { frameWidth, frameHeight, codes, failed ->\n                onCableMintBarcodes(mapOf(\n                  "width" to frameWidth, "height" to frameHeight,\n                  "maxZoom" to (camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f),\n                  "decodedCount" to codes.count { it.rawValue != null || it.rawBytes != null },\n                  "failed" to failed,\n                  "barcodes" to codes.mapNotNull { code -> code.boundingBox?.let { box -> mapOf(\n                    "decoded" to (code.rawValue != null || code.rawBytes != null),\n                    "left" to box.left, "top" to box.top, "right" to box.right, "bottom" to box.bottom,\n                    "corners" to (code.cornerPoints?.map { mapOf("x" to it.x, "y" to it.y) } ?: emptyList())\n                  ) } }\n                ))\n              }) {');
  patch(view,'          onCameraReady(Unit)','          onCameraReady(Unit)\n          onCableMintBarcodes(mapOf("width" to 0, "height" to 0, "maxZoom" to (camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f), "decodedCount" to 0, "failed" to false, "barcodes" to emptyList<Map<String, Any>>()))');
  patch(path.join(java,'CameraViewModule.kt'),'  "onCameraReady",','  "onCableMintBarcodes",\n  "onCameraReady",');
+ // v1.2.2: view commands bypass barcode event delivery and wait for CameraX acknowledgement.
+ patch(view,'  private val onCableMintBarcodes by EventDispatcher<Map<String, Any>>()',`  private var cableMintZoomRatio: Float? = null
+  private var latestBarcodeFrame: Map<String, Any> = emptyMap()
+  private var barcodeFrameSequence = 0
+
+  fun cableMintScannerState(): Map<String, Any> {
+    val state = camera?.cameraInfo?.zoomState?.value
+    return mapOf("ready" to (state != null), "zoom" to (state?.zoomRatio ?: 1f),
+      "minZoom" to (state?.minZoomRatio ?: 1f), "maxZoom" to (state?.maxZoomRatio ?: 1f),
+      "sequence" to barcodeFrameSequence, "frame" to latestBarcodeFrame)
+  }
+
+  fun setCableMintZoom(requested: Float, promise: Promise) {
+    val boundCamera = camera
+    val state = boundCamera?.cameraInfo?.zoomState?.value
+    if (boundCamera == null || state == null || !requested.isFinite()) {
+      promise.reject("ERR_ZOOM_NOT_READY", "Camera zoom is not ready. Reopen the camera.", null)
+      return
+    }
+    val target = requested.coerceIn(state.minZoomRatio, state.maxZoomRatio)
+    cableMintZoomRatio = target
+    val operation = boundCamera.cameraControl.setZoomRatio(target)
+    operation.addListener({
+      try {
+        operation.get()
+        promise.resolve(cableMintScannerState())
+      } catch (error: Exception) {
+        cableMintZoomRatio = boundCamera.cameraInfo.zoomState.value?.zoomRatio
+        promise.reject("ERR_ZOOM_APPLY", "Camera could not apply zoom: " + (error.cause?.message ?: error.message), error)
+      }
+    }, ContextCompat.getMainExecutor(context))
+  }
+
+  private val onCableMintBarcodes by EventDispatcher<Map<String, Any>>()`);
+ patch(view,'                onCableMintBarcodes(mapOf(','                latestBarcodeFrame = mapOf(');
+ patch(view,'                ))\n              }) {','                )\n                barcodeFrameSequence++\n                onCableMintBarcodes(latestBarcodeFrame)\n              }) {');
+ patch(view,'    val targetZoomRatio = max(1f, min(maxZoomRatio, value.coerceIn(0f, 1f) * maxZoomRatio))','    val targetZoomRatio = cableMintZoomRatio?.coerceIn(camera?.cameraInfo?.zoomState?.value?.minZoomRatio ?: 1f, maxZoomRatio) ?: max(1f, min(maxZoomRatio, value.coerceIn(0f, 1f) * maxZoomRatio))');
+ patch(path.join(java,'CameraViewModule.kt'),'      AsyncFunction("getAvailablePictureSizes")', '      AsyncFunction("getCableMintScannerState") { view: ExpoCameraView ->\n        view.cableMintScannerState()\n      }.runOnQueue(Queues.MAIN)\n\n      AsyncFunction("setCableMintZoom") { view: ExpoCameraView, ratio: Float, promise: Promise ->\n        view.setCableMintZoom(ratio, promise)\n      }.runOnQueue(Queues.MAIN)\n\n      AsyncFunction("getAvailablePictureSizes")');
+
+ fs.appendFileSync(view,'\n// CableMint zoom bridge v1.2.2\n');
 }
 module.exports=config=>withDangerousMod(config,['android',async mod=>{apply(mod.modRequest.projectRoot);return mod;}]);
 module.exports.apply=apply;

@@ -3,11 +3,13 @@ import { ActivityIndicator, Alert, BackHandler, Keyboard, Platform, Pressable, S
 import { randomUUID } from 'expo-crypto';
 import { cleanDraft, type Batch, type Device, type Project, type SaveAttempt } from './deviceWorkflow';
 import { DuplicateDeviceError, SavePreflightError } from './deviceService';
-import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import CableMintOcr from '../modules/cablemint-ocr/src/CableMintOcrModule';
 import { analyzeScan, normalizeMac, type ScanReview, type ValueCandidate, type BarcodeCandidate } from './recognition';
+import { CameraZoom } from './cameraZoom';
+import { NativeZoomCamera } from './NativeZoomCamera';
 import { SmartZoom, type BarcodeFrame } from './smartZoom';
 import { withTimeout } from './withTimeout';
 import { isAppCachePhoto } from './photoPrivacy';
@@ -42,22 +44,28 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const previewSize=useRef({width:0,height:0});
   const pinch=useRef({distance:0,ratio:1});
   const lastZoomLog=useRef(0);
-  const [zoom,setZoom]=useState(0);
+  const zoomDriver=useRef<CameraZoom|null>(null);
   const [zoomRatio,setZoomRatio]=useState(1);
-  function applyZoom(ratio:number){setZoomRatio(ratio);setZoom(ratio===1 ? 0 : ratio/zoomControl.current.max);}
-  function resetZoom(){zoomControl.current.reset();applyZoom(1);}
-  function onBarcodeFrame(event:{nativeEvent:BarcodeFrame}){
-    const now=Date.now(),frame=event.nativeEvent;
-    if(Number.isFinite(frame.maxZoom))zoomControl.current.max=Math.max(1,frame.maxZoom);
+  const [zoomReady,setZoomReady]=useState(false);
+  const [zoomError,setZoomError]=useState('');
+  function applyZoom(ratio:number){zoomDriver.current?.request(ratio);}
+  function resetZoom(){zoomControl.current.reset();setZoomReady(false);setZoomError('');}
+  function onBarcodeFrame(frame:BarcodeFrame){
+    const now=Date.now();
     if(stage!=='camera'||captureInProgress.current)return;
     const decodedBefore=zoomControl.current.decoded;
     const result=zoomControl.current.frame(frame,previewSize.current,now);
-    if(frame.decodedCount>0 && !decodedBefore)console.info('[CableMint scanner] decode success; auto-zoom stopped', {decodedCount:frame.decodedCount,zoom:zoomControl.current.ratio});
-    if(result){applyZoom(result.ratio);console.info('[CableMint scanner] auto-zoom trigger',{targetSize:result.size,zoom:result.ratio,failedFrames:result.failures});}
-    else if(now-lastZoomLog.current>1500 && !zoomControl.current.decoded){lastZoomLog.current=now;console.info('[CableMint scanner] decode not confirmed',{potentialCount:frame.barcodes.length,recognitionFailed:frame.failed,zoom:zoomControl.current.ratio});}
+    if(__DEV__ && frame.decodedCount>0 && !decodedBefore)console.info('[CableMint scanner] barcode decode success',{decodedCount:frame.decodedCount,currentZoom:zoomDriver.current?.actual});
+    if(result){
+      applyZoom(result.ratio);
+      if(__DEV__)console.info('[CableMint scanner] auto-zoom trigger',{boundingBoxSize:result.size,requestedZoom:result.ratio,currentZoom:zoomDriver.current?.actual});
+    }else if(__DEV__ && now-lastZoomLog.current>1500){
+      lastZoomLog.current=now;
+      console.info('[CableMint scanner] barcode frame',{decodedCount:frame.decodedCount,decodeFailed:frame.failed,boxes:frame.barcodes.map(b=>({width:b.right-b.left,height:b.bottom-b.top})),currentZoom:zoomDriver.current?.actual});
+    }
   }
   const distance=(touches:readonly {pageX:number;pageY:number}[])=>touches.length>=2 ? Math.hypot(touches[0].pageX-touches[1].pageX,touches[0].pageY-touches[1].pageY) : 0;
-  const camera = useRef<CameraView>(null);
+  const camera = useRef<NativeZoomCamera>(null);
   const liveBarcodes = useRef(new Map<string, BarcodeScanningResult>());
   const captureInProgress = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -68,6 +76,31 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [liveCodes, setLiveCodes] = useState<BarcodeScanningResult[]>([]);
   const [captureStatus, setCaptureStatus] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
+  useEffect(()=>{
+    if(!cameraReady || (stage!=='camera' && stage!=='installed') || !camera.current)return;
+    let cancelled=false,lastSequence=-1;
+    const driver=new CameraZoom(camera.current,state=>{
+      if(cancelled)return;
+      zoomControl.current.min=state.minZoom;zoomControl.current.max=state.maxZoom;
+      zoomControl.current.ratio=state.zoom;setZoomRatio(state.zoom);
+    },failure=>{if(!cancelled)setZoomError(failure.message);},data=>{if(__DEV__)console.info('[CableMint scanner] camera zoom',data);});
+    zoomDriver.current=driver;zoomControl.current.reset();setZoomReady(false);setZoomError('');
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    async function poll(){
+      try{
+        const state=await driver.poll();
+        if(cancelled)return;
+        const frame=state.frame as BarcodeFrame;
+        if(state.sequence!==lastSequence && Array.isArray(frame.barcodes)){
+          lastSequence=state.sequence;
+          if(!driver.busy)onBarcodeFrame({...frame,maxZoom:state.maxZoom});
+        }
+      }catch(failure){if(!cancelled)setZoomError('Scanner feedback unavailable: '+(failure as Error).message);}
+      if(!cancelled)timer=setTimeout(()=>{void poll();},200);
+    }
+    void driver.initialize().then(()=>{if(!cancelled){setZoomReady(true);void poll();}}).catch(failure=>{if(!cancelled)setZoomError((failure as Error).message);});
+    return()=>{cancelled=true;driver.dispose();if(timer)clearTimeout(timer);if(zoomDriver.current===driver)zoomDriver.current=null;};
+  },[cameraReady,stage]);
   const [review, setReview] = useState<ScanReview | null>(null);
   const [mac, setMac] = useState('');
   const [serial, setSerial] = useState('');
@@ -93,6 +126,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
 
   function onBarcodeScanned(result: BarcodeScanningResult) {
     if (captureInProgress.current) return;
+    if(__DEV__ && !zoomControl.current.decoded)console.info('[CableMint scanner] barcode decode success',{currentZoom:zoomDriver.current?.actual});
     zoomControl.current.decoded=true;
     const key = `${result.type}:${result.data.trim()}`;
     if (!result.data.trim() || liveBarcodes.current.has(key)) return;
@@ -324,17 +358,18 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     </View>
     {stage === 'camera' || stage==='installed' ? <View style={styles.cameraPage}>
       <View style={styles.cameraFrame} onLayout={e=>{previewSize.current=e.nativeEvent.layout;}}>
-        <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" mode="picture" enableTorch={torch} zoom={zoom} autofocus="on" {...({onCableMintBarcodes:onBarcodeFrame} as object)}
+        <NativeZoomCamera ref={camera} style={StyleSheet.absoluteFill} facing="back" mode="picture" enableTorch={torch} autofocus="on"
           barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }} onBarcodeScanned={stage==='camera' ? onBarcodeScanned : undefined}
           onCameraReady={() => setCameraReady(true)} onMountError={event => setError(event.message)} />
-        <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={e=>e.nativeEvent.touches.length>=2} onMoveShouldSetResponder={e=>e.nativeEvent.touches.length>=2}
-          onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomControl.current.ratio};zoomControl.current.manual=true;}}
+        <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2} onMoveShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2}
+          onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomDriver.current?.requested ?? zoomControl.current.ratio};zoomControl.current.manual=true;}}
           onResponderMove={e=>{const d=distance(e.nativeEvent.touches);if(d>0&&pinch.current.distance>0)applyZoom(zoomControl.current.manualZoom(pinch.current.ratio*d/pinch.current.distance,Date.now()));}}
           onResponderRelease={()=>zoomControl.current.endManual(Date.now())} onResponderTerminate={()=>zoomControl.current.endManual(Date.now())}/>
         <View pointerEvents="none" style={styles.guide} />
       </View>
       <ScrollView style={{maxHeight:'48%',backgroundColor:'#F4F8FA'}} contentContainerStyle={styles.controls}>
-        <View style={styles.controlRow}><View style={styles.flex}><Action label="− Zoom" outline onPress={()=>{applyZoom(zoomControl.current.manualZoom(zoomControl.current.ratio-.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View><Text style={styles.muted}>{zoomRatio.toFixed(1)}× · pinch to zoom</Text><View style={styles.flex}><Action label="+ Zoom" outline onPress={()=>{applyZoom(zoomControl.current.manualZoom(zoomControl.current.ratio+.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View></View>
+        <View style={styles.controlRow}><View style={styles.flex}><Action label="Zoom Out" disabled={!zoomReady || busy || zoomRatio<=zoomControl.current.min} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)-.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View><Text style={styles.muted}>{zoomReady ? zoomRatio.toFixed(1)+'× · pinch to zoom' : 'Starting camera zoom…'}</Text><View style={styles.flex}><Action label="Zoom In" disabled={!zoomReady || busy || zoomRatio>=zoomControl.current.max} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)+.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View></View>
+        {!!zoomError && <Text accessibilityRole="alert" style={styles.error}>{zoomError}</Text>}
         <Text style={styles.body}>{stage==='installed' ? 'Photograph the installed device in place. This temporary photo will be removed after saving.' : 'Read the label, then confirm its identifiers.'}</Text>
         {stage==='camera' && <><Text style={styles.body}>Fill the guide with a sharp label. Native ML Kit has seen {barcodeCount} distinct barcode{barcodeCount === 1 ? '' : 's'}.</Text>
         {!!liveCodes.length && <ScrollView style={{ maxHeight: 100 }}>
