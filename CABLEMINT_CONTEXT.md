@@ -200,3 +200,5 @@ TypeScript and regression checks passed locally. Actual source compilation and A
 ## October 1, 2026 — v1.2.2 native compilation repair
 
 GitHub Actions run 36789096585 (versionCode 12) correctly compiled expo-camera from source, exposing a Kotlin type-inference error in the mixed barcode geometry map at ExpoCameraView.kt:591. The plugin now uses explicit Map<String, Any> types for both the frame and per-barcode geometry. The next testing build increments versionCode to 13. This is a source compilation repair; actual APK and phone zoom remain unverified until their respective checks pass.
+
+Build 13 (run 36922528269) passed TypeScript/regression checks but Kotlin still rejected the nested geometry-map expression, even with explicit map type arguments. Build 14 replaces nested mapOf/to expressions with typed mutable maps populated field by field. The payload shape and zoom algorithm are unchanged. versionCode increments to 14.

@@ -4,7 +4,7 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.2.2 — October 1, 2026
 
-Android versionCode: **13**. Native build and binary verification pending. Build 12 compiled expo-camera from source and found a Kotlin heterogeneous-map inference error; build 13 supplies explicit geometry-map types. Build 10 was superseded by interrupted-sync recovery; binary inspection rejected build 11 because Expo linked an unmodified precompiled camera library. Both candidates are excluded from delivery.
+Android versionCode: **14**. Native build and binary verification pending. Source builds 12–13 exposed a Kotlin nested-map inference error; build 14 constructs typed barcode/frame maps field by field. Build 10 was superseded by interrupted-sync recovery; binary inspection rejected build 11 because Expo linked an unmodified precompiled camera library. Both candidates are excluded from delivery.
 
 - Explicit Sync Now / Syncing… / Synced ✓ / Sync Failed — Retry states, spinner, disabled repeated presses, and 2.5-second success feedback.
 - Pending/uploading/failed counts, explicit empty-queue feedback, upload errors, and retries using the existing stable record IDs, including recovery after a local status write fails. Success requires server-confirmed captures.

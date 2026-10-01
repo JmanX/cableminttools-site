@@ -24,7 +24,37 @@ function apply(root){
  patch(analyzer,'    }\n  }\n}','    } else {\n      imageProxy.close()\n    }\n  }\n}');
  const view=path.join(java,'ExpoCameraView.kt');
  patch(view,'  private val onCameraReady by EventDispatcher<Unit>()','  private val onCableMintBarcodes by EventDispatcher<Map<String, Any>>()\n  private val onCameraReady by EventDispatcher<Unit>()');
- patch(view,'              BarcodeAnalyzer(barcodeFormats) {','              BarcodeAnalyzer(barcodeFormats, { frameWidth, frameHeight, codes, failed ->\n                onCableMintBarcodes(mapOf(\n                  "width" to frameWidth, "height" to frameHeight,\n                  "maxZoom" to (camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f),\n                  "decodedCount" to codes.count { it.rawValue != null || it.rawBytes != null },\n                  "failed" to failed,\n                  "barcodes" to codes.mapNotNull { code -> code.boundingBox?.let { box -> mapOf<String, Any>(\n                    "decoded" to (code.rawValue != null || code.rawBytes != null),\n                    "left" to box.left, "top" to box.top, "right" to box.right, "bottom" to box.bottom,\n                    "corners" to (code.cornerPoints?.map { mapOf("x" to it.x, "y" to it.y) } ?: emptyList())\n                  ) } }\n                ))\n              }) {');
+ patch(view,'              BarcodeAnalyzer(barcodeFormats) {',`              BarcodeAnalyzer(barcodeFormats, { frameWidth, frameHeight, codes, failed ->
+                val boxes = mutableListOf<Map<String, Any>>()
+                for (code in codes) {
+                  val box = code.boundingBox ?: continue
+                  val fields = mutableMapOf<String, Any>()
+                  fields["decoded"] = code.rawValue != null || code.rawBytes != null
+                  fields["left"] = box.left
+                  fields["top"] = box.top
+                  fields["right"] = box.right
+                  fields["bottom"] = box.bottom
+                  val corners = mutableListOf<Map<String, Int>>()
+                  for (point in code.cornerPoints ?: emptyArray()) {
+                    val corner = mutableMapOf<String, Int>()
+                    corner["x"] = point.x
+                    corner["y"] = point.y
+                    corners.add(corner)
+                  }
+                  fields["corners"] = corners
+                  boxes.add(fields)
+                }
+                val frame = mutableMapOf<String, Any>()
+                frame["width"] = frameWidth
+                frame["height"] = frameHeight
+                frame["maxZoom"] = camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f
+                frame["decodedCount"] = codes.count { it.rawValue != null || it.rawBytes != null }
+                frame["failed"] = failed
+                frame["barcodes"] = boxes
+                latestBarcodeFrame = frame
+                barcodeFrameSequence++
+                onCableMintBarcodes(frame)
+              }) {`);
  patch(view,'          onCameraReady(Unit)','          onCameraReady(Unit)\n          onCableMintBarcodes(mapOf("width" to 0, "height" to 0, "maxZoom" to (camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 1f), "decodedCount" to 0, "failed" to false, "barcodes" to emptyList<Map<String, Any>>()))');
  patch(path.join(java,'CameraViewModule.kt'),'  "onCameraReady",','  "onCableMintBarcodes",\n  "onCameraReady",');
  // v1.2.2: view commands bypass barcode event delivery and wait for CameraX acknowledgement.
@@ -61,8 +91,6 @@ function apply(root){
   }
 
   private val onCableMintBarcodes by EventDispatcher<Map<String, Any>>()`);
- patch(view,'                onCableMintBarcodes(mapOf(','                latestBarcodeFrame = mapOf<String, Any>(');
- patch(view,'                ))\n              }) {','                )\n                barcodeFrameSequence++\n                onCableMintBarcodes(latestBarcodeFrame)\n              }) {');
  patch(view,'    val targetZoomRatio = max(1f, min(maxZoomRatio, value.coerceIn(0f, 1f) * maxZoomRatio))','    val targetZoomRatio = cableMintZoomRatio?.coerceIn(camera?.cameraInfo?.zoomState?.value?.minZoomRatio ?: 1f, maxZoomRatio) ?: max(1f, min(maxZoomRatio, value.coerceIn(0f, 1f) * maxZoomRatio))');
  patch(path.join(java,'CameraViewModule.kt'),'      AsyncFunction("getAvailablePictureSizes")', '      AsyncFunction("getCableMintScannerState") { view: ExpoCameraView ->\n        view.cableMintScannerState()\n      }.runOnQueue(Queues.MAIN)\n\n      AsyncFunction("setCableMintZoom") { view: ExpoCameraView, ratio: Float, promise: Promise ->\n        view.setCableMintZoom(ratio, promise)\n      }.runOnQueue(Queues.MAIN)\n\n      AsyncFunction("getAvailablePictureSizes")');
 
