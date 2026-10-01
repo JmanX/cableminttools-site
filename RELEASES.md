@@ -2,9 +2,9 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
-## 1.2.2 — September 30, 2026
+## 1.2.2 — October 1, 2026
 
-Android versionCode: **12**. Native build and binary verification pending. Build 10 was superseded by interrupted-sync recovery; binary inspection rejected build 11 because Expo linked an unmodified precompiled camera library. Both candidates are excluded from delivery.
+Android versionCode: **13**. Native build and binary verification pending. Build 12 compiled expo-camera from source and found a Kotlin heterogeneous-map inference error; build 13 supplies explicit geometry-map types. Build 10 was superseded by interrupted-sync recovery; binary inspection rejected build 11 because Expo linked an unmodified precompiled camera library. Both candidates are excluded from delivery.
 
 - Explicit Sync Now / Syncing… / Synced ✓ / Sync Failed — Retry states, spinner, disabled repeated presses, and 2.5-second success feedback.
 - Pending/uploading/failed counts, explicit empty-queue feedback, upload errors, and retries using the existing stable record IDs, including recovery after a local status write fails. Success requires server-confirmed captures.

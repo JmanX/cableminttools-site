@@ -196,3 +196,7 @@ Smart zoom selects the potential barcode nearest the scan-guide center, increase
 Release standard: root RELEASES.md records each version/date/fixes/known issues. Expo config drives the visible Account version and generated native versionName; Android versionCode increments per testing/release build. scripts/package-android.cjs validates native output metadata against app.json, keeps app-release.apk for Gradle, and creates CableMint-Device-Capture-v<version>.apk without overwriting an existing copy. The workflow uploads the versioned copy.
 
 TypeScript and regression checks passed locally. Actual source compilation and APK DEX verification are required; the successful earlier builds linked an unmodified precompiled camera and do not prove the new Kotlin code compiled. v1.2.2 phone testing remains. No Supabase schema, production website, Dodo configuration or deployed Edge Functions were changed.
+
+## October 1, 2026 — v1.2.2 native compilation repair
+
+GitHub Actions run 36789096585 (versionCode 12) correctly compiled expo-camera from source, exposing a Kotlin type-inference error in the mixed barcode geometry map at ExpoCameraView.kt:591. The plugin now uses explicit Map<String, Any> types for both the frame and per-barcode geometry. The next testing build increments versionCode to 13. This is a source compilation repair; actual APK and phone zoom remain unverified until their respective checks pass.
