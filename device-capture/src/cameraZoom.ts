@@ -4,6 +4,7 @@ export interface NativeZoomApi {getCableMintScannerState():Promise<NativeScanner
 /** Serializes/coalesces pinch commands. Display values only after CameraX acknowledgement. */
 export class CameraZoom {
  min=1;max=1;actual=1;requested=1;ready=false;busy=false;
+ application: 'not-requested'|'requested'|'applied'|'not-applied'='not-requested';
  private pending:number|null=null;private active=true;
  constructor(private api:NativeZoomApi,private changed:(s:NativeScannerState)=>void,private failed:(e:Error)=>void,private log:(data:object)=>void=()=>{}){}
  private accept(s:NativeScannerState){
@@ -23,7 +24,7 @@ export class CameraZoom {
  }
  request(ratio:number){
   if(!this.active || !this.ready || !Number.isFinite(ratio))return;
-  this.requested=Math.max(this.min,Math.min(this.max,ratio));this.pending=this.requested;
+  this.requested=Math.max(this.min,Math.min(this.max,ratio));this.pending=this.requested;this.application='requested';
   this.log({currentZoom:this.actual,requestedZoom:this.requested});
   void this.flush();
  }
@@ -35,9 +36,13 @@ export class CameraZoom {
     const target=this.pending;this.pending=null;
     try{
      const state=await this.api.setCableMintZoom(target);
-     if(this.active){this.accept(state);this.log({currentZoom:this.actual,requestedZoom:target,acknowledged:true});}
+     if(this.active){
+      this.accept(state);
+      if(Math.abs(this.actual-target)>.03)throw Error('Zoom requested but not applied by camera: requested '+target.toFixed(2)+'×, actual '+this.actual.toFixed(2)+'×');
+      this.application='applied';this.log({currentZoom:this.actual,requestedZoom:target,acknowledged:true});
+     }
     }catch(error){
-     if(this.active){this.pending=null;this.requested=this.actual;this.failed(error instanceof Error ? error : Error(String(error)));}
+     if(this.active){this.pending=null;this.requested=this.actual;this.application='not-applied';this.failed(error instanceof Error ? error : Error(String(error)));}
     }
    }
   }finally{this.busy=false;}

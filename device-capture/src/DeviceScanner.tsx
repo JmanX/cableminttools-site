@@ -7,7 +7,7 @@ import { useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import CableMintOcr from '../modules/cablemint-ocr/src/CableMintOcrModule';
-import { analyzeScan, normalizeMac, type ScanReview, type ValueCandidate, type BarcodeCandidate } from './recognition';
+import { analyzeScan, normalizeMac, unresolvedConflicts, resolveField, type ConflictResolution, type Field, type ScanReview, type ValueCandidate, type BarcodeCandidate } from './recognition';
 import { CameraZoom } from './cameraZoom';
 import { NativeZoomCamera } from './NativeZoomCamera';
 import { SmartZoom, type BarcodeFrame } from './smartZoom';
@@ -48,20 +48,27 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [zoomRatio,setZoomRatio]=useState(1);
   const [zoomReady,setZoomReady]=useState(false);
   const [zoomError,setZoomError]=useState('');
+  const [showDiagnostics,setShowDiagnostics]=useState(false);
+  const [scannerStatus,setScannerStatus]=useState('Waiting for scanner frames');
+  const [scannerDetails,setScannerDetails]=useState('');
   function applyZoom(ratio:number){zoomDriver.current?.request(ratio);}
-  function resetZoom(){zoomControl.current.reset();setZoomReady(false);setZoomError('');}
+  function resetZoom(){zoomControl.current.reset();setZoomReady(false);setZoomError('');setScannerStatus('Waiting for scanner frames');setScannerDetails('');}
   function onBarcodeFrame(frame:BarcodeFrame){
     const now=Date.now();
     if(stage!=='camera'||captureInProgress.current)return;
     const decodedBefore=zoomControl.current.decoded;
     const result=zoomControl.current.frame(frame,previewSize.current,now);
     if(__DEV__ && frame.decodedCount>0 && !decodedBefore)console.info('[CableMint scanner] barcode decode success',{decodedCount:frame.decodedCount,currentZoom:zoomDriver.current?.actual});
+    if(result || frame.decodedCount>0 || now-lastZoomLog.current>1500){
+      setScannerStatus(zoomControl.current.status);
+      setScannerDetails(JSON.stringify({potential:zoomControl.current.potentialCount,boxSize:zoomControl.current.boxSize,suggestedZoom:frame.suggestedZoom,suggestionSequence:frame.suggestionSequence,currentZoom:zoomDriver.current?.actual,requestedZoom:zoomDriver.current?.requested,cameraApplication:zoomDriver.current?.application}));
+    }
     if(result){
       applyZoom(result.ratio);
       if(__DEV__)console.info('[CableMint scanner] auto-zoom trigger',{boundingBoxSize:result.size,requestedZoom:result.ratio,currentZoom:zoomDriver.current?.actual});
-    }else if(__DEV__ && now-lastZoomLog.current>1500){
+    }else if(now-lastZoomLog.current>1500){
       lastZoomLog.current=now;
-      console.info('[CableMint scanner] barcode frame',{decodedCount:frame.decodedCount,decodeFailed:frame.failed,boxes:frame.barcodes.map(b=>({width:b.right-b.left,height:b.bottom-b.top})),currentZoom:zoomDriver.current?.actual});
+      if(__DEV__)console.info('[CableMint scanner] barcode frame',{status:zoomControl.current.status,potentialCount:zoomControl.current.potentialCount,suggestedZoom:frame.suggestedZoom,suggestionSequence:frame.suggestionSequence,decodedCount:frame.decodedCount,decodeFailed:frame.failed,boxes:frame.barcodes.map(b=>({width:b.right-b.left,height:b.bottom-b.top})),currentZoom:zoomDriver.current?.actual});
     }
   }
   const distance=(touches:readonly {pageX:number;pageY:number}[])=>touches.length>=2 ? Math.hypot(touches[0].pageX-touches[1].pageX,touches[0].pageY-touches[1].pageY) : 0;
@@ -102,8 +109,19 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     return()=>{cancelled=true;driver.dispose();if(timer)clearTimeout(timer);if(zoomDriver.current===driver)zoomDriver.current=null;};
   },[cameraReady,stage]);
   const [review, setReview] = useState<ScanReview | null>(null);
+  const [resolution, setResolution] = useState<ConflictResolution>({});
   const [mac, setMac] = useState('');
   const [serial, setSerial] = useState('');
+  const unresolved = unresolvedConflicts(review, resolution, mac, serial);
+  function resolveConflict(field: Field, value: string) {
+    if (busy || pendingAttempt) return;
+    if (field === 'mac') chooseMac(value); else chooseSerial(value);
+    setResolution(previous => resolveField(previous, field, value));
+  }
+  function identificationReady() {
+    if (unresolvedConflicts(review, resolution, mac, serial).length) { setConfirmationError('Resolve the barcode / OCR conflict before continuing or saving.'); return false; }
+    return true;
+  }
   const [installationLocation, setInstallationLocation] = useState(batch.unit_location);
   const [verified, setVerified] = useState(false);
   const [pendingAttempt, setPendingAttempt] = useState<SaveAttempt | null>(null);
@@ -127,7 +145,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   function onBarcodeScanned(result: BarcodeScanningResult) {
     if (captureInProgress.current) return;
     if(__DEV__ && !zoomControl.current.decoded)console.info('[CableMint scanner] barcode decode success',{currentZoom:zoomDriver.current?.actual});
-    zoomControl.current.decoded=true;
+    zoomControl.current.decoded=true;setScannerStatus('Barcode decoded — auto-zoom stopped');
     const key = `${result.type}:${result.data.trim()}`;
     if (!result.data.trim() || liveBarcodes.current.has(key)) return;
     liveBarcodes.current.set(key, result);
@@ -141,9 +159,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     setVerified(false);
     setPendingAttempt(null);
     setConfirmationError('');
-    setReview(result);
-    setMac(result.macs.length === 1 ? result.macs[0].value : '');
-    setSerial(result.serials.length === 1 ? result.serials[0].value : '');
+    setReview(result); setResolution({});
+    setMac(!result.conflicts.some(c => c.field === 'mac') && result.macs.length === 1 ? result.macs[0].value : '');
+    setSerial(!result.conflicts.some(c => c.field === 'serial') && result.serials.length === 1 ? result.serials[0].value : '');
     setStage('review');
     setCameraReady(false);
   }
@@ -164,6 +182,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
 
   async function saveAndNext() {
     if (saving.current || busy) return;
+    if (!identificationReady()) return;
     if(batch.requireInstalledPhoto && !installedPhoto.current){setConfirmationError('Take the temporary installed-device photo first.');return;}
     if (!verified) { setConfirmationError('Confirm that you checked the MAC, serial, and location against this device.'); return; }
     saving.current = true;
@@ -321,7 +340,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     setBarcodeCount(0);
     setLiveCodes([]);
     setCameraReady(false);
-    setReview(null);
+    setReview(null); setResolution({});
     setMac('');
     setSerial('');
     setError('');
@@ -370,6 +389,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
       <ScrollView style={{maxHeight:'48%',backgroundColor:'#F4F8FA'}} contentContainerStyle={styles.controls}>
         <View style={styles.controlRow}><View style={styles.flex}><Action label="Zoom Out" disabled={!zoomReady || busy || zoomRatio<=zoomControl.current.min} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)-.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View><Text style={styles.muted}>{zoomReady ? zoomRatio.toFixed(1)+'× · pinch to zoom' : 'Starting camera zoom…'}</Text><View style={styles.flex}><Action label="Zoom In" disabled={!zoomReady || busy || zoomRatio>=zoomControl.current.max} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)+.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View></View>
         {!!zoomError && <Text accessibilityRole="alert" style={styles.error}>{zoomError}</Text>}
+        {stage==='camera' && <><Pressable onPress={()=>setShowDiagnostics(!showDiagnostics)}><Text style={styles.muted}>{showDiagnostics ? 'Hide scanner diagnostics' : 'Show scanner diagnostics'}</Text></Pressable>
+          {showDiagnostics && <><Text selectable style={styles.muted}>{zoomControl.current.manual ? 'Auto-zoom paused after manual adjustment' : scannerStatus}</Text><Text selectable style={styles.ocrText}>{scannerDetails}</Text><Text style={styles.muted}>Camera: {zoomDriver.current?.application} · requested {zoomDriver.current?.requested.toFixed(2)}× · actual {zoomRatio.toFixed(2)}×</Text></>}
+        </>}
         <Text style={styles.body}>{stage==='installed' ? 'Photograph the installed device in place. This temporary photo will be removed after saving.' : 'Read the label, then confirm its identifiers.'}</Text>
         {stage==='camera' && <><Text style={styles.body}>Fill the guide with a sharp label. Native ML Kit has seen {barcodeCount} distinct barcode{barcodeCount === 1 ? '' : 's'}.</Text>
         {!!liveCodes.length && <ScrollView style={{ maxHeight: 100 }}>
@@ -390,9 +412,26 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
       </ScrollView>
     </View> : <ScrollView key="review" style={{backgroundColor:'#F4F8FA'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.reviewPage}>
       <Text style={styles.darkTitle}>{stage === 'location' ? 'Installation Location & Save' : 'Identify Device'}</Text>
-      <Text style={styles.muted}>Candidates are associated with nearby printed MAC or SN labels. Barcode values take priority over OCR in the same field. Confirm every value against the label.</Text>
+      <Text style={styles.muted}>Candidates use printed MAC or SN labels and proximity. Conflicting readings require your explicit choice. Confirm every value against the device.</Text>
       {!!error && <Text style={styles.error}>{error}</Text>}
       {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
+      {!!review?.conflicts.length && <View style={[styles.section, {backgroundColor:'#FFF1EE',borderWidth:2,borderColor:'#B32626'}]}>
+        <Text accessibilityRole="alert" style={styles.error}>{unresolved.length ? 'Identifier conflict — action required' : 'Conflict resolved — verify your selected value'}</Text>
+        <Text style={styles.body}>Saving is blocked until you explicitly choose a reading or confirm a manual correction.</Text>
+        {review.conflicts.map(conflict => <View key={conflict.id} style={styles.codeRow}>
+          <Text style={styles.label}>{conflict.field.toUpperCase()} · {conflict.reason}</Text>
+          <Text selectable style={styles.candidateValue}>{conflict.barcode.raw}</Text><Text style={styles.candidateMeta}>{conflict.barcode.source}</Text>
+          <Action label="Choose decoded barcode" disabled={busy || !!pendingAttempt || !conflict.barcode.value} outline onPress={() => resolveConflict(conflict.field, conflict.barcode.value!)} />
+          <Text selectable style={styles.candidateValue}>{conflict.ocr.raw}</Text><Text style={styles.candidateMeta}>{conflict.ocr.source}</Text>
+          <Action label="Choose printed-text reading" disabled={busy || !!pendingAttempt || !conflict.ocr.value} outline onPress={() => resolveConflict(conflict.field, conflict.ocr.value!)} />
+          {!conflict.ocr.value && <Text style={styles.error}>Printed-text reading is not valid. Correct it in Technician check.</Text>}
+        </View>)}
+        {(['mac','serial'] as const).filter(field => review.conflicts.some(c => c.field === field)).map(field => <View key={field}>
+          <Text selectable style={styles.label}>Selected {field.toUpperCase()}: {(field === 'mac' ? mac : serial) || '(blank)'}</Text>
+          <Action label={'Confirm my manually checked '+field.toUpperCase()} disabled={busy || !!pendingAttempt || (field === 'mac' ? !normalizeMac(mac) : !serial.trim())} outline onPress={() => resolveConflict(field, field === 'mac' ? normalizeMac(mac)! : serial.trim())} />
+          {field === 'mac' && <Action label="Confirm this is serial-only; omit MAC" disabled={busy || !!pendingAttempt || !serial.trim()} outline onPress={() => resolveConflict('mac','')} />}
+        </View>)}
+      </View>}
       {stage === 'review' && <>
       <Text style={styles.muted}>Confidence: {review?.macs.some(c => c.corroboratedByBarcode) || review?.serials.some(c => c.corroboratedByBarcode) ? 'Barcode corroborates a printed label; verify before saving.' : 'Manual review required. Ambiguous values remain unassigned.'}</Text>
       <CandidateList title="Printed MAC candidates" candidates={review?.macs ?? []} onChoose={chooseMac} />
@@ -427,8 +466,8 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
         {!!confirmationError && <Text accessibilityRole="alert" style={styles.error}>{confirmationError}</Text>}
         {duplicates.map(d => <View key={d.id} style={styles.candidate}><Text style={styles.candidateValue}>Existing {d.device_type} · {d.unit_location}</Text><Text selectable style={styles.muted}>{d.mac_address}{'\n'}{d.serial_number}{'\n'}{d.building} / {d.floor_area}</Text></View>)}
         {!!installedUri && <><Image source={{uri:installedUri}} style={{height:180,borderRadius:10}} resizeMode="contain"/><Text style={styles.muted}>Temporary installed photo · not uploaded or retained.</Text><Action label="Retake Installed Photo" disabled={busy || !!pendingAttempt} outline onPress={()=>{setCameraReady(false);resetZoom();setStage('installed');}}/></>}
-        <Action label={busy ? 'Saving capture…' : batch.requireInstalledPhoto && !installedUri ? 'Next: Installed Photo' : pendingAttempt ? 'Retry Save Device' : 'Save Device & Next'} disabled={busy || !verified} onPress={() => { if(batch.requireInstalledPhoto && !installedUri){setCameraReady(false);resetZoom();setStage('installed');}else void saveAndNext(); }} /></>
-        : <><Text style={styles.muted}>Confirm identification, then enter the installation location.</Text><Action label="Continue to Location" disabled={busy || (!mac.trim() && !serial.trim()) || (!!mac && !normalizeMac(mac))} onPress={() => { setStage('location'); setVerified(false); Keyboard.dismiss(); }} /></>}
+        <Action label={busy ? 'Saving capture…' : batch.requireInstalledPhoto && !installedUri ? 'Next: Installed Photo' : pendingAttempt ? 'Retry Save Device' : 'Save Device & Next'} disabled={busy || !verified || unresolved.length > 0} onPress={() => { if(!identificationReady())return; if(batch.requireInstalledPhoto && !installedUri){setCameraReady(false);resetZoom();setStage('installed');}else void saveAndNext(); }} /></>
+        : <><Text style={styles.muted}>Confirm identification, then enter the installation location.</Text><Action label="Continue to Location" disabled={busy || unresolved.length > 0 || (!mac.trim() && !serial.trim()) || (!!mac && !normalizeMac(mac))} onPress={() => { if(!identificationReady())return; setStage('location'); setVerified(false); Keyboard.dismiss(); }} /></>}
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Raw OCR text</Text>

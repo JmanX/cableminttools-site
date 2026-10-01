@@ -38,6 +38,10 @@ export class CaptureQueue {
   if(projects.some(p=>p.user_id!==this.userId)||devices.some(d=>d.user_id!==this.userId))throw Error('Server cache owner mismatch.');
   await this.change(s=>{s.projects=projects;s.devices=devices;s.pro=pro;s.proCheckedAt=new Date().toISOString();s.checkedAt=new Date().toISOString();});
  }
+ async cacheServerDevices(devices:Device[],checkedAt:string){
+  if(devices.some(d=>d.user_id!==this.userId))throw Error('Server cache owner mismatch.');
+  await this.change(s=>{s.devices=devices;s.checkedAt=checkedAt;});
+ }
  async enqueue(attempt:SaveAttempt){
   if(attempt.user_id!==this.userId)throw Error('Capture owner changed.');
   await this.change(s=>{const old=s.items.find(i=>i.attempt.id===attempt.id);if(old){if(JSON.stringify(old.attempt)!==JSON.stringify(attempt))throw Error('Retry fields differ from the durable capture.');return;}

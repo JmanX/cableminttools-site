@@ -1,4 +1,4 @@
-import { analyzeScan, normalizeMac } from './recognition';
+import { analyzeScan, normalizeMac, unresolvedConflicts, resolveField } from './recognition';
 import type { Bounds, OcrLine, ImageBarcode } from '../modules/cablemint-ocr/src/CableMintOcr.types';
 
 const line = (text: string, top = 0, left = 0) => ({ text, top, left, bottom: top + 20, right: left + 140 });
@@ -53,6 +53,32 @@ export function runRecognitionChecks() {
   assert(akuvox.macs[0].source === 'Barcode near printed MAC label', 'assignment explanation');
   assert(akuvox.macs[0].anchor.cornerPoints?.length === 4 && akuvox.macs[0].evidence.cornerPoints?.length === 4, 'preserve anchor and evidence corner points');
   assert(akuvox.barcodes.find(b => b.data === macCode.data)?.assignedTo === 'mac', 'raw barcode assignment shown');
+
+  // The exact field failure and confusable characters must never silently save.
+  for (const misread of ['00110533D733','OC110533D733','0C110533D7B3','00110533D7B3']) {
+    const wrong=printed(misread,{left:100,top:55,right:270,bottom:75});
+    const review=analyzeScan({text:wrong.text,lines:[macAnchor,wrong,snAnchor,printed(snCode.data,{left:100,top:165,right:270,bottom:185})]},[macCode,snCode]);
+    assert(review.barcodes.find(b=>b.assignedTo==='mac')?.data===macCode.data,'original barcode must survive OCR '+misread);
+    assert(review.conflicts.some(c=>c.field==='mac'&&c.barcode.raw===macCode.data&&c.ocr.raw===misread),'conflict must show both sources '+misread);
+    assert(unresolvedConflicts(review,{},macCode.data,snCode.data).length>0,'typing correct value alone does not resolve conflict');
+    const resolution=resolveField({},'mac',macCode.data);
+    assert(!unresolvedConflicts(review,resolution,'0c:11:05:33:d7:33',snCode.data).length,'explicit choice resolves normalized value');
+    assert(unresolvedConflicts(review,resolution,'00110533D733',snCode.data).length>0,'later edit invalidates conflict resolution');
+    assert(!unresolvedConflicts(review,resolveField({},'mac',''),'',snCode.data).length,'explicit serial-only omission supported');
+  }
+  const eight=code('8C110533D733',macCode.boundingBox!);
+  const eightWrong=printed('BC110533D733',{left:100,top:55,right:270,bottom:75});
+  assert(analyzeScan({text:'',lines:[macAnchor,eightWrong]},[eight]).conflicts.length===1,'8/B must warn');
+  const formatted=printed('0c:11:05:33:d7:33',{left:100,top:55,right:270,bottom:75});
+  assert(!analyzeScan({text:'',lines:[macAnchor,formatted]},[macCode]).conflicts.length,'formatting differences are not conflicts');
+  const liveMismatch=analyzeScan({text:'',lines:[macAnchor,printed('00110533D733',{left:100,top:55,right:270,bottom:75})]},[{...macCode,source:'live',coordinateSpace:'preview'}]);
+  assert(liveMismatch.conflicts.length===1&&liveMismatch.conflicts[0].barcode.source.includes('Live'),'live decode/photo OCR mismatch blocks save without inventing coordinate association');
+  const liveSerial=analyzeScan({text:'',lines:[snAnchor,printed('P1U922QJ0046S',{left:100,top:165,right:270,bottom:185})]},[{...snCode,source:'live',coordinateSpace:'preview'}]);
+  assert(liveSerial.conflicts[0]?.field==='serial'&&!liveSerial.macs.length,'Serial-only live/photo mismatch also blocks silent OCR selection');
+  const raw=analyzeScan(null,[{...macCode,data:' 0c110533d733 '}]);
+  assert(raw.barcodes[0].data===' 0c110533d733 ','raw decoded payload preserved exactly');
+  const serialConflict=analyzeScan({text:'',lines:[snAnchor,printed('P1U922QJ0046S',{left:100,top:165,right:270,bottom:185})]},[snCode]);
+  assert(serialConflict.conflicts[0]?.field==='serial'&&!serialConflict.macs.length,'serial-only conflicts handled independently');
 
   const belowCode = code(macCode.data, { left: 20, top: 50, right: 270, bottom: 90 });
   const inline = printed('MAC:DC110533D733', { left: 20, top: 80, right: 270, bottom: 100 });

@@ -38,7 +38,8 @@ with zipfile.ZipFile(apk) as z:
  names=z.namelist()
  dex=[z.read(n) for n in names if n.endswith('.dex')]
  commands={key:any(key.encode() in blob for blob in dex) for key in ('getCableMintScannerState','setCableMintZoom')}
- result={'filename':apk.name,'bytes':apk.stat().st_size,'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'package':manifest.get('package'),'versionName':manifest.get('versionName'),'versionCode':manifest.get('versionCode'),'nativeZoomCommands':commands,'javascriptBundle':'assets/index.android.bundle' in names,'mlkitModelAssets':sum('mlkit' in n.lower() for n in names)}
+ suggestions={key:any(key.encode() in blob for blob in dex) for key in ('ZoomSuggestionOptions','suggestedZoom','suggestionSequence')}
+ result={'filename':apk.name,'bytes':apk.stat().st_size,'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'package':manifest.get('package'),'versionName':manifest.get('versionName'),'versionCode':manifest.get('versionCode'),'nativeZoomCommands':commands,'nativeZoomSuggestions':suggestions,'javascriptBundle':'assets/index.android.bundle' in names,'mlkitModelAssets':sum('mlkit' in n.lower() for n in names)}
  print(json.dumps(result,indent=2))
  config=json.loads((Path(__file__).resolve().parents[1]/'app.json').read_text())['expo']
  assert result['versionName']==config['version'], 'APK versionName mismatch'
@@ -46,4 +47,5 @@ with zipfile.ZipFile(apk) as z:
  assert result['package']==config['android']['package'], 'APK package mismatch'
  assert result['filename']=='CableMint-Device-Capture-v'+config['version']+'.apk', 'APK filename mismatch'
  assert all(commands.values()), 'APK is missing native zoom commands; expo-camera must build from source'
+ assert all(suggestions.values()), 'APK is missing ML Kit zoom-suggestion integration'
  assert result['javascriptBundle'], 'APK is missing its JavaScript bundle'

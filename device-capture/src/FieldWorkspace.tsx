@@ -11,7 +11,7 @@ import { DeviceScanner } from './DeviceScanner';
 import { Button, colors, Field, ui } from './ui';
 import { CaptureQueue, type Snapshot } from './captureQueue';
 import { SyncStatus } from './SyncStatus';
-import { SYNC_SUCCESS_MS, syncFeedback, uploadCounts, type SyncPhase } from './syncFeedback';
+import { SYNC_SUCCESS_MS, checkedSync, syncFeedback, uploadCounts, type SyncPhase } from './syncFeedback';
 import appConfig from '../app.json';
 
 const TYPES = ['WAP', 'Intercom', 'Network Switch', 'Security Camera', 'Access Control', 'Fiber / Other'];
@@ -48,25 +48,30 @@ export function FieldWorkspace({ session }: { session: Session }) {
   useEffect(()=>()=>{if(successTimer.current)clearTimeout(successTimer.current);},[]);
   async function syncQueue(manual=false,onlyId?:string) {
     const q=queue.current;
-    if (!q || syncWork.current || uploadPaused.current) return;
+    if (!q || syncWork.current || uploadPaused.current || (manual && op.current)) return;
     const items=q.read().items;
     const hasWork=items.some(i=>(!onlyId || i.attempt.id===onlyId) && ((i.state==='pending' || i.state==='uploading') || (i.state==='failed' && (manual || (i.nextRetry!==undefined && i.nextRetry<=Date.now())))));
-    if(!hasWork){
-      if(manual){const result=syncFeedback({confirmed:0,attempted:0,failed:0},q.read());setSyncPhase(result.phase);setSyncMessage(result.message);}
-      return;
-    }
+    if(!hasWork && !manual)return;
     syncWork.current=true;
+    if(manual){op.current=true;setBusy(true);}
     if(successTimer.current){clearTimeout(successTimer.current);successTimer.current=null;}
-    setSyncPhase('syncing');setSyncMessage('Uploading saved captures…');
+    setSyncPhase('syncing');setSyncMessage(manual ? 'Checking the server and synchronizing captures…' : 'Uploading saved captures…');
     try {
-      const report=await q.sync(saveDevice,id=>loadDevices(userId,id),()=>alive.current && !uploadPaused.current && AppState.currentState==='active',{retryFailed:manual,onlyId});
+      const upload=()=>q.sync(saveDevice,id=>loadDevices(userId,id),()=>alive.current && !uploadPaused.current && AppState.currentState==='active',{retryFailed:manual,onlyId});
+      const report=manual ? await checkedSync(upload,async()=>{
+        const captures=await loadHistory(userId);
+        if(!alive.current || uploadPaused.current)throw Error('Server check interrupted. Retry when the app is ready.');
+        const checkedAt=new Date().toISOString();
+        await q.cacheServerDevices(captures,checkedAt);
+        if(alive.current){setServerTime(new Date(checkedAt).toLocaleString());setServerFresh(true);}
+      }) : await upload();
       if(!alive.current)return;
-      const result=syncFeedback(report,q.read());
+      const result=syncFeedback(report,q.read(),manual);
       setSyncPhase(result.phase);setSyncMessage(result.message);
-      if(result.phase==='success')successTimer.current=setTimeout(()=>{if(alive.current){setSyncPhase('idle');setSyncMessage('Everything is synced');}successTimer.current=null;},SYNC_SUCCESS_MS);
+      if(result.phase==='success')successTimer.current=setTimeout(()=>{if(alive.current){setSyncPhase('idle');setSyncMessage(syncFeedback({confirmed:0,attempted:0,failed:0},q.read()).message);}successTimer.current=null;},SYNC_SUCCESS_MS);
     } catch (failure) {
-      if(alive.current){setSyncPhase('failure');setSyncMessage('Sync could not be confirmed: '+(failure as Error).message);}
-    } finally {syncWork.current=false;}
+      if(alive.current){if(manual)setServerFresh(false);setSyncPhase('failure');setSyncMessage('Sync could not be confirmed: '+(failure as Error).message);}
+    } finally {syncWork.current=false;if(manual){op.current=false;if(alive.current)setBusy(false);}}
   }
   useEffect(() => {
     const q=new CaptureQueue(AsyncStorage,userId,s=>{if(alive.current){setJournal(s);setRows(s.devices);}});
@@ -199,7 +204,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
       {!!storageError && <Text style={ui.error}>{storageError}</Text>}
       {!!journal?.items.some(i=>i.state==='failed') && <Text style={ui.error}>{journal.items.filter(i=>i.state==='failed').length} upload(s) failed. Open Sync & Uploads for the exact error and retry.</Text>}
-      <SyncStatus phase={syncPhase} message={syncMessage} counts={uploadCounts(journal)} disabled={!journal || busy} onSync={()=>{void syncQueue(true);}} />
+      <SyncStatus phase={syncPhase} message={syncMessage} lastChecked={serverTime} counts={uploadCounts(journal)} disabled={!journal || busy} onSync={()=>{void syncQueue(true);}} />
       {screen!=='sync' && <Button title="Sync & Uploads" secondary disabled={busy} onPress={()=>push('sync')} />}
       {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}{busy && <ActivityIndicator color={colors.green} />}
       {screen === 'projects' ? <><Text style={ui.heading}>{picking ? 'Choose Capture Project' : 'Projects'}</Text>

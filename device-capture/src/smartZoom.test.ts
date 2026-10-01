@@ -16,5 +16,15 @@ export function runZoomChecks(){
 
  z.reset();for(let t=1000;t<15000;t+=700)if(z.frame({...frame,barcodes:[{decoded:false,left:120,top:300,right:280,bottom:500,corners:[]}]},preview,t))throw Error('Large undecoded codes must not force runaway zoom');
  z.reset();for(let t=1000;t<15000;t+=700)if(z.frame({...frame,barcodes:[{decoded:false,left:190,top:20,right:210,bottom:40,corners:[]}]},preview,t))throw Error('Outside-guide target must not zoom');
+ z.reset();z.frame({...frame,barcodes:[]},preview,1000);if(z.status!=='No potential barcode detected')throw Error('Missing no-potential diagnostics');
+ z.frame(frame,preview,1100);if(!z.status.includes('no zoom requested'))throw Error('Missing potential/no-request diagnostics');
+ z.reset();const suggested={...frame,barcodes:[],suggestedZoom:3,suggestionSequence:1,suggestionAgeMs:100};
+ z.frame(suggested,preview,1000);z.frame(suggested,preview,1100);const suggestion=z.frame(suggested,preview,1200);
+ if(!suggestion||suggestion.ratio!==1.12||suggestion.reason!=='ML Kit zoom suggestion')throw Error('Native suggestion must ramp gradually even before geometry is exposed');
+ z.reset();for(let t=1000;t<4000;t+=700)if(z.frame({...suggested,suggestionAgeMs:5000},preview,t))throw Error('Stale suggestions must not zoom');
+ z.reset();for(let t=1000;t<4000;t+=700)if(z.frame({...suggested,decodedCount:1},preview,t))throw Error('Already decoded barcode must stop, not count as auto-zoom failure');
+ if(!z.status.includes('decoded'))throw Error('Decode diagnostics missing');
+ z.reset();z.manualZoom(2,1000);if(z.frame(suggested,preview,5000))throw Error('Suggestion bypassed manual override');
+ z.reset();for(let t=1000;t<9000;t+=700)z.frame({...suggested,maxZoom:1.3},preview,t);if(z.ratio>1.3)throw Error('Suggestion ignored hardware cap');
  console.log('smart zoom center preference, debounce, cooldown, manual override, decode stop, reset and hardware cap checks passed');
 }

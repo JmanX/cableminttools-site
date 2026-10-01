@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path');
 const {withDangerousMod}=require('expo/config-plugins');
 function patch(file,from,to){
- const source=fs.readFileSync(file,'utf8');
+ const source=fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n');
  if(source.includes(to))return;
  if(!source.includes(from))throw Error('Smart barcode integration requires review: '+file);
  fs.writeFileSync(file,source.replace(from,to));
@@ -12,7 +12,7 @@ function apply(root){
  const pkg=path.dirname(require.resolve('expo-camera/package.json',{paths:[root]}));
  if(require(path.join(pkg,'package.json')).version!=='57.0.5')throw Error('Review smart barcode patch for the new expo-camera version.');
  const java=path.join(pkg,'android/src/main/java/expo/modules/camera');
- if(fs.readFileSync(path.join(java,'ExpoCameraView.kt'),'utf8').includes('// CableMint zoom bridge v1.2.2'))return;
+ if(fs.readFileSync(path.join(java,'ExpoCameraView.kt'),'utf8').includes('// CableMint zoom bridge v1.2.2')){applyAutoZoom(java);return;}
  const analyzer=path.join(java,'analyzers/BarcodeAnalyzer.kt');
  patch(analyzer,'class BarcodeAnalyzer(formats: List<BarcodeType>, val onComplete: (BarCodeScannerResult) -> Unit)',
  'class BarcodeAnalyzer(formats: List<BarcodeType>, val onFrame: (Int, Int, List<com.google.mlkit.vision.barcode.common.Barcode>, Boolean) -> Unit, val onComplete: (BarCodeScannerResult) -> Unit)');
@@ -95,6 +95,49 @@ function apply(root){
  patch(path.join(java,'CameraViewModule.kt'),'      AsyncFunction("getAvailablePictureSizes")', '      AsyncFunction("getCableMintScannerState") { view: ExpoCameraView ->\n        view.cableMintScannerState()\n      }.runOnQueue(Queues.MAIN)\n\n      AsyncFunction("setCableMintZoom") { view: ExpoCameraView, ratio: Float, promise: Promise ->\n        view.setCableMintZoom(ratio, promise)\n      }.runOnQueue(Queues.MAIN)\n\n      AsyncFunction("getAvailablePictureSizes")');
 
  fs.appendFileSync(view,'\n// CableMint zoom bridge v1.2.2\n');
+ applyAutoZoom(java);
+}
+function applyAutoZoom(java){
+ const analyzer=path.join(java,'analyzers/BarcodeAnalyzer.kt'),view=path.join(java,'ExpoCameraView.kt');
+ if(fs.readFileSync(view,'utf8').includes('// CableMint ML Kit zoom suggestions v1.2.3'))return;
+ patch(analyzer,'val onFrame: (Int, Int, List<com.google.mlkit.vision.barcode.common.Barcode>, Boolean) -> Unit','val maxZoom: () -> Float, val onZoomSuggestion: (Float) -> Unit, val onFrame: (Int, Int, List<com.google.mlkit.vision.barcode.common.Barcode>, Boolean) -> Unit');
+ patch(analyzer,`  private var barcodeScannerOptions =
+    BarcodeScannerOptions.Builder()
+      .setBarcodeFormats(barcodeFormats)
+      .enableAllPotentialBarcodes()
+      .build()
+  private var barcodeScanner = BarcodeScanning.getClient(barcodeScannerOptions)`,
+ `  // Evaluate limits on the first bound-camera frame, not analyzer construction.
+  private val barcodeScanner by lazy {
+    val zoomOptions = com.google.mlkit.vision.barcode.ZoomSuggestionOptions.Builder { ratio ->
+      onZoomSuggestion(ratio)
+      // The app ramps the suggestion through its acknowledged CameraX command.
+      // No synchronous camera change occurred in this callback.
+      false
+    }.setMaxSupportedZoomRatio(maxZoom().coerceIn(1f, 4f)).build()
+    BarcodeScanning.getClient(BarcodeScannerOptions.Builder()
+      .setBarcodeFormats(barcodeFormats)
+      .enableAllPotentialBarcodes()
+      .setZoomSuggestionOptions(zoomOptions)
+      .build())
+  }`);
+ patch(analyzer,'    val mediaImage = imageProxy.image','    if (maxZoom() <= 0f) { imageProxy.close(); return }\n    val mediaImage = imageProxy.image');
+ patch(view,'  private var barcodeFrameSequence = 0',`  private var barcodeFrameSequence = 0
+  private var suggestedZoom = 1f
+  private var zoomSuggestionSequence = 0
+  private var zoomSuggestionTime = 0L`);
+ patch(view,'BarcodeAnalyzer(barcodeFormats, { frameWidth, frameHeight, codes, failed ->',`BarcodeAnalyzer(barcodeFormats, { camera?.cameraInfo?.zoomState?.value?.maxZoomRatio ?: 0f }, { ratio ->
+                if (ratio.isFinite() && ratio > 0f) {
+                  suggestedZoom = ratio
+                  zoomSuggestionSequence++
+                  zoomSuggestionTime = android.os.SystemClock.elapsedRealtime()
+                }
+              }, { frameWidth, frameHeight, codes, failed ->`);
+ patch(view,'                frame["barcodes"] = boxes',`                frame["barcodes"] = boxes
+                frame["suggestedZoom"] = suggestedZoom
+                frame["suggestionSequence"] = zoomSuggestionSequence
+                frame["suggestionAgeMs"] = if (zoomSuggestionTime > 0L) android.os.SystemClock.elapsedRealtime() - zoomSuggestionTime else Long.MAX_VALUE`);
+ fs.appendFileSync(view,'\n// CableMint ML Kit zoom suggestions v1.2.3\n');
 }
 module.exports=config=>withDangerousMod(config,['android',async mod=>{apply(mod.modRequest.projectRoot);return mod;}]);
 module.exports.apply=apply;

@@ -1,6 +1,15 @@
 import type { Bounds, Geometry, ImageBarcode, OcrElement, OcrLine, OcrResult, Point } from '../modules/cablemint-ocr/src/CableMintOcr.types';
 
-type Field = 'mac' | 'serial';
+export type Field = 'mac' | 'serial';
+export type IdentificationConflict = { id: string; field: Field; barcode: { raw: string; value: string | null; source: string }; ocr: { raw: string; value: string | null; source: string }; reason: string };
+export type ConflictResolution = Partial<Record<Field, string>>;
+const comparable = (field: Field, raw: string) => field === 'mac' ? normalizeMac(raw) ?? raw.trim().toUpperCase() : raw.trim().toUpperCase();
+export function unresolvedConflicts(review: ScanReview | null, resolution: ConflictResolution, mac: string, serial: string) {
+  return (review?.conflicts ?? []).filter(c => resolution[c.field] === undefined || resolution[c.field] !== comparable(c.field, c.field === 'mac' ? mac : serial));
+}
+export function resolveField(resolution: ConflictResolution, field: Field, value: string): ConflictResolution {
+  return { ...resolution, [field]: comparable(field, value) };
+}
 export type ValueCandidate = {
   value: string;
   source: string;
@@ -10,7 +19,7 @@ export type ValueCandidate = {
 };
 export type BarcodeCandidate = ImageBarcode & { assignedTo?: Field; assignmentReason?: string };
 export type ScanReview = { macs: ValueCandidate[]; serials: ValueCandidate[]; barcodes: BarcodeCandidate[];
-  ocrText: string; ocrLines: OcrLine[]; anchors: OcrElement[]; ocrValues: OcrElement[] };
+  conflicts: IdentificationConflict[]; ocrText: string; ocrLines: OcrLine[]; anchors: OcrElement[]; ocrValues: OcrElement[] };
 type Anchor = OcrElement & { kind: Field; id: number };
 type TextValue = OcrElement & { inlineAnchor?: number };
 
@@ -175,7 +184,7 @@ export function analyzeScan(ocr: OcrResult | null, barcodeResults: ImageBarcode[
     const data = code.data.trim();
     if (!data || (code.source === 'live' && imageData.has(data))) continue;
     const key = JSON.stringify([data, code.type, points(code)]);
-    if (!seen.has(key)) { barcodes.push({ ...code, data }); seen.add(key); }
+    if (!seen.has(key)) { barcodes.push({ ...code }); seen.add(key); }
   }
   const imageCodes = barcodes.filter(b => b.source !== 'live' && b.coordinateSpace !== 'preview' && points(b).length);
   const textFor = new Map<number, TextValue>();
@@ -212,6 +221,14 @@ export function analyzeScan(ocr: OcrResult | null, barcodeResults: ImageBarcode[
       ? matching.map(item => ({ ...item, score: -10 + item.score })) : direct);
   }
   const macs = new Map<string, ValueCandidate>(), serials = new Map<string, ValueCandidate>();
+  const conflicts: IdentificationConflict[] = [];
+  function addConflict(anchor: Anchor, barcode: BarcodeCandidate, text: TextValue, reason: string, associated=false) {
+    if (comparable(anchor.kind, barcode.data) === comparable(anchor.kind, text.text)) return;
+    const parse = anchor.kind === 'mac' ? normalizeMac : serialValue;
+    conflicts.push({ id: JSON.stringify([anchor.id, barcode.data, text.text]), field: anchor.kind,
+      barcode: { raw: barcode.data, value: parse(barcode.data), source: barcode.source === 'live' ? 'Live decoded barcode (field association unconfirmed)' : associated || barcode.assignedTo ? 'Decoded barcode near printed '+anchor.kind.toUpperCase()+' label' : 'Photo decoded barcode (field association unconfirmed)' },
+      ocr: { raw: text.text, value: parse(text.text), source: 'OCR near printed '+anchor.kind.toUpperCase()+' label' }, reason });
+  }
   for (const anchor of anchors) {
     const candidates = barcodeChoices.get(anchor.id)!;
     let evidence: ImageBarcode | TextValue | null = null;
@@ -235,13 +252,41 @@ export function analyzeScan(ocr: OcrResult | null, barcodeResults: ImageBarcode[
     // or decoded barcodes; do not guess them from nearby printed prose.
     const value = anchor.kind === 'mac' ? normalizeMac(raw)
       : !fromBarcode && !/\d/.test(raw) ? null : serialValue(raw);
+    const printed = textFor.get(anchor.id);
+    if (fromBarcode && printed) addConflict(anchor, evidence as BarcodeCandidate, printed, 'The decoded barcode and printed-text reading disagree. Check this device and explicitly choose or correct the value.', true);
     if (!value) continue;
     const label = anchor.kind === 'mac' ? 'MAC' : 'serial';
     const source = `${fromBarcode ? 'Barcode' : 'OCR value'} near printed ${label} label`;
     const candidate: ValueCandidate = { value, source, corroboratedByBarcode: fromBarcode, anchor, evidence };
     (anchor.kind === 'mac' ? macs : serials).set(value, candidate);
-    if (fromBarcode) { (evidence as BarcodeCandidate).assignedTo = anchor.kind; (evidence as BarcodeCandidate).assignmentReason = source; }
+    if (fromBarcode) {
+      (evidence as BarcodeCandidate).assignedTo = anchor.kind; (evidence as BarcodeCandidate).assignmentReason = source;
+
+    }
   }
-  return { macs: [...macs.values()], serials: [...serials.values()], barcodes, ocrText: ocr?.text ?? '',
+  // A live decode may survive when the still-image decode fails. Its preview
+  // coordinates cannot assign a field, but a disagreement must block OCR autofill.
+  for (const anchor of anchors.filter(a => a.kind === 'mac')) {
+    const printed = textFor.get(anchor.id);
+    if (!printed || !/^[0-9a-fOo:.\-\s]{12,17}$/i.test(printed.text.trim())) continue;
+    for (const barcode of barcodes.filter(b => !b.assignedTo && normalizeMac(b.data))) {
+      if (!conflicts.some(c => c.field === 'mac' && c.barcode.raw === barcode.data && c.ocr.raw === printed.text))
+        addConflict(anchor, barcode, printed, 'This decoded value has no confirmed field association. It differs from the printed MAC reading; identify the correct field before continuing.');
+    }
+  }
+  // Serial-only live/photo conflicts use observed character resemblance only
+  // to request review, never to assign a barcode or repair OCR automatically.
+  for (const anchor of anchors.filter(a => a.kind === 'serial')) {
+    const printed = textFor.get(anchor.id);
+    if (!printed || !serialValue(printed.text) || !/\d/.test(printed.text)) continue;
+    const text = comparable('serial', printed.text);
+    for (const barcode of barcodes.filter(b => !b.assignedTo && serialValue(b.data))) {
+      const decoded = comparable('serial', barcode.data);
+      if (text.length === decoded.length && [...text].filter((c,i) => c !== decoded[i]).length <= 2 &&
+          !conflicts.some(c => c.field === 'serial' && c.barcode.raw === barcode.data && c.ocr.raw === printed.text))
+        addConflict(anchor, barcode, printed, 'A similar decoded value differs from the printed serial reading. Its field association is unconfirmed; resolve it explicitly.');
+    }
+  }
+  return { macs: [...macs.values()], serials: [...serials.values()], barcodes, conflicts, ocrText: ocr?.text ?? '',
     ocrLines: ocr?.lines ?? [], anchors, ocrValues: values };
 }

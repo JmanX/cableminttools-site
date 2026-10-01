@@ -40,7 +40,7 @@ const {emptyBatch,cleanDraft}=require('../.test/src/deviceWorkflow.js');
  confirm();const confirmed=await first;
  assert.equal(syncFeedback(confirmed,feedbackQueue.read()).phase,'success');
  assert.ok(SYNC_SUCCESS_MS>=2000 && SYNC_SUCCESS_MS<=3000);
- assert.equal(syncFeedback(await feedbackQueue.sync(slowSave,async()=>[]),feedbackQueue.read()).message,'Everything is synced');
+ assert.equal(syncFeedback(await feedbackQueue.sync(slowSave,async()=>[]),feedbackQueue.read()).message,'No pending uploads. Use Sync Now to check the server.');
  await feedbackQueue.enqueue({...attempt,id:'failed-feedback'});
  const failure=await feedbackQueue.sync(async()=>{throw Error('Network request failed: offline');},async()=>[]);
  assert.equal(syncFeedback(failure,feedbackQueue.read()).phase,'failure');

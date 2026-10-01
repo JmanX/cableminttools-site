@@ -130,3 +130,11 @@ Phone checks: sign in with your existing account; create/select a test project; 
 - Native camera changes require a freshly compiled internal APK. The versioned delivery file is created by scripts/package-android.cjs after assembleRelease; its metadata must match app.json. See root RELEASES.md.
 
 The camera must appear as a source module (without the 📦 marker) in Gradle output. package.json forces expo-camera to build from source. The CI binary check rejects an APK without the custom zoom command names, even if Gradle itself succeeds.
+
+### v1.2.3 reliability field checks
+
+Account should report 1.2.3. A conflicting label (barcode 0C110533D733; OCR 00110533D733) must show both readings with sources, leave the conflicted field unselected, and prevent Continue/Save until explicit selection or manual confirmation. Verify editing a resolved value blocks saving again, serial-only omission works, and duplicate warnings still run on the chosen identifier. Existing cloud records are not automatically edited.
+
+Press Sync Now with zero queued records online: expect immediate spinner, disabled button, actual authenticated server read, green Synced ✓ plus Everything is synced — checked just now for three seconds, four counts and updated last-successful-check time. Repeat offline: expect red failure/retry and unchanged successful timestamp. An empty local queue is not evidence of server connectivity.
+
+Use a genuinely distant barcode that is initially undecodable. Expand Show scanner diagnostics: No potential barcode detected means ML Kit has supplied neither potential geometry nor a fresh suggestion; Potential barcode detected — no zoom requested includes the suppression reason; requested-but-not-applied produces a camera error and actual/requested ratios. Observe gradual zoom, then decode stop. Manual button/pinch must pause auto-zoom until a new capture/retake, which resets normal zoom. A barcode decoded at normal zoom must not be reported as an auto-zoom failure. Optical detection/suggestion thresholds and physical camera behavior still need phone testing.

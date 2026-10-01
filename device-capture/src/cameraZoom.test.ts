@@ -26,6 +26,9 @@ export async function runCameraZoomChecks(){
  driver.request(2);driver.dispose();const count=shown.length;
  resolve!({...state,zoom:2});await Promise.resolve();await Promise.resolve();await Promise.resolve();
  assert(shown.length===count,'Old camera acknowledgements must not affect a new capture');
+ const unapplied=new CameraZoom({getCableMintScannerState:async()=>({...state,zoom:1}),setCableMintZoom:async()=>({...state,zoom:1})},()=>{},e=>errors.push(e.message));
+ await unapplied.initialize();unapplied.request(2);await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ assert(unapplied.application==='not-applied'&&unapplied.actual===1&&errors.some(e=>e.includes('not applied')),'Camera acknowledgement with unchanged zoom must expose requested/not-applied failure');
  const unavailable=new CameraZoom({...api,getCableMintScannerState:async()=>({...state,ready:false})},()=>{},()=>{});
  let threw=false;try{await unavailable.initialize();}catch{threw=true;}
  assert(threw && !unavailable.ready,'Unavailable hardware must not expose UI-only zoom');
