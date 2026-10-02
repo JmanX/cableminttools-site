@@ -2,14 +2,20 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
-## 1.2.3 — October 1, 2026
+## 1.2.3 — October 2, 2026
 
-Android versionCode: **15**. Focused scanner accuracy and reliability release; native build verification pending.
+Android versionCode: **15**. Focused scanner accuracy and reliability release. Source commit `11116c7e810ef99389a007e7ff55db0c83c2fb73` passed [GitHub Actions run 36937982573](https://github.com/JmanX/cableminttools-site/actions/runs/36937982573) on October 1; APK downloaded and independently verified on October 2. Fresh dependency installation, TypeScript/regression checks, native camera source compilation, Android release assembly, versioned packaging and binary checks passed.
 
 - Original decoded barcode payloads are preserved. Formatting is normalized for comparison, without inventing OCR character corrections. Barcode/OCR disagreements show both sources and block Continue/Save until the technician explicitly chooses or confirms a correction. Edits invalidate a resolution when its selected value changes. Live decoded values still trigger conflict review if photo recognition fails; preview coordinates are never treated as photo geometry. Serial-only and multiple-barcode support and duplicate checks remain.
 - Sync Now shows immediate spinner/disabled state even for an empty journal, performs an authenticated server History read, refreshes all four upload counts and the durable last-check timestamp, then confirms in green for three seconds. An empty local queue alone never claims server connectivity; failures show red retry feedback. Manual checks serialize with deletion/refresh.
 - Small native change enables ML Kit 17.3.0 zoom suggestions alongside potential-barcode geometry. Suggestions use the existing acknowledged CameraX command with gradual 0.12× steps, stability/cooldown guards and a 4×/hardware cap. Decode/manual adjustment stops auto-zoom; capture/retake resets zoom. Expandable scanner diagnostics distinguish no potential barcode, detected/no request, and requested/not applied. Manual buttons and pinch are preserved.
 - Regression coverage includes exact 0C110533D733 / 00110533D733 disagreement, 0/O, C/0, 8/B, formatted equivalence, serial conflicts, live/photo mismatch, explicit resolution and edit invalidation; empty-queue server success/failure, timestamps/counts; suggestions without geometry, stale suggestions, already-decoded inputs, manual override/hardware limits, and a camera acknowledging an unapplied request.
+
+Delivery: [artifact 11198574951](https://github.com/JmanX/cableminttools-site/actions/runs/36937982573/artifacts/11198574951), copied without overwriting older builds to:
+
+`C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.2.3\CableMint-Device-Capture-v1.2.3.apk`
+
+Size: 137,692,474 bytes. SHA-256: `b3828ef115e4f40b47b55126312bd333854ef798878509c3f11cfcddfafb5f31` (matches CI). Actual manifest: package com.cableminttools.devicecapture.prototype, versionName 1.2.3, versionCode 15. DEX contains both acknowledged zoom commands and the ML Kit suggestion bridge; standalone JavaScript bundle and 32 bundled ML Kit asset entries are present.
 
 Known issues / remaining tests: A physical Android phone must verify the conflict UI with the supplied label, zero-record online/offline Sync Now feedback, and a genuinely distant undecodable barcode. Synthetic geometry tests are not ML Kit optical field tests. No potential detection or suggestion means no automatic zoom. Uploads remain foreground-only; installed photos remain temporary and are not uploaded. Prototype signing; internal testing only. Existing cloud records, website, schema, Dodo and Edge Functions are unchanged.
 
