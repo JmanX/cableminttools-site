@@ -1249,8 +1249,11 @@ window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;$('instal
 $('projectName').value=localStorage.getItem('cm_project_name')||'';
 $('projectName').addEventListener('input',e=>localStorage.setItem('cm_project_name',e.target.value));
 renderQuickLinks();
+const requestedTool=new URLSearchParams(window.location.search).get('tool');
 const lastTool=localStorage.getItem('cm_last_tool');
-if(lastTool&&toolNames[lastTool])openTool(lastTool,false);
+// Explicit deep links override the last locally selected tool without changing existing app navigation.
+if(requestedTool&&Object.prototype.hasOwnProperty.call(toolNames,requestedTool))openTool(requestedTool,false);
+else if(lastTool&&Object.prototype.hasOwnProperty.call(toolNames,lastTool))openTool(lastTool,false);
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 function syncOhmFields(){
   ['ohmV','ohmA','ohmR','ohmW'].forEach(id=>$(id).disabled=false);
