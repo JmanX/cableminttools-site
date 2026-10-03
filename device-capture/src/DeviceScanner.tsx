@@ -66,7 +66,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     const details={...automatic,currentZoom:state.zoom,frameAgeMs:state.frameAgeMs,frameSequence:state.sequence};
     setScannerDetails(JSON.stringify(details));
     console.info('[CableMint scanner] native automatic zoom',details);
-    if(automatic.application==='not-applied')setZoomError(automatic.status);
+    if(automatic.enabled && automatic.application==='not-applied')setZoomError(automatic.status);
   }
   const distance=(touches:readonly {pageX:number;pageY:number}[])=>touches.length>=2 ? Math.hypot(touches[0].pageX-touches[1].pageX,touches[0].pageY-touches[1].pageY) : 0;
   const camera = useRef<NativeZoomCamera>(null);

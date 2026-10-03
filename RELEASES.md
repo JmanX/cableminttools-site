@@ -4,7 +4,7 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.2.4 — October 2, 2026
 
-Android versionCode: **16**. Focused correction to v1.2.3 automatic zoom and resolved-conflict text. Build verification pending.
+Android versionCode: **17**. Focused correction to v1.2.3 automatic zoom and resolved-conflict text. Build 16 passed native controller tests; build 17 also suppresses an intentional canceled automatic request from becoming a red error after manual override. Final release verification pending.
 
 - ML Kit potential-barcode detection and zoom suggestions remain enabled with bundled barcode-scanning 17.3.0. Automatic decisions now run beside ML Kit in Kotlin, directly invoking the same acknowledged CameraX operation as manual zoom. The former callback only exported suggestions and returned false; JavaScript polling, suggestion expiry and repeated observation gates made that handoff fragile. The recording confirms no automatic movement at 1× but its collapsed diagnostics cannot identify which gate stopped that phone.
 - Small centered undecoded barcodes, including thin wide 1D codes, trigger 0.12× steps with 650ms cooldown, hardware/4× cap and native acknowledgement. ML Kit suggestions directly request a bounded step without waiting for JavaScript polls. Decode, photo capture and manual button/pinch adjustment stop automatic requests; new capture/retake resets normal zoom and re-arms scanning.
