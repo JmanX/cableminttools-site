@@ -1,0 +1,24 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.cableminttools.devicecapture.ocr'
+version = '0.1.0'
+
+android {
+  namespace "com.cableminttools.devicecapture.ocr"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+  // Bundled Latin-script model: OCR is available on first launch without a download.
+  implementation 'com.google.mlkit:text-recognition:16.0.1'
+}

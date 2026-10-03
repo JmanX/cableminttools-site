@@ -1,0 +1,53 @@
+name: Device Capture Android prototype
+
+on:
+  pull_request:
+    paths:
+      - 'device-capture/**'
+      - '.github/workflows/device-capture-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-prototype-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: device-capture
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: device-capture/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install dependencies
+        run: npm ci
+      - name: Check TypeScript and label parsing
+        run: |
+          npm run typecheck
+          npm run test:recognition
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+      - name: Test native automatic zoom without manual input
+        run: ./gradlew :expo-camera:testReleaseUnitTest --no-daemon
+        working-directory: device-capture/android
+      - name: Build standalone prototype APK
+        run: ./gradlew :app:assembleRelease --no-daemon
+        working-directory: device-capture/android
+      - name: Package versioned APK
+        id: package
+        run: node scripts/package-android.cjs
+      - name: Verify APK version and native zoom commands
+        run: python3 scripts/verify-android-apk.py "android/app/build/outputs/apk/release/${{ steps.package.outputs.filename }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CableMint-Device-Capture-v${{ steps.package.outputs.version }}
+          path: ${{ steps.package.outputs.path }}
+          if-no-files-found: error
