@@ -37,8 +37,8 @@ with zipfile.ZipFile(apk) as z:
   p+=size
  names=z.namelist()
  dex=[z.read(n) for n in names if n.endswith('.dex')]
- commands={key:any(key.encode() in blob for blob in dex) for key in ('getCableMintScannerState','setCableMintZoom')}
- suggestions={key:any(key.encode() in blob for blob in dex) for key in ('ZoomSuggestionOptions','suggestedZoom','suggestionSequence')}
+ commands={key:any(key.encode() in blob for blob in dex) for key in ('getCableMintScannerState','setCableMintZoom','setCableMintAutoZoom','pauseCableMintAutoZoom')}
+ suggestions={key:any(key.encode() in blob for blob in dex) for key in ('ZoomSuggestionOptions','suggestedZoom','suggestionSequence','CableMintAutoZoom','applyCableMintZoom','autoZoom')}
  result={'filename':apk.name,'bytes':apk.stat().st_size,'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'package':manifest.get('package'),'versionName':manifest.get('versionName'),'versionCode':manifest.get('versionCode'),'nativeZoomCommands':commands,'nativeZoomSuggestions':suggestions,'javascriptBundle':'assets/index.android.bundle' in names,'mlkitModelAssets':sum('mlkit' in n.lower() for n in names)}
  print(json.dumps(result,indent=2))
  config=json.loads((Path(__file__).resolve().parents[1]/'app.json').read_text())['expo']

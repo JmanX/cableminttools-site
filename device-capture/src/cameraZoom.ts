@@ -1,6 +1,7 @@
 import type { BarcodeFrame } from './smartZoom';
-export type NativeScannerState={ready:boolean;zoom:number;minZoom:number;maxZoom:number;sequence:number;frame:BarcodeFrame|Record<string,never>};
-export interface NativeZoomApi {getCableMintScannerState():Promise<NativeScannerState>;setCableMintZoom(ratio:number):Promise<NativeScannerState>}
+export type NativeAutoZoomState={enabled:boolean;manual:boolean;decoded:boolean;status:string;application:string;requestedZoom:number;potentialCount:number;boxWidth:number;boxHeight:number;suggestedZoom:number;suggestionSequence:number;frameCount:number;requestCount:number;appliedCount:number};
+export type NativeScannerState={ready:boolean;zoom:number;minZoom:number;maxZoom:number;sequence:number;frame:BarcodeFrame|Record<string,never>;autoZoom?:NativeAutoZoomState;frameAgeMs?:number};
+export interface NativeZoomApi {getCableMintScannerState():Promise<NativeScannerState>;setCableMintZoom(ratio:number):Promise<NativeScannerState>;setCableMintAutoZoom(enabled:boolean):Promise<NativeScannerState>;pauseCableMintAutoZoom():Promise<NativeScannerState>}
 /** Serializes/coalesces pinch commands. Display values only after CameraX acknowledgement. */
 export class CameraZoom {
  min=1;max=1;actual=1;requested=1;ready=false;busy=false;
@@ -11,7 +12,7 @@ export class CameraZoom {
   if(!s.ready || !Number.isFinite(s.zoom) || !Number.isFinite(s.maxZoom) || !Number.isFinite(s.minZoom) || s.minZoom<=0 || s.maxZoom<s.minZoom)throw Error('Camera did not report a supported zoom range.');
   this.min=s.minZoom;this.max=s.maxZoom;this.actual=s.zoom;this.changed(s);
  }
- async initialize(){
+ async initialize(automatic=false){
   const limits=await this.api.getCableMintScannerState();
   if(!this.active)return;
   this.accept(limits);
@@ -19,7 +20,10 @@ export class CameraZoom {
   this.requested=normal;
   const result=await this.api.setCableMintZoom(normal);
   if(!this.active)return;
-  this.accept(result);this.ready=true;
+  this.accept(result);
+  const enabled=await this.api.setCableMintAutoZoom(automatic);
+  if(!this.active)return;
+  this.accept(enabled);this.ready=true;
   this.log({currentZoom:this.actual,requestedZoom:normal,minZoom:this.min,maxZoom:this.max,reason:'capture reset'});
  }
  request(ratio:number){
@@ -47,6 +51,15 @@ export class CameraZoom {
    }
   }finally{this.busy=false;}
  }
- async poll(){return this.api.getCableMintScannerState();}
+ async poll(){
+  const state=await this.api.getCableMintScannerState();
+  if(this.active){
+   this.accept(state);
+   if(!this.busy && state.autoZoom?.enabled){this.requested=state.autoZoom.requestedZoom;this.application=state.autoZoom.application as typeof this.application;}
+  }
+  return state;
+ }
+ async pauseAutomatic(){return this.api.pauseCableMintAutoZoom();}
+ async stopAutomatic(){return this.api.setCableMintAutoZoom(false);}
  dispose(){this.active=false;this.ready=false;this.pending=null;}
 }

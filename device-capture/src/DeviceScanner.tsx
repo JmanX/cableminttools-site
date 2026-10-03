@@ -8,9 +8,9 @@ import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import CableMintOcr from '../modules/cablemint-ocr/src/CableMintOcrModule';
 import { analyzeScan, normalizeMac, unresolvedConflicts, resolveField, type ConflictResolution, type Field, type ScanReview, type ValueCandidate, type BarcodeCandidate } from './recognition';
-import { CameraZoom } from './cameraZoom';
+import { CameraZoom, type NativeScannerState } from './cameraZoom';
 import { NativeZoomCamera } from './NativeZoomCamera';
-import { SmartZoom, type BarcodeFrame } from './smartZoom';
+import { SmartZoom } from './smartZoom';
 import { withTimeout } from './withTimeout';
 import { isAppCachePhoto } from './photoPrivacy';
 
@@ -53,23 +53,20 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [scannerDetails,setScannerDetails]=useState('');
   function applyZoom(ratio:number){zoomDriver.current?.request(ratio);}
   function resetZoom(){zoomControl.current.reset();setZoomReady(false);setZoomError('');setScannerStatus('Waiting for scanner frames');setScannerDetails('');}
-  function onBarcodeFrame(frame:BarcodeFrame){
-    const now=Date.now();
+  function onScannerState(state:NativeScannerState){
     if(stage!=='camera'||captureInProgress.current)return;
-    const decodedBefore=zoomControl.current.decoded;
-    const result=zoomControl.current.frame(frame,previewSize.current,now);
-    if(__DEV__ && frame.decodedCount>0 && !decodedBefore)console.info('[CableMint scanner] barcode decode success',{decodedCount:frame.decodedCount,currentZoom:zoomDriver.current?.actual});
-    if(result || frame.decodedCount>0 || now-lastZoomLog.current>1500){
-      setScannerStatus(zoomControl.current.status);
-      setScannerDetails(JSON.stringify({potential:zoomControl.current.potentialCount,boxSize:zoomControl.current.boxSize,suggestedZoom:frame.suggestedZoom,suggestionSequence:frame.suggestionSequence,currentZoom:zoomDriver.current?.actual,requestedZoom:zoomDriver.current?.requested,cameraApplication:zoomDriver.current?.application}));
-    }
-    if(result){
-      applyZoom(result.ratio);
-      if(__DEV__)console.info('[CableMint scanner] auto-zoom trigger',{boundingBoxSize:result.size,requestedZoom:result.ratio,currentZoom:zoomDriver.current?.actual});
-    }else if(now-lastZoomLog.current>1500){
-      lastZoomLog.current=now;
-      if(__DEV__)console.info('[CableMint scanner] barcode frame',{status:zoomControl.current.status,potentialCount:zoomControl.current.potentialCount,suggestedZoom:frame.suggestedZoom,suggestionSequence:frame.suggestionSequence,decodedCount:frame.decodedCount,decodeFailed:frame.failed,boxes:frame.barcodes.map(b=>({width:b.right-b.left,height:b.bottom-b.top})),currentZoom:zoomDriver.current?.actual});
-    }
+    const automatic=state.autoZoom;
+    if(!automatic){setScannerStatus('Native automatic-zoom diagnostics unavailable');return;}
+    const now=Date.now();
+    zoomControl.current.manual=automatic.manual;zoomControl.current.decoded=automatic.decoded;
+    if(now-lastZoomLog.current<750)return;
+    lastZoomLog.current=now;
+    const status=state.frameAgeMs===-1 ? 'No scanner frame received yet' : (state.frameAgeMs ?? 0)>3000 ? 'Scanner frames stalled — no new detection' : automatic.status;
+    setScannerStatus(status);
+    const details={...automatic,currentZoom:state.zoom,frameAgeMs:state.frameAgeMs,frameSequence:state.sequence};
+    setScannerDetails(JSON.stringify(details));
+    console.info('[CableMint scanner] native automatic zoom',details);
+    if(automatic.application==='not-applied')setZoomError(automatic.status);
   }
   const distance=(touches:readonly {pageX:number;pageY:number}[])=>touches.length>=2 ? Math.hypot(touches[0].pageX-touches[1].pageX,touches[0].pageY-touches[1].pageY) : 0;
   const camera = useRef<NativeZoomCamera>(null);
@@ -85,27 +82,23 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [cameraReady, setCameraReady] = useState(false);
   useEffect(()=>{
     if(!cameraReady || (stage!=='camera' && stage!=='installed') || !camera.current)return;
-    let cancelled=false,lastSequence=-1;
+    let cancelled=false;
     const driver=new CameraZoom(camera.current,state=>{
       if(cancelled)return;
       zoomControl.current.min=state.minZoom;zoomControl.current.max=state.maxZoom;
       zoomControl.current.ratio=state.zoom;setZoomRatio(state.zoom);
-    },failure=>{if(!cancelled)setZoomError(failure.message);},data=>{if(__DEV__)console.info('[CableMint scanner] camera zoom',data);});
+    },failure=>{if(!cancelled)setZoomError(failure.message);},data=>{console.info('[CableMint scanner] camera zoom',data);});
     zoomDriver.current=driver;zoomControl.current.reset();setZoomReady(false);setZoomError('');
     let timer:ReturnType<typeof setTimeout>|undefined;
     async function poll(){
       try{
         const state=await driver.poll();
         if(cancelled)return;
-        const frame=state.frame as BarcodeFrame;
-        if(state.sequence!==lastSequence && Array.isArray(frame.barcodes)){
-          lastSequence=state.sequence;
-          if(!driver.busy)onBarcodeFrame({...frame,maxZoom:state.maxZoom});
-        }
+        onScannerState(state);
       }catch(failure){if(!cancelled)setZoomError('Scanner feedback unavailable: '+(failure as Error).message);}
       if(!cancelled)timer=setTimeout(()=>{void poll();},200);
     }
-    void driver.initialize().then(()=>{if(!cancelled){setZoomReady(true);void poll();}}).catch(failure=>{if(!cancelled)setZoomError((failure as Error).message);});
+    void driver.initialize(stage==='camera').then(()=>{if(!cancelled){setZoomReady(true);void poll();}}).catch(failure=>{if(!cancelled)setZoomError((failure as Error).message);});
     return()=>{cancelled=true;driver.dispose();if(timer)clearTimeout(timer);if(zoomDriver.current===driver)zoomDriver.current=null;};
   },[cameraReady,stage]);
   const [review, setReview] = useState<ScanReview | null>(null);
@@ -143,8 +136,8 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   useEffect(() => { const sub = BackHandler.addEventListener('hardwareBackPress', () => { back(); return true; }); return () => sub.remove(); }, [stage, busy, pendingAttempt]);
 
   function onBarcodeScanned(result: BarcodeScanningResult) {
-    if (captureInProgress.current) return;
-    if(__DEV__ && !zoomControl.current.decoded)console.info('[CableMint scanner] barcode decode success',{currentZoom:zoomDriver.current?.actual});
+    if (captureInProgress.current || !result.data.trim()) return;
+    if(!zoomControl.current.decoded)console.info('[CableMint scanner] barcode decode success',{currentZoom:zoomDriver.current?.actual});
     zoomControl.current.decoded=true;setScannerStatus('Barcode decoded — auto-zoom stopped');
     const key = `${result.type}:${result.data.trim()}`;
     if (!result.data.trim() || liveBarcodes.current.has(key)) return;
@@ -263,6 +256,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     let photoUri: string | undefined;
     try {
       setCaptureStatus('Taking photo…');
+      await withTimeout(zoomDriver.current?.stopAutomatic().then(()=>{}) ?? Promise.resolve(),3000,'Camera zoom did not stop for photo capture.');
       const photo = await withTimeout(camera.current.takePictureAsync({ quality: 1, skipProcessing: false }),
         10000, 'Photo capture timed out. Review the live codes or try again.',
         latePhoto => { if (latePhoto?.uri) removePhoto(latePhoto.uri); });
@@ -272,6 +266,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Capture failed. Please try again.');
       if (liveBarcodes.current.size) showReview(analyzeScan(null, liveValues()));
+      else if (!zoomControl.current.manual && !zoomControl.current.decoded) {
+        void camera.current?.setCableMintAutoZoom(true).catch(failure=>setZoomError((failure as Error).message));
+      }
     } finally {
       if (photoUri) {
         removePhoto(photoUri);
@@ -381,7 +378,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
           barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }} onBarcodeScanned={stage==='camera' ? onBarcodeScanned : undefined}
           onCameraReady={() => setCameraReady(true)} onMountError={event => setError(event.message)} />
         <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2} onMoveShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2}
-          onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomDriver.current?.requested ?? zoomControl.current.ratio};zoomControl.current.manual=true;}}
+          onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomDriver.current?.requested ?? zoomControl.current.ratio};zoomControl.current.manual=true;void zoomDriver.current?.pauseAutomatic().catch(failure=>setZoomError((failure as Error).message));}}
           onResponderMove={e=>{const d=distance(e.nativeEvent.touches);if(d>0&&pinch.current.distance>0)applyZoom(zoomControl.current.manualZoom(pinch.current.ratio*d/pinch.current.distance,Date.now()));}}
           onResponderRelease={()=>zoomControl.current.endManual(Date.now())} onResponderTerminate={()=>zoomControl.current.endManual(Date.now())}/>
         <View pointerEvents="none" style={styles.guide} />
@@ -417,7 +414,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
       {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
       {!!review?.conflicts.length && <View style={[styles.section, {backgroundColor:'#FFF1EE',borderWidth:2,borderColor:'#B32626'}]}>
         <Text accessibilityRole="alert" style={styles.error}>{unresolved.length ? 'Identifier conflict — action required' : 'Conflict resolved — verify your selected value'}</Text>
-        <Text style={styles.body}>Saving is blocked until you explicitly choose a reading or confirm a manual correction.</Text>
+        {unresolved.length>0 && <Text style={styles.body}>Saving is blocked until you explicitly choose a reading or confirm a manual correction.</Text>}
         {review.conflicts.map(conflict => <View key={conflict.id} style={styles.codeRow}>
           <Text style={styles.label}>{conflict.field.toUpperCase()} · {conflict.reason}</Text>
           <Text selectable style={styles.candidateValue}>{conflict.barcode.raw}</Text><Text style={styles.candidateMeta}>{conflict.barcode.source}</Text>

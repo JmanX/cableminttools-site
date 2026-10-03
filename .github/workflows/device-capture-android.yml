@@ -35,6 +35,9 @@ jobs:
           npm run test:recognition
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
+      - name: Test native automatic zoom without manual input
+        run: ./gradlew :expo-camera:testReleaseUnitTest --no-daemon
+        working-directory: device-capture/android
       - name: Build standalone prototype APK
         run: ./gradlew :app:assembleRelease --no-daemon
         working-directory: device-capture/android
