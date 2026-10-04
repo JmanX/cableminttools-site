@@ -36,9 +36,9 @@ function CandidateList({ title, candidates, onChoose }: { title: string; candida
   </View>;
 }
 
-export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, onExit, onDevices, savedMessage, batchStorageError, active=true, onBusyChange, saveFeedback }: {
+export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, onExit, onDevices, savedMessage, batchStorageError, active=true, onBusyChange, saveFeedback, onCaptureNext }: {
   project: Project; userId: string; batch: Batch; onSave: (attempt: SaveAttempt) => Promise<string>;
-  onExit: () => void; onDevices: () => void; savedMessage: string; batchStorageError: string; active?:boolean; onBusyChange?:(busy:boolean)=>void; saveFeedback?:ReactNode;
+  onCaptureNext: () => void; onExit: () => void; onDevices: () => void; savedMessage: string; batchStorageError: string; active?:boolean; onBusyChange?:(busy:boolean)=>void; saveFeedback?:ReactNode;
   onBatchChange: (field: keyof Batch, value: string | boolean) => void;
 }) {
   const zoomControl=useRef(new SmartZoom());
@@ -194,6 +194,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
       Keyboard.dismiss();
       const nextLocation = await onSave(attempt);
       scanAgain(nextLocation);
+      onCaptureNext();
     } catch (failure) {
       if (failure instanceof DuplicateDeviceError) setDuplicates(failure.records);
       if (!pendingAttempt && failure instanceof SavePreflightError) setPendingAttempt(null);
@@ -399,7 +400,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
       </ScrollView>
     </View>:<ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
       <Text style={ui.heading}>{stage==='review'?'Verify identification':'Where is this device?'}</Text>
-      <Text style={ui.muted}>{stage==='review'?'Check the selected values against the equipment label.':'Your batch location carries forward to the next capture.'}</Text>
+      <Text style={ui.muted}>{stage==='review'?'Check the selected values against the equipment label.':'Building and Floor / Area carry forward. Confirm this device’s location.'}</Text>
       {stage==='review'&&<IdentifierPanel mac={mac} serial={serial} onMac={chooseMac} onSerial={chooseSerial} disabled={busy||!!pendingAttempt}/>}
       <ConflictPanel conflicts={review?.conflicts??[]} unresolved={unresolved} mac={mac} serial={serial} onResolve={resolveConflict} disabled={busy||!!pendingAttempt}/>
       {!!error&&<Text accessibilityRole="alert" style={ui.error}>{readableError(error)}</Text>}{!!cleanupWarning&&<Text style={ui.error}>{cleanupWarning}</Text>}
@@ -407,7 +408,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
         <View style={ui.card}><View style={ui.row}><Icon name="location"/><Text style={ui.sectionTitle}>Installation location</Text></View>
           <View style={[ui.row,{alignItems:'flex-start'}]}>{([['building','Building',100],['floor_area','Floor / Area',100]] as const).map(([field,label,limit])=><FieldInput key={field} label={label} value={batch[field]} maxLength={limit} disabled={busy||!!pendingAttempt} onChange={value=>{onBatchChange(field,value);setVerified(false);}}/>)}</View>
           <FieldInput label="Unit / Room / Location" value={installationLocation} maxLength={120} placeholder="e.g. Room 204" disabled={busy||!!pendingAttempt} onChange={value=>{setInstallationLocation(value);setVerified(false);setConfirmationError('');}}/>
-          <Text style={ui.caption}>{batch.autoAdvance?'Next save advances the final room number.':'This location is remembered for the next device.'}</Text>
+          <Text style={ui.caption}>{batch.autoAdvance?'Numeric rooms advance; other locations clear after saving.':'Unit / Room clears after saving this device.'}</Text>
         </View>
         <View style={ui.card}><Text style={ui.eyebrow}>READY TO SAVE</Text><Text selectable style={ui.identifier}>{mac||'Serial-only device'}</Text><Text selectable style={ui.body}>{serial||'No serial supplied'}</Text><Text style={ui.muted}>{batch.device_type} · {[batch.building,batch.floor_area,installationLocation].filter(Boolean).join(' / ')||'No location set'}</Text>
           <View style={ui.row}><Text style={[ui.label,ui.flex]}>I checked identifiers and location</Text><Switch accessibilityLabel="Technician verified device fields" value={verified} disabled={busy||!!pendingAttempt} trackColor={{true:GREEN}} onValueChange={setVerified}/></View>

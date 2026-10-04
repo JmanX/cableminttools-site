@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { supabase } from './supabase';
 import { createProject, DuplicateDeviceError, ProjectCreateError, deleteDevice, loadDevices, loadHistory, loadProjects, readPro, saveDevice } from './deviceService';
-import { batchStorageKey, emptyBatch, nextUnit, duplicateFields, restoreBatch, type Batch, type Device, type Project, type SaveAttempt } from './deviceWorkflow';
+import { batchStorageKey, emptyBatch, duplicateFields, restoreBatch, type Batch, type Device, type Project, type SaveAttempt } from './deviceWorkflow';
 import { previousScreen, searchHistory, type Screen } from './historyModel';
 import { DeviceScanner } from './DeviceScanner';
 import { Button, colors, Field, ui } from './ui';
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader, AdvancedPanel, BottomNavigation, CaptureStepHeader, ConfirmationPanel, DeviceHistoryRow, DeviceTypeCard, EmptyState, ProjectCard, SectionHeading, StatusBadge, type Tab } from './components';
 import { Icon } from './Icon';
 import { latestCapture, queueStatus, readableError, syncBadge } from './presentation';
+import { nextCaptureBatch, completedCaptureScreens } from './captureNext';
 
 const TYPES = ['WAP', 'Intercom', 'Network Switch', 'Security Camera', 'Access Control', 'Fiber / Other'];
 export function FieldWorkspace({ session }: { session: Session }) {
@@ -176,8 +177,8 @@ export function FieldWorkspace({ session }: { session: Session }) {
       const durable=previous?.attempt ?? {...attempt,captured_at:new Date().toISOString()};
       await queue.current.enqueue(durable);
       // Publish locally before any network request. The worker alone can mark Uploaded.
-      const unit = nextUnit(attempt.draft.unit_location, batch.autoAdvance);
-      if(alive.current){setLastSavedId(durable.id);setBatch(b=>({...b,building:attempt.draft.building,floor_area:attempt.draft.floor_area,unit_location:unit}));setSavedMessage('Saved on this phone. Pending upload; see Sync & Uploads for server confirmation.');}
+      const unit = nextCaptureBatch(batch, durable.draft).unit_location;
+      if(alive.current){setLastSavedId(durable.id);setBatch(b=>nextCaptureBatch(b,durable.draft));setSavedMessage('Saved on this phone. Pending upload; see Sync & Uploads for server confirmation.');}
       void syncQueue();
       return unit;
     } finally { op.current = false; }
@@ -200,6 +201,12 @@ export function FieldWorkspace({ session }: { session: Session }) {
     try { const result = await supabase.auth.signOut({ scope: 'local' }); if (result.error) throw result.error; }
     catch (failure) { if (alive.current) setError((failure as Error).message); }
     finally { op.current = false; if (alive.current) setBusy(false); }
+  }
+  function startCapture(type:string){
+    setBatch(b=>({...b,device_type:type}));setLastSavedId('');push('scan');
+  }
+  function captureNext(){
+    setScanMounted(false);setScannerBusy(false);setStack(completedCaptureScreens);
   }
   const counts=uploadCounts(journal);
   const status=syncBadge(syncPhase,journal,serverFresh);
@@ -224,7 +231,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
   function recordRow(d:Device){return <DeviceHistoryRow key={d.id} device={d} project={projects.find(p=>p.id===d.project_id)?.name??'Project'} status={queueStatus(localItems.find(i=>i.attempt.id===d.id)?.state??'uploaded')} onPress={()=>{setSelectedDevice(d);if(screen!=='history'){setHistoryProject(d.project_id);push('history');}}}/>;}
   return <SafeAreaView edges={['top','bottom']} style={[ui.page,{backgroundColor:colors.blue}]}><StatusBar barStyle="light-content" backgroundColor={colors.blue}/>
     {scanMounted&&project&&batchReady===key&&<DeviceScanner project={project} userId={userId} batch={batch} active={screen==='scan'} onBusyChange={setScannerBusy} saveFeedback={saveFeedback}
-      onSave={save} onBatchChange={(field,value)=>setBatch(b=>({...b,[field]:value}))}
+      onSave={save} onCaptureNext={captureNext} onBatchChange={(field,value)=>setBatch(b=>({...b,[field]:value}))}
       onExit={()=>{setScanMounted(false);setStack(s=>{const next=s.filter(item=>item!=='scan');return next.length?next:['projects'];});}} onDevices={()=>{setHistoryProject(project.id);push('history');}} savedMessage="" batchStorageError={storageError}/>}
     {screen!=='scan'&&<View style={ui.page}>
     <AppHeader title={title} subtitle={subtitles[screen]} status={status} onSync={()=>push('sync')} onBack={stack.length>1?()=>{if(selectedDevice)setSelectedDevice(null);else back();}:undefined} disabled={busy}/>
@@ -261,9 +268,10 @@ export function FieldWorkspace({ session }: { session: Session }) {
         <SectionHeading title="Recent captures" action="View History" onPress={()=>{setHistoryProject(project.id);push('history');}}/>
         {projectDevices.slice(0,3).map(recordRow)}{!projectDevices.length&&<EmptyState icon="capture" title="Ready to capture" description="Verified devices will appear here after saving."/>}
       </>:screen==='types'&&project?<>
+        {saveFeedback}
         <Text style={ui.heading}>What are you capturing?</Text><Text style={ui.muted}>MAC and serial labels are supported. Choose the equipment category.</Text>
-        {TYPES.map(type=><DeviceTypeCard key={type} type={type} description={type==='WAP'?'Wireless access point':type==='Security Camera'?'IP camera · MAC or serial':type==='Network Switch'?'Network infrastructure':type==='Access Control'?'Reader or controller':type==='Intercom'?'Entry and communication':'Fiber equipment or other label'} disabled={batchReady!==key} onPress={()=>{setBatch(b=>({...b,device_type:type}));push('scan');}}/>)}
-        <View style={ui.card}><Field label="Custom device type" placeholder="Equipment category" value={batch.device_type} maxLength={80} disabled={batchReady!==key} onChange={device_type=>setBatch(b=>({...b,device_type}))}/><Button title="Capture This Type" secondary disabled={!batch.device_type.trim()||batchReady!==key} onPress={()=>push('scan')}/></View>
+        {TYPES.map(type=><DeviceTypeCard key={type} type={type} description={type==='WAP'?'Wireless access point':type==='Security Camera'?'IP camera · MAC or serial':type==='Network Switch'?'Network infrastructure':type==='Access Control'?'Reader or controller':type==='Intercom'?'Entry and communication':'Fiber equipment or other label'} disabled={batchReady!==key} onPress={()=>startCapture(type)}/>)}
+        <View style={ui.card}><Field label="Custom device type" placeholder="Equipment category" value={batch.device_type} maxLength={80} disabled={batchReady!==key} onChange={device_type=>setBatch(b=>({...b,device_type}))}/><Button title="Capture This Type" secondary disabled={!batch.device_type.trim()||batchReady!==key} onPress={()=>startCapture(batch.device_type)}/></View>
       </>:screen==='history'?<>
         {selectedDevice?<>
           <Button title="Back to History" icon="back" secondary onPress={()=>setSelectedDevice(null)}/>

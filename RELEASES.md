@@ -2,6 +2,19 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
+## 1.3.1 — October 4, 2026
+
+Android versionCode: **20**. Focused Capture Next workflow update from the user-approved stable v1.3.0 UI. Local checks and Android generation passed; native compilation and delivery pending.
+
+- Save & Capture Next returns directly to What are you capturing? / Device Type, retaining the project. Choose a different type and proceed directly to Scan.
+- Completed identifiers, OCR/barcode candidates, verification/conflict state, diagnostics, device fields and zoom reset for each next capture. Manufacturer/Model/type clear.
+- Building / Floor / Area remain. Unit / Room clears unless the existing explicit auto-advance creates a different numeric location; nonnumeric/unincrementable locations clear.
+- Durable local-save and server-confirmed status remain distinct, with confirmation on the Device Type screen. Existing finish/Back navigation remains.
+- Local TypeScript and all existing recognition/service/auth/queue/sync/manual zoom regressions pass. New tests exercise routing/reset/context and two different-type records through the real queue with synthetic server acknowledgement. Actual screens passed WAP gallery/conflict resolution → save → Type → Intercom serial-only → save → Type, fresh 1× zoom/empty diagnostics, retained Building/Floor, cleared Room and both History entries.
+- No visual redesign, native scanner/auto-zoom policy, recognition, sync/Supabase service, production website, schema, Dodo or Edge Function changes.
+
+Known issues / remaining tests: Physical Android consecutive-capture test with real labels and live Supabase/website History is still required. Browser/native test adapters do not prove optical hardware behavior or live connectivity. Existing foreground-only uploads, temporary/not-uploaded installed photos and internal prototype signing remain.
+
 ## 1.3.0 — October 4, 2026
 
 Android versionCode: **19**. UI/workflow overhaul from the user-confirmed stable v1.2.5 scanner. Native compilation, regression gates, release assembly and independent APK verification passed.

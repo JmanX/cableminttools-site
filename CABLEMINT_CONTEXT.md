@@ -1,6 +1,6 @@
 # CableMint Device Capture: technical context
 
-**Status:** The user confirms v1.2.5 is field-stable: automatic/manual zoom/reset, MAC/serial recognition and conflict handling, serial-only capture, projects, Supabase save/website visibility, server History/delete, duplicates, gallery, flashlight and sync feedback. This confirmation supersedes the earlier pending physical-test notes. v1.3.0 is a UI/workflow overhaul on that stable implementation; native recognition/zoom, queue and backend services are unchanged. Version 1.3.0 / Android versionCode 19. Updated October 4, 2026. Native release build, twelve native tests, release assembly and independent binary verification passed; final v1.3.0 phone smoke test is required.
+**Status:** The user confirms the v1.2.5 scanner/integrations are field-stable and the v1.3.0 UI is approved/stable. v1.3.1 is a focused Capture Next navigation/reset change on that implementation; native recognition/zoom, sync queue and backend services are unchanged. Version 1.3.1 / Android versionCode 20. Updated October 4, 2026. Local regression/UI checks and Android generation passed; native release build and APK verification pending.
 
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
@@ -284,3 +284,17 @@ Downloaded artifact 11305744745 independently confirms package com.cableminttool
 Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.0\CableMint-Device-Capture-v1.3.0.apk`
 
 Size: 145,838,356 bytes. SHA-256: `1ad8023a0af43b749358b3ae35ccef954845873a83198041fbe901cb343c702f` (matches CI). Older versioned APKs are preserved.
+
+
+## v1.3.1 Capture Next decisions — October 4, 2026
+
+Save & Capture Next now returns directly to Device Type in the same project, after the unchanged queue confirms a durable local save. The type screen displays that exact saved record's Pending/Syncing/Failed or server-confirmed Synced state; returning to Type does not claim the upload succeeded. A failed local enqueue leaves the original capture available for retry.
+
+- Completed MAC/serial, raw barcode/OCR candidates, conflict resolution, verification, photos, errors, diagnostics, pending save attempt and camera state are cleared using the existing reset and a fresh scanner mount. Device Type, Manufacturer and Model clear. Native initialization resets zoom to 1× and re-arms the existing automatic scanner.
+- Building and Floor / Area persist per project. Unit / Room / Location clears by default. The existing explicit auto-advance option carries only a newly incremented numeric location; unincrementable/non-numeric locations clear.
+- The next type selection opens Scan directly. Completion removes stale scan routes and clears the parent's scanner-busy state; Back from Device Type still exits to the project overview. Existing tabs/capture-resume behavior is retained.
+- Tests cover type routing/Back, retained context, clear equipment fields, default/explicit advance/overflow locations, immutable completed drafts, serial-only second capture, independent identifiers and two acknowledged History records through the real durable queue with a synthetic server.
+- Actual production screens passed a browser preview with synthetic adapters: WAP gallery conflict → explicit barcode choice → local save/confirmed upload → Device Type → Intercom at 1× with empty diagnostics → serial-only scan → retained Building/Floor and empty Room → second save → Device Type → Back/History with both correct records.
+- v1.3.0 visual design, native scanner/automatic/manual/pinch zoom, recognition, duplicate checks, authenticated services and synchronization are unchanged. The October 4 read-only integration contract and user-confirmed working v1.3.0 behavior remain applicable. No website/schema/Dodo/Edge Function/cloud-record modifications.
+
+See device-capture/CAPTURE_NEXT_V1.3.1.md for regression scope and phone follow-up. Native build and versioned delivery pending.
