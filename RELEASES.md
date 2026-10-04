@@ -4,7 +4,7 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.3.0 — October 4, 2026
 
-Android versionCode: **19**. UI/workflow overhaul from the user-confirmed stable v1.2.5 scanner. Native release build pending.
+Android versionCode: **19**. UI/workflow overhaul from the user-confirmed stable v1.2.5 scanner. Native compilation, regression gates, release assembly and independent APK verification passed.
 
 - Original CableMint charcoal/green design system, shared components and line icons; approved logo unchanged. High-contrast controls, 48px touch targets and safe-area-aware persistent Projects / History / Capture / Tasks / Account navigation.
 - Field-job project cards, project overview with real counts/recent captures, concise type selection and remembered batch/location settings.
@@ -13,7 +13,13 @@ Android versionCode: **19**. UI/workflow overhaul from the user-confirmed stable
 - Compact searchable/filterable History and record details; app-wide sync badges and dedicated upload screen. Local-save confirmation is distinct from server-confirmed save. Account and honest Tasks empty state match the new shell.
 - Local TypeScript/core regressions and presentation-status tests pass. Actual production screens were exercised in a browser using synthetic camera/gallery/OCR/storage/server adapters at 360/390-point widths: source conflict/resolve, serial-only capture, manual zoom/torch controls, tab resume, location/save-next/reset, History formatting/search, empty-queue spinner/success/failure/retry. See UI_V1.3.0.md.
 
-Delivery target: CableMint-Device-Capture-v1.3.0.apk. Preserve all earlier versioned APKs.
+Source aff4a87bdb385600a8e78449228d328eff10b941 passed [GitHub Actions run 37209055014](https://github.com/JmanX/cableminttools-site/actions/runs/37209055014) / job 111456289183. TypeScript, all recognition/service/auth/queue/sync/manual zoom regressions, fresh Android generation, twelve native policy/CameraControl tests, native release assembly and binary gates passed. Native tests logged independent 1.12×/1.24× requests and actual acknowledgements with a camera test double; the physical Android smoke checklist remains pending.
+
+Downloaded artifact 11305744745 independently confirms package com.cableminttools.devicecapture.prototype, versionName 1.3.0 / versionCode 19, native zoom commands/suggestions, shared CameraControl operation, SVG/safe-area packages, redesigned UI and standalone JS with 32 ML Kit assets. Synthetic development-preview identifiers/labels are absent from the production bundle.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.0\CableMint-Device-Capture-v1.3.0.apk`
+
+Size: 145,838,356 bytes. SHA-256: `1ad8023a0af43b749358b3ae35ccef954845873a83198041fbe901cb343c702f` (matches CI). Older versioned APKs are preserved.
 
 Known issues / remaining tests: A final physical Android smoke test is required for the redesigned keyboard/safe-area behavior and all 17 requested flows with real labels/cloud data. Browser camera/server adapters prove presentation/state wiring, not optical accuracy or live connectivity. v1.2.5 optical/cloud behavior is user-confirmed and its implementation is preserved. Uploads remain foreground-only; installed photos remain temporary and are not uploaded. Prototype signing; internal testing only.
 

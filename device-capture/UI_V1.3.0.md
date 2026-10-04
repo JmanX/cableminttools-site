@@ -19,11 +19,11 @@ Preview controls select phone width and offline/serial-only fixtures. Field test
 | Requested flow | Verification completed | Final Android smoke check |
 |---|---|---|
 | 1. Sign in | Existing session/auth handling preserved; auth storage regression; new form typechecked | Sign in with existing CableMint account, keyboard/relaunch |
-| 2. Create project | Service validation/ownership/idempotent creation regressions; form uses same handler | Create a disposable test job |
+| 2. Create project | Service validation/ownership/idempotent creation regressions; actual UI fixture shows disabled Creating… then opens the new overview | Create a disposable test job |
 | 3. Select project | Actual UI preview opens overview and capture types from server fixtures | Select existing job and inspect real counts |
 | 4. Camera scan | Actual UI → existing capture/recognition handler using synthetic native adapter | Scan real equipment label |
 | 5. Gallery scan | Actual UI → existing gallery/recognition handler → sourced conflict | Android picker and real label |
-| 6. Automatic zoom | Unchanged native policy/guide/commands; native tests required in build | Distant undecoded barcode, no manual interaction |
+| 6. Automatic zoom | Unchanged native policy/guide/commands; twelve native tests pass in release build | Distant undecoded barcode, no manual interaction |
 | 7. Manual zoom | Actual UI controls reach existing driver; preview ratio 1.0→1.2; adapter clamp/reset regressions | Buttons and pinch on lens |
 | 8. Flashlight | Preview changes On→Off through existing torch prop | Verify physical flashlight |
 | 9. MAC conflict | Preview conflict blocks Continue, source choice resolves, positive state remains across History/Capture tabs; existing exact mismatch/OCR regressions | Conflicting real OCR/barcode, edit invalidation |
@@ -43,3 +43,13 @@ TypeScript and `npm run test:recognition` pass, including added presentation sta
 Foreground-only uploads, internal prototype signing, Android-only build, no task backend, no native checkout. Installed-photo check uses existing batch option and transient photo. No attached physical Android phone is available for this agent; final APK smoke checks are explicitly pending.
 
 Read-only live integration check on October 4 confirmed the existing project/device column contract. No schema or service changes were needed. Record details and its Back action, plus the honest Tasks empty state, were also checked in the actual UI preview.
+
+## Verified internal APK
+
+Source aff4a87bdb385600a8e78449228d328eff10b941 passed [GitHub Actions run 37209055014](https://github.com/JmanX/cableminttools-site/actions/runs/37209055014) / job 111456289183. TypeScript, all recognition/service/auth/queue/sync/manual zoom regressions, fresh Android generation, twelve native policy/CameraControl tests, native release assembly and binary gates passed. Native tests logged independent 1.12×/1.24× requests and actual acknowledgements with a camera test double; the physical Android smoke checklist remains pending.
+
+Downloaded artifact 11305744745 independently confirms package com.cableminttools.devicecapture.prototype, versionName 1.3.0 / versionCode 19, native zoom commands/suggestions, shared CameraControl operation, SVG/safe-area packages, redesigned UI and standalone JS with 32 ML Kit assets. Synthetic development-preview identifiers/labels are absent from the production bundle.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.0\CableMint-Device-Capture-v1.3.0.apk`
+
+Size: 145,838,356 bytes. SHA-256: `1ad8023a0af43b749358b3ae35ccef954845873a83198041fbe901cb343c702f` (matches CI). Older versioned APKs are preserved.

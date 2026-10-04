@@ -1,6 +1,6 @@
 # CableMint Device Capture: technical context
 
-**Status:** The user confirms v1.2.5 is field-stable: automatic/manual zoom/reset, MAC/serial recognition and conflict handling, serial-only capture, projects, Supabase save/website visibility, server History/delete, duplicates, gallery, flashlight and sync feedback. This confirmation supersedes the earlier pending physical-test notes. v1.3.0 is a UI/workflow overhaul on that stable implementation; native recognition/zoom, queue and backend services are unchanged. Version 1.3.0 / Android versionCode 19. Updated October 4, 2026. Native release build pending; final v1.3.0 phone smoke test is required.
+**Status:** The user confirms v1.2.5 is field-stable: automatic/manual zoom/reset, MAC/serial recognition and conflict handling, serial-only capture, projects, Supabase save/website visibility, server History/delete, duplicates, gallery, flashlight and sync feedback. This confirmation supersedes the earlier pending physical-test notes. v1.3.0 is a UI/workflow overhaul on that stable implementation; native recognition/zoom, queue and backend services are unchanged. Version 1.3.0 / Android versionCode 19. Updated October 4, 2026. Native release build, twelve native tests, release assembly and independent binary verification passed; final v1.3.0 phone smoke test is required.
 
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
@@ -274,3 +274,13 @@ Source: user confirms v1.2.5 field stability and requests a complete native UI/U
 - Development-only browser preview compiles the actual screen/components with synthetic native/network adapters. It is not imported by App.tsx and is not evidence of physical optics or live cloud connectivity. See device-capture/UI_V1.3.0.md for regression evidence and remaining phone checks.
 
 Read-only live check October 4, 2026 reconfirmed the public.field_projects / public.field_devices column contract above; the v1.3.0 UI uses the same existing fields. No live records or infrastructure were changed.
+
+### Verified v1.3.0 internal delivery — October 4, 2026
+
+Source aff4a87bdb385600a8e78449228d328eff10b941 passed [GitHub Actions run 37209055014](https://github.com/JmanX/cableminttools-site/actions/runs/37209055014) / job 111456289183. TypeScript, all recognition/service/auth/queue/sync/manual zoom regressions, fresh Android generation, twelve native policy/CameraControl tests, native release assembly and binary gates passed. Native tests logged independent 1.12×/1.24× requests and actual acknowledgements with a camera test double; the physical Android smoke checklist remains pending.
+
+Downloaded artifact 11305744745 independently confirms package com.cableminttools.devicecapture.prototype, versionName 1.3.0 / versionCode 19, native zoom commands/suggestions, shared CameraControl operation, SVG/safe-area packages, redesigned UI and standalone JS with 32 ML Kit assets. Synthetic development-preview identifiers/labels are absent from the production bundle.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.0\CableMint-Device-Capture-v1.3.0.apk`
+
+Size: 145,838,356 bytes. SHA-256: `1ad8023a0af43b749358b3ae35ccef954845873a83198041fbe901cb343c702f` (matches CI). Older versioned APKs are preserved.
