@@ -4,12 +4,18 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.2.5 — October 3, 2026
 
-Android versionCode: **18**. Implementation/diagnostics ready before preparing the build. Native CI and APK verification pending. Focused scanner correction; physical automatic zoom is not yet claimed fixed.
+Android versionCode: **18**. Implementation/diagnostics ready before preparing the build. [Native build 37166331749](https://github.com/JmanX/cableminttools-site/actions/runs/37166331749) passed from source c0028323ef32d86bb9ec683c254f60f596eb833b, and the downloaded APK was independently verified. Focused scanner correction; physical automatic zoom is not yet claimed fixed.
 
 - Verified v1.2.4 bug: every decoded UPC-E/QR latched automatic zoom off. Clear codes did not re-arm it. ML Kit also suppresses built-in suggestions when any barcode decodes. The existing live ML Kit 17.3.0 configuration supports potentials and suggestions.
 - Guide-nearest stable small/thin potential boxes independently trigger bounded zoom through the same production CameraControl operation as manual input. Relevant decoded targets suspend requests per frame; unrelated reads cannot permanently disable the session. No fresh potential means no blind zoom. Manual/pinch/photo stop, cooldown, limits and capture reset remain.
 - Always-visible potential/decoded/relevance counts, automatic mode, callback count, suggested/actual ratios, request/API/application counts and last reason. Expanded state includes frame age, camera generation/session, configuration and source/application. Stale camera work is ignored; redundant scanner props do not recreate the camera.
-- Local clean-source/idempotence validation, TypeScript and existing conflict/sync/queue/manual zoom regressions pass. Twelve native tests include independent requests through the production CameraControl operation with a camera test double; CI must verify their results. See device-capture/SCANNER_V1.2.5_FINDINGS.md.
+- Local clean-source/idempotence validation, TypeScript and existing conflict/sync/queue/manual zoom regressions pass. Twelve native tests include independent requests through the production CameraControl operation with a camera test double; CI verified all twelve results and logged independent 1.12×/1.24× CameraControl requests and actual acknowledgements. See device-capture/SCANNER_V1.2.5_FINDINGS.md.
+
+Delivery: [artifact 11289174856](https://github.com/JmanX/cableminttools-site/actions/runs/37166331749/artifacts/11289174856), saved without overwriting older APKs to:
+
+`C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.2.5\CableMint-Device-Capture-v1.2.5.apk`
+
+Size: 137,710,826 bytes. SHA-256: `707b7773e41473be6d8547845c75da2d302b9e8bacea352fb636a5acd0adfbfa` (matches CI). Actual manifest confirms versionName 1.2.5 / versionCode 18; all four commands, ML Kit suggestions, shared native camera operation and new request/relevance/generation diagnostic fields are present in DEX. Standalone JavaScript and 32 bundled ML Kit asset entries are present. Native release assembly and binary gates passed.
 
 Known issues: Physical distant-barcode detection and automatic camera movement remain unverified. The recording's zero-decoded intervals lack potential diagnostics. No potential detection must not cause arbitrary zoom. Relevant means identifier-shaped candidate, not confirmed MAC/SN ownership; raw values and explicit conflicts remain. Foreground-only uploads and temporary installed photos remain. Prototype signing; internal testing only. No production backend/site/billing/function or existing cloud-record changes.
 
