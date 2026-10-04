@@ -4,6 +4,8 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.3.1 — October 4, 2026
 
+**Current stable baseline — user-confirmed October 4, 2026.** The user reported this delivered build is working properly and designated it stable.
+
 Android versionCode: **20**. Focused Capture Next workflow update from the user-approved stable v1.3.0 UI. Local/CI regression gates, native compilation, twelve native tests, release assembly and independent APK verification passed.
 
 - Save & Capture Next returns directly to What are you capturing? / Device Type, retaining the project. Choose a different type and proceed directly to Scan.
@@ -21,7 +23,7 @@ Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.
 
 Size: 145,839,372 bytes. SHA-256: `770f57859e76b615e5dfa0e3fa18f2305eef03d713095507cb6bb9225210d1ba` (matches CI). Older APKs preserved.
 
-Known issues / remaining tests: Physical Android consecutive-capture test with real labels and live Supabase/website History is still required. Browser/native test adapters do not prove optical hardware behavior or live connectivity. Existing foreground-only uploads, temporary/not-uploaded installed photos and internal prototype signing remain.
+Field acceptance: User-confirmed stable on October 4, 2026, superseding the earlier pending overall phone-acceptance note. Automated/browser test evidence remains separate from this user confirmation. Existing limitations: foreground-only uploads, temporary/not-uploaded installed photos and internal prototype signing.
 
 ## 1.3.0 — October 4, 2026
 

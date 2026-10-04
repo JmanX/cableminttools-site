@@ -30,7 +30,9 @@ Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.
 
 Size: 145,839,372 bytes. SHA-256: `770f57859e76b615e5dfa0e3fa18f2305eef03d713095507cb6bb9225210d1ba` (matches CI). Older APKs preserved.
 
-## Physical Android follow-up
+## Field acceptance and future regression checklist
+
+On October 4, 2026, the user reported v1.3.1 is working properly and designated it the stable version. This supersedes the pending overall phone-acceptance note. The following protocol remains useful when testing future changes against this stable baseline.
 
 Install the versioned APK and, in one project, capture a WAP with a genuine distant label (no manual input initially), then use manual zoom and resolve a real conflict if encountered. Confirm verification/location, save, and check direct Device Type return. Select Intercom or another serial-only type. Check 1× reset, empty diagnostics/candidates, no prior MAC/SN, retained Building/Floor and blank Room (or explicitly advanced next numeric Room). Save a different identifier/location; confirm both on native History and website after actual cloud acknowledgement. Back from Type should finish to the project overview. Test default Room clearing and explicit numeric/non-numeric auto-advance separately.
 
