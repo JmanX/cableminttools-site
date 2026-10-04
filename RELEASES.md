@@ -2,6 +2,17 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
+## 1.2.5 — October 3, 2026
+
+Android versionCode: **18**. Implementation/diagnostics ready before preparing the build. Native CI and APK verification pending. Focused scanner correction; physical automatic zoom is not yet claimed fixed.
+
+- Verified v1.2.4 bug: every decoded UPC-E/QR latched automatic zoom off. Clear codes did not re-arm it. ML Kit also suppresses built-in suggestions when any barcode decodes. The existing live ML Kit 17.3.0 configuration supports potentials and suggestions.
+- Guide-nearest stable small/thin potential boxes independently trigger bounded zoom through the same production CameraControl operation as manual input. Relevant decoded targets suspend requests per frame; unrelated reads cannot permanently disable the session. No fresh potential means no blind zoom. Manual/pinch/photo stop, cooldown, limits and capture reset remain.
+- Always-visible potential/decoded/relevance counts, automatic mode, callback count, suggested/actual ratios, request/API/application counts and last reason. Expanded state includes frame age, camera generation/session, configuration and source/application. Stale camera work is ignored; redundant scanner props do not recreate the camera.
+- Local clean-source/idempotence validation, TypeScript and existing conflict/sync/queue/manual zoom regressions pass. Twelve native tests include independent requests through the production CameraControl operation with a camera test double; CI must verify their results. See device-capture/SCANNER_V1.2.5_FINDINGS.md.
+
+Known issues: Physical distant-barcode detection and automatic camera movement remain unverified. The recording's zero-decoded intervals lack potential diagnostics. No potential detection must not cause arbitrary zoom. Relevant means identifier-shaped candidate, not confirmed MAC/SN ownership; raw values and explicit conflicts remain. Foreground-only uploads and temporary installed photos remain. Prototype signing; internal testing only. No production backend/site/billing/function or existing cloud-record changes.
+
 ## 1.2.4 — October 2, 2026
 
 Android versionCode: **17**. Focused correction to v1.2.3 automatic zoom and resolved-conflict text. Build 16 passed native controller tests; build 17 also suppresses an intentional canceled automatic request from becoming a red error after manual override. Final code-17 build passed [GitHub Actions run 37084671054](https://github.com/JmanX/cableminttools-site/actions/runs/37084671054) from source `dae185c3449ac5fc76400f89dcbcaf663a1fb85c`; downloaded APK independently verified locally.
@@ -18,7 +29,7 @@ Delivery: [artifact 11259718413](https://github.com/JmanX/cableminttools-site/ac
 
 Size: 137,693,070 bytes. SHA-256: `44f262bc6dfe6781f614550661fa58d49e27b1499e45baec29396ff48a26117b` (matches CI). Actual manifest confirms package com.cableminttools.devicecapture.prototype, versionName 1.2.4 and versionCode 17. DEX includes all four zoom commands, ZoomSuggestionOptions, the Kotlin automatic controller and shared camera operation. Standalone JavaScript and 32 ML Kit asset entries are present. Native source and unit-test compilation, six automatic-controller tests, existing TypeScript/regression checks, release assembly, versioned packaging and binary verification passed. Build 16 also passed run 37084285755; code 17 is the delivered candidate.
 
-Known issues / remaining tests: No physical Android camera is attached to this workspace. Controller tests use synthetic geometry/suggestion inputs; they do not prove optical detection of a genuinely distant barcode. Field-test the new APK without touching zoom controls and keep Show scanner diagnostics expanded. No potential detection or ML Kit suggestion means there is insufficient evidence to zoom. Existing cloud/service behavior and other v1.2.3 features are unchanged. Prototype signing; internal testing only.
+Known issues / remaining tests: October 3 field testing confirms v1.2.4 automatic zoom still fails; see the v1.2.5 investigation of unrelated-decode suppression. No physical Android camera is attached to this workspace. Controller tests use synthetic geometry/suggestion inputs; they do not prove optical detection of a genuinely distant barcode. Field-test the new APK without touching zoom controls and keep Show scanner diagnostics expanded. No potential detection or ML Kit suggestion means there is insufficient evidence to zoom. Existing cloud/service behavior and other v1.2.3 features are unchanged. Prototype signing; internal testing only.
 
 ## 1.2.3 — October 2, 2026
 

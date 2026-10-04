@@ -17,6 +17,7 @@ import { isAppCachePhoto } from './photoPrivacy';
 const BLUE = '#102B4B';
 const GREEN = '#26B67A';
 const BARCODE_TYPES = ['qr', 'code128', 'code39', 'code93', 'datamatrix', 'pdf417', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf14', 'codabar', 'aztec'] as const;
+const BARCODE_SETTINGS = { barcodeTypes: [...BARCODE_TYPES] };
 
 function Action({ label, onPress, outline = false, disabled = false }: { label: string; onPress: () => void; outline?: boolean; disabled?: boolean }) {
   return <Pressable onPress={onPress} disabled={disabled} style={[styles.action, outline && styles.actionOutline, disabled && styles.disabled]}>
@@ -51,8 +52,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [showDiagnostics,setShowDiagnostics]=useState(false);
   const [scannerStatus,setScannerStatus]=useState('Waiting for scanner frames');
   const [scannerDetails,setScannerDetails]=useState('');
+  const [scannerNative,setScannerNative]=useState<NativeScannerState|null>(null);
   function applyZoom(ratio:number){zoomDriver.current?.request(ratio);}
-  function resetZoom(){zoomControl.current.reset();setZoomReady(false);setZoomError('');setScannerStatus('Waiting for scanner frames');setScannerDetails('');}
+  function resetZoom(){zoomControl.current.reset();setZoomReady(false);setZoomError('');setScannerStatus('Waiting for scanner frames');setScannerDetails('');setScannerNative(null);}
   function onScannerState(state:NativeScannerState){
     if(stage!=='camera'||captureInProgress.current)return;
     const automatic=state.autoZoom;
@@ -62,8 +64,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     if(now-lastZoomLog.current<750)return;
     lastZoomLog.current=now;
     const status=state.frameAgeMs===-1 ? 'No scanner frame received yet' : (state.frameAgeMs ?? 0)>3000 ? 'Scanner frames stalled — no new detection' : automatic.status;
-    setScannerStatus(status);
-    const details={...automatic,currentZoom:state.zoom,frameAgeMs:state.frameAgeMs,frameSequence:state.sequence};
+    setScannerStatus(status);setScannerNative(state);
+    const {frame:unusedFrame,...nativeDetails}=state;
+    const details={...nativeDetails,...automatic,currentZoom:state.zoom,frameSequence:state.sequence};
     setScannerDetails(JSON.stringify(details));
     console.info('[CableMint scanner] native automatic zoom',details);
     if(automatic.enabled && automatic.application==='not-applied')setZoomError(automatic.status);
@@ -137,8 +140,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
 
   function onBarcodeScanned(result: BarcodeScanningResult) {
     if (captureInProgress.current || !result.data.trim()) return;
-    if(!zoomControl.current.decoded)console.info('[CableMint scanner] barcode decode success',{currentZoom:zoomDriver.current?.actual});
-    zoomControl.current.decoded=true;setScannerStatus('Barcode decoded — auto-zoom stopped');
+    // Native geometry/relevance decides whether the target is decoded. Retail/QR reads
+    // must not disable automatic zoom or assign identification fields here.
+    console.info('[CableMint scanner] barcode decode success',{format:result.type,currentZoom:zoomDriver.current?.actual});
     const key = `${result.type}:${result.data.trim()}`;
     if (!result.data.trim() || liveBarcodes.current.has(key)) return;
     liveBarcodes.current.set(key, result);
@@ -375,7 +379,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     {stage === 'camera' || stage==='installed' ? <View style={styles.cameraPage}>
       <View style={styles.cameraFrame} onLayout={e=>{previewSize.current=e.nativeEvent.layout;}}>
         <NativeZoomCamera ref={camera} style={StyleSheet.absoluteFill} facing="back" mode="picture" enableTorch={torch} autofocus="on"
-          barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }} onBarcodeScanned={stage==='camera' ? onBarcodeScanned : undefined}
+          barcodeScannerSettings={BARCODE_SETTINGS} onBarcodeScanned={stage==='camera' ? onBarcodeScanned : undefined}
           onCameraReady={() => setCameraReady(true)} onMountError={event => setError(event.message)} />
         <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2} onMoveShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2}
           onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomDriver.current?.requested ?? zoomControl.current.ratio};zoomControl.current.manual=true;void zoomDriver.current?.pauseAutomatic().catch(failure=>setZoomError((failure as Error).message));}}
@@ -386,9 +390,17 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
       <ScrollView style={{maxHeight:'48%',backgroundColor:'#F4F8FA'}} contentContainerStyle={styles.controls}>
         <View style={styles.controlRow}><View style={styles.flex}><Action label="Zoom Out" disabled={!zoomReady || busy || zoomRatio<=zoomControl.current.min} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)-.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View><Text style={styles.muted}>{zoomReady ? zoomRatio.toFixed(1)+'× · pinch to zoom' : 'Starting camera zoom…'}</Text><View style={styles.flex}><Action label="Zoom In" disabled={!zoomReady || busy || zoomRatio>=zoomControl.current.max} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)+.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View></View>
         {!!zoomError && <Text accessibilityRole="alert" style={styles.error}>{zoomError}</Text>}
-        {stage==='camera' && <><Pressable onPress={()=>setShowDiagnostics(!showDiagnostics)}><Text style={styles.muted}>{showDiagnostics ? 'Hide scanner diagnostics' : 'Show scanner diagnostics'}</Text></Pressable>
-          {showDiagnostics && <><Text selectable style={styles.muted}>{zoomControl.current.manual ? 'Auto-zoom paused after manual adjustment' : scannerStatus}</Text><Text selectable style={styles.ocrText}>{scannerDetails}</Text><Text style={styles.muted}>Camera: {zoomDriver.current?.application} · requested {zoomDriver.current?.requested.toFixed(2)}× · actual {zoomRatio.toFixed(2)}×</Text></>}
-        </>}
+        {stage==='camera' && <View style={styles.diagnostics}>
+          <Text style={styles.label}>Live scanner diagnostics</Text>
+          <Text selectable style={styles.muted}>Potential undecoded: {scannerNative?.autoZoom?.potentialCount ?? '—'} · decoded: {scannerNative?.autoZoom?.decodedCount ?? '—'}</Text>
+          <Text selectable style={styles.muted}>Relevant candidates: {scannerNative?.autoZoom?.relevantCount ?? '—'} · irrelevant: {scannerNative?.autoZoom?.irrelevantCount ?? '—'} · unassigned: {scannerNative?.autoZoom?.unassignedCount ?? '—'}</Text>
+          <Text selectable style={styles.muted}>Automatic zoom: {scannerNative?.autoZoom?.enabled ? 'enabled' : 'disabled'} · callbacks: {scannerNative?.zoomCallbackInvocationCount ?? 0}</Text>
+          <Text selectable style={styles.muted}>Last suggestion: {scannerNative?.autoZoom?.suggestedZoom ? scannerNative.autoZoom.suggestedZoom.toFixed(2)+'×' : 'none'} · actual: {zoomRatio.toFixed(2)}×</Text>
+          <Text selectable style={styles.muted}>Automatic requests: {scannerNative?.autoZoom?.requestCount ?? 0} · CameraControl: {scannerNative?.automaticCameraRequestCount ?? 0} · applied: {scannerNative?.autoZoom?.appliedCount ?? 0}</Text>
+          <Text selectable style={styles.muted}>Last reason: {scannerStatus}</Text>
+          <Pressable onPress={()=>setShowDiagnostics(!showDiagnostics)}><Text style={styles.muted}>{showDiagnostics ? 'Hide detailed diagnostics' : 'Show detailed diagnostics'}</Text></Pressable>
+          {showDiagnostics && <><Text style={styles.muted}>Relevant means identifier-shaped, not confirmed MAC/SN ownership. All raw values remain available for review.</Text><Text selectable style={styles.ocrText}>{scannerDetails}</Text></>}
+        </View>}
         <Text style={styles.body}>{stage==='installed' ? 'Photograph the installed device in place. This temporary photo will be removed after saving.' : 'Read the label, then confirm its identifiers.'}</Text>
         {stage==='camera' && <><Text style={styles.body}>Fill the guide with a sharp label. Native ML Kit has seen {barcodeCount} distinct barcode{barcodeCount === 1 ? '' : 's'}.</Text>
         {!!liveCodes.length && <ScrollView style={{ maxHeight: 100 }}>
@@ -488,6 +500,7 @@ const styles = StyleSheet.create({
   headerSub: { color: '#B7CEDB', fontSize: 12, marginTop: 4 },
   cameraPage: { flex: 1 }, cameraFrame: { flex: 1, overflow: 'hidden', backgroundColor: '#071726' },
   guide: { position: 'absolute', left: '8%', right: '8%', top: '27%', bottom: '27%', borderColor: GREEN, borderWidth: 2, borderRadius: 14 },
+  diagnostics: { padding: 10, gap: 3, backgroundColor: 'white', borderRadius: 8 },
   controls: { padding: 18, gap: 10 }, controlRow: { flexDirection: 'row', gap: 8 }, flex: { flex: 1 },
   action: { backgroundColor: GREEN, borderRadius: 10, paddingVertical: 13, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
   actionOutline: { backgroundColor: 'white', borderWidth: 1, borderColor: '#B8CDD7' },

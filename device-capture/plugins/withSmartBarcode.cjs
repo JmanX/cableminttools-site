@@ -12,7 +12,7 @@ function apply(root){
  const pkg=path.dirname(require.resolve('expo-camera/package.json',{paths:[root]}));
  if(require(path.join(pkg,'package.json')).version!=='57.0.5')throw Error('Review smart barcode patch for the new expo-camera version.');
  const java=path.join(pkg,'android/src/main/java/expo/modules/camera');
- if(fs.readFileSync(path.join(java,'ExpoCameraView.kt'),'utf8').includes('// CableMint zoom bridge v1.2.2')){applyAutoZoom(java);applyNativeAutoZoom(java);return;}
+ if(fs.readFileSync(path.join(java,'ExpoCameraView.kt'),'utf8').includes('// CableMint zoom bridge v1.2.2')){applyAutoZoom(java);applyNativeAutoZoom(java);require('./withScannerReliability.cjs')(java);return;}
  const analyzer=path.join(java,'analyzers/BarcodeAnalyzer.kt');
  patch(analyzer,'class BarcodeAnalyzer(formats: List<BarcodeType>, val onComplete: (BarCodeScannerResult) -> Unit)',
  'class BarcodeAnalyzer(formats: List<BarcodeType>, val onFrame: (Int, Int, List<com.google.mlkit.vision.barcode.common.Barcode>, Boolean) -> Unit, val onComplete: (BarCodeScannerResult) -> Unit)');
@@ -97,6 +97,7 @@ function apply(root){
  fs.appendFileSync(view,'\n// CableMint zoom bridge v1.2.2\n');
  applyAutoZoom(java);
  applyNativeAutoZoom(java);
+ require('./withScannerReliability.cjs')(java);
 }
 function applyAutoZoom(java){
  const analyzer=path.join(java,'analyzers/BarcodeAnalyzer.kt'),view=path.join(java,'ExpoCameraView.kt');
