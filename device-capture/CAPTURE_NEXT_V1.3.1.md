@@ -15,14 +15,20 @@ Project, Building, Floor / Area and explicit batch options remain. Completed equ
 | Project remains selected | Route/reset tests and actual preview screens retain North Tower |
 | Next type can change | Actual WAP save → Type → Intercom → Scan |
 | No old MAC/serial | Fresh scanner mount; synthetic serial-only second capture has blank MAC, distinct serial and correct History |
-| Automatic zoom | Production native policy/CameraControl unchanged; native tests required by release CI; fresh mount re-arms existing initialization |
+| Automatic zoom | Production native policy/CameraControl unchanged; twelve native tests passed in release CI; fresh mount re-arms existing initialization |
 | Manual zoom/reset | Existing controller/gesture tests pass; preview 1.2× first capture → 1.0× second capture |
 | MAC conflict | Existing exact OCR mismatch/explicit resolution tests pass; actual preview choice removes blocked warning |
 | Serial-only | Existing recognition tests and actual Intercom serial-only preview pass |
 | Save & sync | Existing service/queue/server-confirmation tests plus actual preview local Pending → acknowledged Synced |
 | History both records | Real queue integration with synthetic server and actual History show distinct WAP/Intercom records |
 
-Local gates: npm run typecheck, npm run test:recognition, npx expo prebuild --platform android --no-install passed. Native release compilation/assembly and independent APK verification pending.
+Local gates: npm run typecheck, npm run test:recognition, npx expo prebuild --platform android --no-install passed. Source 117264a1c943c77d1bffd8cb4f5d970d276cf404 passed [GitHub Actions run 37227558977](https://github.com/JmanX/cableminttools-site/actions/runs/37227558977) / job 111510256399. TypeScript and all core/new Capture Next regressions, fresh Android generation, twelve native policy/CameraControl tests, native release assembly, packaging and binary gates passed. Existing native tests independently requested/acknowledged 1.12× and 1.24× with a camera test double; this is not a physical optics test.
+
+Artifact 11312902152 downloaded without replacing older versioned APKs. Independent local inspection confirms package com.cableminttools.devicecapture.prototype, versionName 1.3.1 / versionCode 20, all native zoom commands/suggestions, shared camera operation, standalone JavaScript and 32 ML Kit assets. New room-reset copy is included; synthetic preview/test identifiers are absent from the production bundle.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.1\CableMint-Device-Capture-v1.3.1.apk`
+
+Size: 145,839,372 bytes. SHA-256: `770f57859e76b615e5dfa0e3fa18f2305eef03d713095507cb6bb9225210d1ba` (matches CI). Older APKs preserved.
 
 ## Physical Android follow-up
 

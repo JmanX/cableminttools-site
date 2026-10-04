@@ -1,6 +1,6 @@
 # CableMint Device Capture: technical context
 
-**Status:** The user confirms the v1.2.5 scanner/integrations are field-stable and the v1.3.0 UI is approved/stable. v1.3.1 is a focused Capture Next navigation/reset change on that implementation; native recognition/zoom, sync queue and backend services are unchanged. Version 1.3.1 / Android versionCode 20. Updated October 4, 2026. Local regression/UI checks and Android generation passed; native release build and APK verification pending.
+**Status:** The user confirms the v1.2.5 scanner/integrations are field-stable and the v1.3.0 UI is approved/stable. v1.3.1 is a focused Capture Next navigation/reset change on that implementation; native recognition/zoom, sync queue and backend services are unchanged. Version 1.3.1 / Android versionCode 20. Updated October 4, 2026. Local and CI regressions, twelve native tests, Android generation/release assembly and independent downloaded-APK verification passed. A physical v1.3.1 consecutive-capture/cloud smoke test remains required.
 
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
@@ -297,4 +297,16 @@ Save & Capture Next now returns directly to Device Type in the same project, aft
 - Actual production screens passed a browser preview with synthetic adapters: WAP gallery conflict → explicit barcode choice → local save/confirmed upload → Device Type → Intercom at 1× with empty diagnostics → serial-only scan → retained Building/Floor and empty Room → second save → Device Type → Back/History with both correct records.
 - v1.3.0 visual design, native scanner/automatic/manual/pinch zoom, recognition, duplicate checks, authenticated services and synchronization are unchanged. The October 4 read-only integration contract and user-confirmed working v1.3.0 behavior remain applicable. No website/schema/Dodo/Edge Function/cloud-record modifications.
 
-See device-capture/CAPTURE_NEXT_V1.3.1.md for regression scope and phone follow-up. Native build and versioned delivery pending.
+See device-capture/CAPTURE_NEXT_V1.3.1.md for regression scope and phone follow-up. Native compilation and versioned delivery passed as recorded below.
+
+### Verified v1.3.1 internal delivery — October 4, 2026
+
+Source 117264a1c943c77d1bffd8cb4f5d970d276cf404 passed [GitHub Actions run 37227558977](https://github.com/JmanX/cableminttools-site/actions/runs/37227558977) / job 111510256399. TypeScript and all core/new Capture Next regressions, fresh Android generation, twelve native policy/CameraControl tests, native release assembly, packaging and binary gates passed. Existing native tests independently requested/acknowledged 1.12× and 1.24× with a camera test double; this is not a physical optics test.
+
+Artifact 11312902152 downloaded without replacing older versioned APKs. Independent local inspection confirms package com.cableminttools.devicecapture.prototype, versionName 1.3.1 / versionCode 20, all native zoom commands/suggestions, shared camera operation, standalone JavaScript and 32 ML Kit assets. New room-reset copy is included; synthetic preview/test identifiers are absent from the production bundle.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.1\CableMint-Device-Capture-v1.3.1.apk`
+
+Size: 145,839,372 bytes. SHA-256: `770f57859e76b615e5dfa0e3fa18f2305eef03d713095507cb6bb9225210d1ba` (matches CI). Older APKs preserved.
+
+Physical consecutive-type scan/zoom/reset and live Supabase/website History remain in the phone follow-up checklist. No production integrations changed.

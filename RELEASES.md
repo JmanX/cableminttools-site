@@ -4,7 +4,7 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.3.1 — October 4, 2026
 
-Android versionCode: **20**. Focused Capture Next workflow update from the user-approved stable v1.3.0 UI. Local checks and Android generation passed; native compilation and delivery pending.
+Android versionCode: **20**. Focused Capture Next workflow update from the user-approved stable v1.3.0 UI. Local/CI regression gates, native compilation, twelve native tests, release assembly and independent APK verification passed.
 
 - Save & Capture Next returns directly to What are you capturing? / Device Type, retaining the project. Choose a different type and proceed directly to Scan.
 - Completed identifiers, OCR/barcode candidates, verification/conflict state, diagnostics, device fields and zoom reset for each next capture. Manufacturer/Model/type clear.
@@ -12,6 +12,14 @@ Android versionCode: **20**. Focused Capture Next workflow update from the user-
 - Durable local-save and server-confirmed status remain distinct, with confirmation on the Device Type screen. Existing finish/Back navigation remains.
 - Local TypeScript and all existing recognition/service/auth/queue/sync/manual zoom regressions pass. New tests exercise routing/reset/context and two different-type records through the real queue with synthetic server acknowledgement. Actual screens passed WAP gallery/conflict resolution → save → Type → Intercom serial-only → save → Type, fresh 1× zoom/empty diagnostics, retained Building/Floor, cleared Room and both History entries.
 - No visual redesign, native scanner/auto-zoom policy, recognition, sync/Supabase service, production website, schema, Dodo or Edge Function changes.
+
+Source 117264a1c943c77d1bffd8cb4f5d970d276cf404 passed [GitHub Actions run 37227558977](https://github.com/JmanX/cableminttools-site/actions/runs/37227558977) / job 111510256399. TypeScript and all core/new Capture Next regressions, fresh Android generation, twelve native policy/CameraControl tests, native release assembly, packaging and binary gates passed. Existing native tests independently requested/acknowledged 1.12× and 1.24× with a camera test double; this is not a physical optics test.
+
+Artifact 11312902152 downloaded without replacing older versioned APKs. Independent local inspection confirms package com.cableminttools.devicecapture.prototype, versionName 1.3.1 / versionCode 20, all native zoom commands/suggestions, shared camera operation, standalone JavaScript and 32 ML Kit assets. New room-reset copy is included; synthetic preview/test identifiers are absent from the production bundle.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.3.1\CableMint-Device-Capture-v1.3.1.apk`
+
+Size: 145,839,372 bytes. SHA-256: `770f57859e76b615e5dfa0e3fa18f2305eef03d713095507cb6bb9225210d1ba` (matches CI). Older APKs preserved.
 
 Known issues / remaining tests: Physical Android consecutive-capture test with real labels and live Supabase/website History is still required. Browser/native test adapters do not prove optical hardware behavior or live connectivity. Existing foreground-only uploads, temporary/not-uploaded installed photos and internal prototype signing remain.
 
