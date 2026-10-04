@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, BackHandler, Keyboard, Pressable, SafeAreaView, ScrollView, StatusBar, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, BackHandler, Keyboard, Pressable, ScrollView, StatusBar, Switch, Text, View } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
@@ -13,6 +13,10 @@ import { CaptureQueue, type Snapshot } from './captureQueue';
 import { SyncStatus } from './SyncStatus';
 import { SYNC_SUCCESS_MS, checkedSync, syncFeedback, uploadCounts, type SyncPhase } from './syncFeedback';
 import appConfig from '../app.json';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader, AdvancedPanel, BottomNavigation, CaptureStepHeader, ConfirmationPanel, DeviceHistoryRow, DeviceTypeCard, EmptyState, ProjectCard, SectionHeading, StatusBadge, type Tab } from './components';
+import { Icon } from './Icon';
+import { latestCapture, queueStatus, readableError, syncBadge } from './presentation';
 
 const TYPES = ['WAP', 'Intercom', 'Network Switch', 'Security Camera', 'Access Control', 'Fiber / Other'];
 export function FieldWorkspace({ session }: { session: Session }) {
@@ -35,6 +39,13 @@ export function FieldWorkspace({ session }: { session: Session }) {
   const [filter, setFilter] = useState<'All' | 'Synced' | 'Pending' | 'Failed'>('All');
   const [historyProject, setHistoryProject] = useState('');
   const [picking, setPicking] = useState(false);
+  const [scanMounted,setScanMounted]=useState(false);
+  const [scannerBusy,setScannerBusy]=useState(false);
+  const [lastSavedId,setLastSavedId]=useState('');
+  const [selectedDevice,setSelectedDevice]=useState<Device|null>(null);
+  const [showProjectFilter,setShowProjectFilter]=useState(false);
+  const [showBatch,setShowBatch]=useState(false);
+  const [showError,setShowError]=useState(false);
   const [name, setName] = useState('');
   const [creation, setCreation] = useState<{ id: string; name: string } | null>(null);
   const op = useRef(false), alive = useRef(true), writes = useRef(Promise.resolve());
@@ -81,9 +92,10 @@ export function FieldWorkspace({ session }: { session: Session }) {
   },[userId]);
   useEffect(()=>{const timer=setInterval(()=>{if(AppState.currentState==='active')void syncQueue();},30000);return()=>clearInterval(timer);},[]);
   const key = project ? batchStorageKey(userId, project.id) : '';
-  const push = (next: Screen) => { setError(''); setStack(s => [...s, next]); };
+  const push = (next: Screen) => { setError(''); if(next==='scan')setScanMounted(true); setStack(s => s.at(-1)===next?s:[...s, next]); };
   function back() {
     if (op.current) return;
+    if(selectedDevice){setSelectedDevice(null);return;}
     if (screen === 'create' && creation) {
       Alert.alert('Leave project creation?', 'The project may already exist. Refresh projects before creating it again.', [{ text: 'Stay', style: 'cancel' }, { text: 'Back', onPress: () => { setCreation(null); setName(''); setStack(previousScreen); } }]);
     } else { setError(''); setPicking(false); setStack(previousScreen); }
@@ -91,9 +103,9 @@ export function FieldWorkspace({ session }: { session: Session }) {
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => {
     if (screen === 'scan') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => { if (op.current) return true; if (stack.length > 1) { back(); return true; } return false; });
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { if (op.current) return true; if(selectedDevice){setSelectedDevice(null);return true;} if (stack.length > 1) { back(); return true; } return false; });
     return () => sub.remove();
-  }, [stack, creation]);
+  }, [stack, creation,selectedDevice]);
   async function refresh() {
     if (op.current) return;
     op.current = true; setBusy(true); setError('');
@@ -123,11 +135,14 @@ export function FieldWorkspace({ session }: { session: Session }) {
     writes.current = writes.current.catch(() => {}).then(() => AsyncStorage.setItem(key, value));
     void writes.current.catch(() => { if (alive.current) setStorageError('Batch settings could not be stored. Keep the app open and retry.'); });
   }, [key, batchReady, batch]);
-  function chooseProject(p: Project) { setProject(p); setSavedMessage(''); push(picking ? 'types' : 'project'); setPicking(false); }
+  function chooseProject(p:Project) {
+    const choose=()=>{if(project?.id!==p.id){setScanMounted(false);setLastSavedId('');setStack(s=>s.filter(item=>item!=='scan'));}setProject(p);setSavedMessage('');push(picking?'types':'project');setPicking(false);};
+    if(scanMounted && project?.id!==p.id)Alert.alert('Switch capture project?','This will discard the open scan. Your saved captures and remembered batch settings are retained.',[{text:'Stay',style:'cancel'},{text:'Switch project',onPress:choose}]);else choose();
+  }
   function capture() {
     if (op.current) return;
     if (pro !== true) { push('account'); setError('Refresh account access to verify CableMint Pro before capturing.'); return; }
-    if (project) push('types'); else { setPicking(true); push('projects'); }
+    if (scanMounted && project) push('scan'); else if (project) push('types'); else { setPicking(true); push('projects'); }
   }
   async function newProject() {
     if (op.current) return;
@@ -139,8 +154,8 @@ export function FieldWorkspace({ session }: { session: Session }) {
       try { own = await loadProjects(userId); }
       catch { own = [created, ...projects.filter(p => p.id !== created.id)]; if (alive.current) setError('Project created; list refresh failed. Refresh when connected.'); }
       if (alive.current) {
-        setProjects(own); await queue.current?.cache(own,rows,pro===true); setProject(created); setName(''); setCreation(null); setSavedMessage(''); Keyboard.dismiss();
-        setStack(s => [...s.slice(0, -1), picking ? 'types' : 'project']); setPicking(false);
+        setScanMounted(false);setLastSavedId('');setProjects(own); await queue.current?.cache(own,rows,pro===true); setProject(created); setName(''); setCreation(null); setSavedMessage(''); Keyboard.dismiss();
+        setStack(s => [...s.slice(0, -1).filter(item=>item!=='scan'), picking ? 'types' : 'project']); setPicking(false);
       }
     } catch (failure) { if (alive.current) { if (creation || (failure instanceof ProjectCreateError && failure.uncertain)) setCreation(attempt); setError((failure as Error).message); } }
     finally { op.current = false; if (alive.current) setBusy(false); }
@@ -162,7 +177,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
       await queue.current.enqueue(durable);
       // Publish locally before any network request. The worker alone can mark Uploaded.
       const unit = nextUnit(attempt.draft.unit_location, batch.autoAdvance);
-      if(alive.current){setBatch(b=>({...b,building:attempt.draft.building,floor_area:attempt.draft.floor_area,unit_location:unit}));setSavedMessage('Saved on this phone. Pending upload; see Sync & Uploads for server confirmation.');}
+      if(alive.current){setLastSavedId(durable.id);setBatch(b=>({...b,building:attempt.draft.building,floor_area:attempt.draft.floor_area,unit_location:unit}));setSavedMessage('Saved on this phone. Pending upload; see Sync & Uploads for server confirmation.');}
       void syncQueue();
       return unit;
     } finally { op.current = false; }
@@ -175,7 +190,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
       await deleteDevice(userId, device.project_id, device.id);
       await queue.current?.forgetDeleted(device.id);
       const server = await loadHistory(userId);
-      if (alive.current) { setRows(server); setServerTime(new Date().toLocaleTimeString()); await queue.current?.cache(projects,server,pro===true); }
+      if (alive.current) { setSelectedDevice(null);setRows(server); setServerTime(new Date().toLocaleTimeString()); await queue.current?.cache(projects,server,pro===true); }
     } catch (failure) { if (alive.current) setError((failure as Error).message + '\nRefresh the server list before trying again.'); }
     finally { uploadPaused.current=false;op.current = false; if (alive.current) setBusy(false); }
   }
@@ -186,67 +201,93 @@ export function FieldWorkspace({ session }: { session: Session }) {
     catch (failure) { if (alive.current) setError((failure as Error).message); }
     finally { op.current = false; if (alive.current) setBusy(false); }
   }
-  function deviceCard(d: Device) {
-    return <View key={d.id} style={ui.card}><Text style={ui.label}>{projects.find(p => p.id === d.project_id)?.name ?? 'Project'} · {d.device_type}</Text>
-      <Text style={ui.body}>{[d.building, d.floor_area, d.unit_location].filter(Boolean).join(' / ') || 'No installation location'}</Text>
-      <Text selectable style={ui.body}>MAC: {d.mac_address || 'None'}{'\n'}Serial: {d.serial_number || 'None'}</Text>
-      <Text style={ui.muted}>Synced · {new Date(d.captured_at).toLocaleString()}</Text><Button title="Delete Device" secondary disabled={busy} onPress={() => confirmDelete(d)} /></View>;
+  const counts=uploadCounts(journal);
+  const status=syncBadge(syncPhase,journal,serverFresh);
+  const localItems=(journal?.items??[]).filter(i=>i.state!=='uploaded'&&!rows.some(d=>d.id===i.attempt.id));
+  const localDevices:Device[]=localItems.map(i=>({...i.attempt.draft,id:i.attempt.id,project_id:i.attempt.project_id,user_id:i.attempt.user_id,captured_at:i.attempt.captured_at??'',verified:true}));
+  const localFiltered=filter==='Synced'?[]:searchHistory(localDevices,projects,search,historyProject).filter(d=>filter==='All'||(filter==='Failed'?localItems.find(i=>i.attempt.id===d.id)?.state==='failed':localItems.find(i=>i.attempt.id===d.id)?.state!=='failed'));
+  const filtered=filter==='Pending'||filter==='Failed'?[]:searchHistory(rows,projects,search,historyProject);
+  const visibleHistory=[...localFiltered,...filtered].sort((a,b)=>b.captured_at.localeCompare(a.captured_at));
+  const projectDevices=[...rows,...localDevices].filter(d=>d.project_id===project?.id).sort((a,b)=>b.captured_at.localeCompare(a.captured_at));
+  const saved=journal?.items.find(i=>i.attempt.id===lastSavedId);
+  const savedStatus=saved?queueStatus(saved.state):'Pending';
+  const saveFeedback=saved?<ConfirmationPanel title={saved.state==='uploaded'?'Saved & synced ✓':'Device saved ✓'} status={savedStatus}
+    detail={saved.state==='uploaded'?'Confirmed by CableMint cloud.':saved.state==='failed'?'Saved locally · Upload failed. Open Sync & Uploads to retry.':'Saved locally · Waiting to sync'}/>:null;
+  const activeTab:Tab=screen==='scan'||screen==='types'||picking?'capture':screen==='history'?'history':screen==='tasks'?'tasks':screen==='account'||screen==='sync'?'account':'projects';
+  function selectTab(tab:Tab){
+    if(busy||scannerBusy)return;
+    if(tab==='capture'){capture();return;}
+    setSelectedDevice(null);setPicking(false);if(tab==='history')setHistoryProject('');push(tab);
   }
-  if (screen === 'scan' && project && batchReady === key) return <DeviceScanner project={project} userId={userId} batch={batch} onSave={save}
-    onBatchChange={(field,value) => setBatch(b => ({ ...b, [field]: value }))}
-    onExit={() => setStack(previousScreen)} onDevices={() => { setHistoryProject(project.id); push('history'); }} savedMessage={(journal?.items.some(i=>i.state==='failed') ? 'Upload failed: '+journal.items.filter(i=>i.state==='failed').at(-1)?.error+'\nOpen Current Project Devices → Sync & Uploads to retry.\n' : '')+savedMessage} batchStorageError={storageError} />;
-  const localItems=(journal?.items ?? []).filter(i=>i.state!=='uploaded' && !rows.some(d=>d.id===i.attempt.id));
-  const localDevices=localItems.map(i=>({...i.attempt.draft,id:i.attempt.id,project_id:i.attempt.project_id,user_id:i.attempt.user_id,captured_at:i.attempt.captured_at ?? '',verified:true}));
-  const localFiltered=filter==='Synced' ? [] : searchHistory(localDevices,projects,search,historyProject).filter(d=>filter==='All' || (filter==='Failed' ? localItems.find(i=>i.attempt.id===d.id)?.state==='failed' : localItems.find(i=>i.attempt.id===d.id)?.state!=='failed'));
-  const filtered = filter === 'Pending' || filter === 'Failed' ? [] : searchHistory(rows, projects, search, historyProject);
-  return <SafeAreaView style={[ui.page, { paddingTop: StatusBar.currentHeight ?? 0 }]}><StatusBar barStyle="light-content" backgroundColor={colors.blue} />
-    <View style={ui.header}><Text style={ui.brand}>CABLEMINT TOOLS</Text><Text style={ui.white}>Device Capture</Text>{stack.length > 1 && <Button title="← Back" secondary disabled={busy} onPress={back} />}</View>
+  const title=screen==='projects'?(picking?'Capture to a project':'Projects'):screen==='project'?project?.name??'Project':screen==='types'?'New capture':screen==='create'?'Create project':screen==='history'?'History':screen==='sync'?'Sync & Uploads':screen==='account'?'Account':'Tasks';
+  const subtitles:Partial<Record<Screen,string>>={projects:picking?'Choose the job for this capture':`${projects.length} field project${projects.length===1?'':'s'}`,history:'Your field device inventory',tasks:'Across your projects',account:'Your CableMint workspace',sync:'Local captures and cloud confirmation',create:'A job name keeps your captures organized'};
+  function recordRow(d:Device){return <DeviceHistoryRow key={d.id} device={d} project={projects.find(p=>p.id===d.project_id)?.name??'Project'} status={queueStatus(localItems.find(i=>i.attempt.id===d.id)?.state??'uploaded')} onPress={()=>{setSelectedDevice(d);if(screen!=='history'){setHistoryProject(d.project_id);push('history');}}}/>;}
+  return <SafeAreaView edges={['top','bottom']} style={[ui.page,{backgroundColor:colors.blue}]}><StatusBar barStyle="light-content" backgroundColor={colors.blue}/>
+    {scanMounted&&project&&batchReady===key&&<DeviceScanner project={project} userId={userId} batch={batch} active={screen==='scan'} onBusyChange={setScannerBusy} saveFeedback={saveFeedback}
+      onSave={save} onBatchChange={(field,value)=>setBatch(b=>({...b,[field]:value}))}
+      onExit={()=>{setScanMounted(false);setStack(s=>{const next=s.filter(item=>item!=='scan');return next.length?next:['projects'];});}} onDevices={()=>{setHistoryProject(project.id);push('history');}} savedMessage="" batchStorageError={storageError}/>}
+    {screen!=='scan'&&<View style={ui.page}>
+    <AppHeader title={title} subtitle={subtitles[screen]} status={status} onSync={()=>push('sync')} onBack={stack.length>1?()=>{if(selectedDevice)setSelectedDevice(null);else back();}:undefined} disabled={busy}/>
+    {screen==='types'&&project&&<CaptureStepHeader step="Type" project={project.name}/>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
-      {!!storageError && <Text style={ui.error}>{storageError}</Text>}
-      {!!journal?.items.some(i=>i.state==='failed') && <Text style={ui.error}>{journal.items.filter(i=>i.state==='failed').length} upload(s) failed. Open Sync & Uploads for the exact error and retry.</Text>}
-      <SyncStatus phase={syncPhase} message={syncMessage} lastChecked={serverTime} counts={uploadCounts(journal)} disabled={!journal || busy} onSync={()=>{void syncQueue(true);}} />
-      {screen!=='sync' && <Button title="Sync & Uploads" secondary disabled={busy} onPress={()=>push('sync')} />}
-      {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}{busy && <ActivityIndicator color={colors.green} />}
-      {screen === 'projects' ? <><Text style={ui.heading}>{picking ? 'Choose Capture Project' : 'Projects'}</Text>
-        <Text style={ui.muted}>{serverTime ? `Server list last checked ${serverTime}` : 'Server list not loaded'}{serverFresh ? ' · Live server checked' : ' · Cached / refresh needed'}</Text>
-        {!projects.length && !busy && <Text style={ui.body}>Create a project to start capturing devices.</Text>}
-        {projects.map(p => { const captured = rows.filter(d => d.project_id === p.id); const last = captured.reduce((latest, d) => d.captured_at > latest ? d.captured_at : latest, ''); return <View key={p.id} style={ui.card}>
-          <Text style={ui.heading}>{p.name}</Text><Text style={ui.body}>{captured.length} server-confirmed devices · {journal?.items.filter(i=>i.attempt.project_id===p.id && i.state!=='uploaded').length ?? 0} awaiting upload</Text><Text style={ui.muted}>{last ? `Last capture ${new Date(last).toLocaleString()}` : 'No server captures yet'} · {serverFresh ? 'Server checked' : 'Cached / needs refresh'}</Text>
-          <Button title={picking ? 'Capture in This Project' : 'Open Project'} disabled={busy} onPress={() => chooseProject(p)} /></View>; })}
-        <Button title="Create New Project" disabled={busy} onPress={() => push('create')} /><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refresh(); }} />
-        <Button title="Sign Out" secondary disabled={busy} onPress={() => { void signOut(); }} />
-      </> : screen === 'create' ? <><Text style={ui.heading}>Create New Project</Text><Field label="Project / Site Name" value={name} onChange={setName} maxLength={80} disabled={busy || !!creation} />
-        {!!creation && <Text style={ui.muted}>Creation was not confirmed. Retry uses the same project ID.</Text>}<Button title={busy ? 'Creating…' : creation ? 'Retry Create Project' : 'Create Project & Open'} disabled={busy} onPress={() => { void newProject(); }} />
-      </> : screen === 'project' && project ? <><Text style={ui.heading}>{project.name}</Text><Text style={ui.body}>{rows.filter(d => d.project_id === project.id).length} server-confirmed devices</Text>
-        {!!savedMessage && <Text style={ui.body}>{savedMessage}</Text>}<Button title="Capture Device" disabled={busy || batchReady !== key} onPress={capture} />
-        <Button title="Current Project Devices" secondary disabled={busy} onPress={() => { setHistoryProject(project.id); push('history'); }} />
-        <Text style={ui.heading}>Batch Context</Text>{!!storageError && <Text style={ui.error}>{storageError}</Text>}
-        {([['building','Building',100],['floor_area','Floor / Area',100],['manufacturer','Manufacturer',100],['model','Model',120],['unit_location','Unit / Room / Location',120]] as const).map(([field,label,max]) => <Field key={field} label={label} value={batch[field]} maxLength={max} disabled={busy || batchReady !== key} onChange={value => setBatch(b => ({ ...b, [field]: value }))} />)}
-        <Text style={ui.label}>Require installed-device photo before saving</Text><Text style={ui.muted}>Temporary check only. Photos are removed and are not uploaded or retained.</Text><Switch value={batch.requireInstalledPhoto} disabled={batchReady!==key} onValueChange={requireInstalledPhoto=>setBatch(b=>({...b,requireInstalledPhoto}))}/><Text style={ui.label}>Auto-advance final room number after saving</Text><Switch value={batch.autoAdvance} disabled={batchReady !== key} onValueChange={autoAdvance => setBatch(b => ({ ...b, autoAdvance }))} />
-      </> : screen === 'types' && project ? <><Text style={ui.heading}>Device Type</Text><Text style={ui.body}>{project.name}</Text>
-        {TYPES.map(type => <Button key={type} title={type} secondary disabled={batchReady !== key} onPress={() => { setBatch(b => ({ ...b, device_type: type })); push('scan'); }} />)}
-        <Field label="Custom Device Type" value={batch.device_type} maxLength={80} disabled={batchReady !== key} onChange={device_type => setBatch(b => ({ ...b, device_type }))} />
-        <Button title="Capture Custom Type" disabled={!batch.device_type.trim() || batchReady !== key} onPress={() => push('scan')} />
-      </> : screen === 'history' ? <><Text style={ui.heading}>Capture History</Text><Text style={ui.muted}>Server records and local upload queue{serverTime ? ` · checked ${serverTime}` : ''}</Text>
-        <Field label="Search project, location, type, MAC, serial, building or floor" value={search} onChange={setSearch} />
-        <View style={{ flexDirection: 'row', gap: 4 }}>{(['All','Synced','Pending','Failed'] as const).map(f => <View key={f} style={{ flex: 1 }}><Button title={f} secondary={filter !== f} onPress={() => setFilter(f)} /></View>)}</View>
-        <Button title={historyProject ? 'Show All Projects' : 'All Projects'} secondary onPress={() => setHistoryProject('')} />
-        {projects.map(p => <Button key={p.id} title={p.name} secondary={historyProject !== p.id} onPress={() => setHistoryProject(p.id)} />)}
-        {localFiltered.map(d=>{const item=localItems.find(i=>i.attempt.id===d.id)!;return <View key={d.id} style={ui.card}><Text style={ui.label}>{projects.find(p=>p.id===d.project_id)?.name} · {d.device_type}</Text><Text style={ui.body}>{d.unit_location} · {d.mac_address || d.serial_number}</Text><Text style={ui.muted}>{item.state==='uploading' ? 'Uploading' : item.state==='failed' ? 'Failed' : 'Pending'} · saved locally {new Date(d.captured_at).toLocaleString()}</Text>{!!item.error && <Text selectable style={ui.error}>{item.error}</Text>}<Button title="Open Sync & Uploads" secondary onPress={()=>push('sync')}/></View>;})}
-        {filtered.map(deviceCard)}{!filtered.length && !localFiltered.length && <Text style={ui.muted}>No matching records.</Text>}
-        <Button title="Refresh History" disabled={busy} onPress={() => { void refresh(); }} />
-      </> : screen === 'tasks' ? <><Text style={ui.heading}>Tasks</Text><Text style={ui.body}>Project tasks and Record a Gap are planned CableMint features. No tasks or punch-list backend is connected.</Text></>
-      : screen === 'sync' ? <><Text style={ui.heading}>Sync & Uploads</Text><Text style={ui.muted}>Only Uploaded has server confirmation. Uploads run while the app is open; failed attempts retain the same ID.</Text>
-      <View style={ui.card}>{(['pending','uploading','uploaded','failed'] as const).map(state=><Text key={state} style={ui.body}>{state.toUpperCase()}: {journal?.items.filter(i=>i.state===state).length ?? 0}</Text>)}</View>
-      {(journal?.items ?? []).slice().reverse().map(item=><View key={item.attempt.id} style={ui.card}><Text style={ui.label}>{item.attempt.draft.device_type} · {item.attempt.draft.unit_location}</Text><Text selectable style={ui.body}>{item.attempt.draft.mac_address || item.attempt.draft.serial_number}</Text><Text style={ui.muted}>{item.state} · attempts {item.retries}</Text>{!!item.error && <Text selectable style={ui.error}>{item.error}</Text>}{item.state==='failed' && <Button title="Retry Upload" disabled={syncPhase==='syncing' || busy} onPress={()=>{void syncQueue(true,item.attempt.id);}}/>}</View>)}
-      </>
-      : screen === 'account' ? <><Text style={ui.heading}>Account</Text><Text style={ui.body}>{session.user.email}</Text><Text style={ui.body}>CableMint Pro: {pro === null ? 'Not verified' : pro ? 'Active at last check' : 'Not active at last check'}</Text>
-        <Text style={ui.muted}>Access last checked: {journal?.proCheckedAt ? new Date(journal.proCheckedAt).toLocaleString() : 'Not yet verified'}</Text><Text style={ui.muted}>Version {appConfig.expo.version} · Android</Text><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={() => { void refresh(); }} />
-        <Text style={ui.muted}>Manage your subscription on the CableMint website. No billing or checkout is included here.</Text><Button title="Sign Out" secondary disabled={busy} onPress={() => { void signOut(); }} />
-      </> : null}
-    </ScrollView>
-    <View style={{ flexDirection: 'row', padding: 8, gap: 4, backgroundColor: colors.blue }}>{(['projects','history','capture','tasks','account'] as const).map(tab => <View key={tab} style={{ flex: 1 }}>
-      <Pressable accessibilityRole="button" accessibilityState={{ selected: tab === screen, disabled: busy }} disabled={busy} style={{minHeight:56,justifyContent:"center",alignItems:"center",borderRadius:10,backgroundColor:tab === "capture" ? colors.green : colors.blue}} onPress={() => { if (tab === 'capture') capture(); else { setError(''); setPicking(false); if (tab === 'history') setHistoryProject(''); setStack(s => s[s.length-1] === tab ? s : [...s, tab]); } }}><Text style={{fontSize:12,fontWeight:'700',color:tab === 'capture' ? colors.blue : 'white'}}>{tab[0].toUpperCase()+tab.slice(1)}</Text></Pressable>
-    </View>)}</View>
+      {(!serverFresh&&!busy)&&screen!=='sync'&&<View style={[ui.row,{padding:10,backgroundColor:'#E2EBEF',borderRadius:8}]}><Icon name="offline" size={18}/><Text style={[ui.muted,ui.flex]}>Using saved data. Refresh or sync to check the server.</Text></View>}
+      {!!error&&<View style={[ui.card,{borderColor:'#AA302A'}]}><Text accessibilityRole="alert" style={ui.error}>{readableError(error)}</Text><AdvancedPanel title="Technical error details" open={showError} onToggle={()=>setShowError(!showError)}><Text selectable style={ui.muted}>{error}</Text></AdvancedPanel></View>}
+      {!!storageError&&<Text accessibilityRole="alert" style={ui.error}>{readableError(storageError)}</Text>}
+      {busy&&<View style={ui.row}><ActivityIndicator color={colors.green}/><Text style={ui.muted}>{syncPhase==='syncing'?'Syncing…':'Loading your workspace…'}</Text></View>}
+      {counts.failed>0&&screen!=='sync'&&<Pressable accessibilityRole="button" onPress={()=>push('sync')} style={[ui.card,{backgroundColor:'#FFF0EC'}]}><Text style={ui.error}>{counts.failed} capture{counts.failed===1?'':'s'} need upload attention. Tap to retry.</Text></Pressable>}
+      {screen==='projects'?<>
+        <View style={ui.row}><View style={ui.flex}><Text style={ui.heading}>{picking?'Choose a job':'Your field jobs'}</Text><Text style={ui.muted}>Capture. Verify. Keep work connected.</Text></View></View>
+        <Button title="Create Project" icon="plus" disabled={busy} onPress={()=>{if(scanMounted)Alert.alert('Create a new project?','Opening the new job will discard the current unsaved scan.',[{text:'Stay',style:'cancel'},{text:'Continue',onPress:()=>push('create')}]);else push('create');}}/>
+        {!projects.length&&!busy&&<EmptyState title="Your first job starts here" description="Create a project, then capture and verify its devices."/>}
+        {projects.map(p=>{const devices=[...rows,...localDevices].filter(d=>d.project_id===p.id);return <ProjectCard key={p.id} project={p} count={devices.length} last={latestCapture(devices)} status={syncBadge(syncPhase,journal,serverFresh,p.id)} disabled={busy} onPress={()=>chooseProject(p)}/>;})}
+        <Button title="Refresh Projects" icon="sync" secondary disabled={busy} onPress={()=>{void refresh();}}/>
+        {scanMounted&&<Button title="Resume Open Capture" secondary icon="capture" onPress={()=>push('scan')}/>}
+      </>:screen==='create'?<>
+        <View style={ui.card}><Text style={ui.heading}>Name the job</Text><Text style={ui.body}>Use the site or project name your team recognizes.</Text><Field label="Project / Site name" placeholder="e.g. North Tower" value={name} onChange={setName} maxLength={80} disabled={busy||!!creation}/>
+        {!!creation&&<Text style={ui.muted}>Creation was not confirmed. Retry checks the same project ID.</Text>}
+        <Button title={busy?'Creating…':creation?'Retry Create Project':'Create & Open Project'} busy={busy} disabled={!name.trim()&&!creation} onPress={()=>{void newProject();}}/></View>
+      </>:screen==='project'&&project?<>
+        <View style={[ui.card,{backgroundColor:colors.blue,borderColor:colors.blue}]}><Text style={[ui.eyebrow,{color:'#BBCCD5'}]}>PROJECT OVERVIEW</Text><Text style={[ui.stat,{color:'white'}]}>{projectDevices.length}<Text style={{fontSize:16}}> devices captured</Text></Text><Text style={ui.headerSub}>{projectDevices.length?`Last capture ${new Date(projectDevices[0].captured_at).toLocaleString()}`:'Ready for your first device'}</Text><Button title={scanMounted?'Resume Capture':'Capture Device'} icon="capture" disabled={busy||batchReady!==key} onPress={capture}/></View>
+        {saveFeedback}
+        <SectionHeading title="Current batch" action={showBatch?'Done':'Edit'} onPress={()=>setShowBatch(!showBatch)}/>
+        <View style={ui.card}><View style={ui.row}><Icon name="location"/><View style={ui.flex}><Text style={ui.label}>{[batch.building,batch.floor_area].filter(Boolean).join(' / ')||'Location not set'}</Text><Text style={ui.muted}>{batch.unit_location||'Add a unit or room during capture'}</Text></View></View>
+          <Text style={ui.caption}>{batch.device_type||'Choose type at capture'}{batch.autoAdvance?' · Room auto-advance on':''}{batch.requireInstalledPhoto?' · Installed photo required':''}</Text>
+          {showBatch&&<>
+            {([['building','Building',100],['floor_area','Floor / Area',100],['unit_location','Unit / Room',120],['manufacturer','Manufacturer',100],['model','Model',120]] as const).map(([field,label,max])=><Field key={field} label={label} value={batch[field]} maxLength={max} disabled={busy||batchReady!==key} onChange={value=>setBatch(b=>({...b,[field]:value}))}/>)}
+            <View style={ui.row}><Text style={[ui.label,ui.flex]}>Installed photo required</Text><Switch accessibilityLabel="Require installed photo" trackColor={{true:colors.green}} value={batch.requireInstalledPhoto} disabled={batchReady!==key} onValueChange={requireInstalledPhoto=>setBatch(b=>({...b,requireInstalledPhoto}))}/></View><Text style={ui.caption}>Temporary check only. Photos are not uploaded or retained.</Text>
+            <View style={ui.row}><Text style={[ui.label,ui.flex]}>Advance room number</Text><Switch accessibilityLabel="Auto advance room number" trackColor={{true:colors.green}} value={batch.autoAdvance} disabled={batchReady!==key} onValueChange={autoAdvance=>setBatch(b=>({...b,autoAdvance}))}/></View>
+          </>}
+        </View>
+        <SectionHeading title="Recent captures" action="View History" onPress={()=>{setHistoryProject(project.id);push('history');}}/>
+        {projectDevices.slice(0,3).map(recordRow)}{!projectDevices.length&&<EmptyState icon="capture" title="Ready to capture" description="Verified devices will appear here after saving."/>}
+      </>:screen==='types'&&project?<>
+        <Text style={ui.heading}>What are you capturing?</Text><Text style={ui.muted}>MAC and serial labels are supported. Choose the equipment category.</Text>
+        {TYPES.map(type=><DeviceTypeCard key={type} type={type} description={type==='WAP'?'Wireless access point':type==='Security Camera'?'IP camera · MAC or serial':type==='Network Switch'?'Network infrastructure':type==='Access Control'?'Reader or controller':type==='Intercom'?'Entry and communication':'Fiber equipment or other label'} disabled={batchReady!==key} onPress={()=>{setBatch(b=>({...b,device_type:type}));push('scan');}}/>)}
+        <View style={ui.card}><Field label="Custom device type" placeholder="Equipment category" value={batch.device_type} maxLength={80} disabled={batchReady!==key} onChange={device_type=>setBatch(b=>({...b,device_type}))}/><Button title="Capture This Type" secondary disabled={!batch.device_type.trim()||batchReady!==key} onPress={()=>push('scan')}/></View>
+      </>:screen==='history'?<>
+        {selectedDevice?<>
+          <Button title="Back to History" icon="back" secondary onPress={()=>setSelectedDevice(null)}/>
+          <View style={ui.card}><View style={ui.row}><Text style={[ui.heading,ui.flex]}>{selectedDevice.device_type}</Text><StatusBadge status={queueStatus(localItems.find(i=>i.attempt.id===selectedDevice.id)?.state??'uploaded')}/></View><Text style={ui.body}>{projects.find(p=>p.id===selectedDevice.project_id)?.name}</Text><Text style={ui.label}>{[selectedDevice.building,selectedDevice.floor_area,selectedDevice.unit_location].filter(Boolean).join(' / ')||'No location set'}</Text><Text style={ui.eyebrow}>MAC ADDRESS</Text><Text selectable style={ui.identifier}>{selectedDevice.mac_address||'No MAC · serial-only'}</Text><Text style={ui.eyebrow}>SERIAL NUMBER</Text><Text selectable style={ui.identifier}>{selectedDevice.serial_number||'Not supplied'}</Text><Text style={ui.muted}>{new Date(selectedDevice.captured_at).toLocaleString()}</Text>
+          {localItems.some(i=>i.attempt.id===selectedDevice.id)?<Button title="Open Sync & Uploads" secondary onPress={()=>push('sync')}/>:<Button title="Delete Device" icon="trash" secondary danger disabled={busy} onPress={()=>confirmDelete(selectedDevice)}/>}</View>
+        </>:<>
+          <View style={ui.row}><Icon name="search"/><Field label="Search captures" placeholder="MAC, serial, room, project or type" value={search} onChange={setSearch}/></View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>{(['All','Synced','Pending','Failed'] as const).map(f=><Pressable key={f} accessibilityRole="button" accessibilityState={{selected:filter===f}} onPress={()=>setFilter(f)} style={{minHeight:48,justifyContent:'center',paddingHorizontal:16,borderRadius:10,backgroundColor:filter===f?colors.blue:'white',borderWidth:1,borderColor:'#CEDBE2'}}><Text style={{fontWeight:'700',color:filter===f?'white':colors.blue}}>{f}</Text></Pressable>)}</ScrollView>
+          <SectionHeading title={`${visibleHistory.length} capture${visibleHistory.length===1?'':'s'}`} action={historyProject?projects.find(p=>p.id===historyProject)?.name??'Project':'All projects'} onPress={()=>setShowProjectFilter(!showProjectFilter)}/>
+          {showProjectFilter&&<View style={ui.card}><Button title="All Projects" secondary onPress={()=>{setHistoryProject('');setShowProjectFilter(false);}}/>{projects.map(p=><Button key={p.id} title={p.name} secondary onPress={()=>{setHistoryProject(p.id);setShowProjectFilter(false);}}/>)}</View>}
+          {visibleHistory.map(recordRow)}{!visibleHistory.length&&!busy&&<EmptyState icon="history" title={search||historyProject||filter!=='All'?'No matching captures':'No captures yet'} description={search||historyProject||filter!=='All'?'Try a different search or clear the filters.':'Capture your first device to start a searchable inventory.'} action={search||historyProject||filter!=='All'?'Clear Filters':'Capture Device'} onPress={()=>{if(search||historyProject||filter!=='All'){setSearch('');setHistoryProject('');setFilter('All');}else capture();}}/>}
+          <Button title="Refresh History" icon="sync" secondary disabled={busy} onPress={()=>{void refresh();}}/>
+        </>}
+      </>:screen==='tasks'?<EmptyState icon="tasks" title="A clear workspace" description="Project tasks are not available in this release. Your device capture and inventory tools are ready to use." action="Capture a Device" onPress={capture}/>
+      :screen==='sync'?<>
+        <SyncStatus phase={syncPhase} message={syncMessage} lastChecked={serverTime} counts={counts} disabled={!journal||busy} onSync={()=>{void syncQueue(true);}}/>
+        <Text style={ui.muted}>Captures stay on this phone until the server confirms them. Keep CableMint open to upload.</Text>
+        {(journal?.items??[]).slice().reverse().map(item=><View key={item.attempt.id} style={ui.card}><View style={ui.row}><Text style={[ui.label,ui.flex]}>{item.attempt.draft.unit_location||item.attempt.draft.device_type}</Text><StatusBadge status={queueStatus(item.state)}/></View><Text selectable style={ui.identifier}>{item.attempt.draft.mac_address||item.attempt.draft.serial_number}</Text><Text style={ui.caption}>{item.attempt.draft.device_type} · {item.retries} upload attempt{item.retries===1?'':'s'}</Text>{!!item.error&&<><Text style={ui.error}>{readableError(item.error)}</Text><AdvancedPanel title="Upload error details" open={showError} onToggle={()=>setShowError(!showError)}><Text selectable style={ui.muted}>{item.error}</Text></AdvancedPanel></>}{item.state==='failed'&&<Button title="Retry Upload" disabled={syncPhase==='syncing'||busy} onPress={()=>{void syncQueue(true,item.attempt.id);}}/>}</View>)}
+        {!journal?.items.length&&<EmptyState icon="sync" title="No local uploads" description="Sync Now checks the server even when the local upload queue is empty."/>}
+      </>:screen==='account'?<>
+        <View style={ui.projectCard}><View style={ui.row}><View style={[ui.tile,{width:56,height:56}]}><Icon name="account" size={30}/></View><View style={ui.flex}><Text style={ui.eyebrow}>SIGNED IN</Text><Text selectable style={ui.sectionTitle}>{session.user.email}</Text></View></View><View style={[ui.row,{justifyContent:'space-between'}]}><Text style={ui.label}>CableMint Pro</Text><Text style={ui.link}>{pro===null?'Not verified':pro?'Active at last check':'Not active'}</Text></View><Text style={ui.caption}>Access checked {journal?.proCheckedAt?new Date(journal.proCheckedAt).toLocaleString():'not yet'}</Text></View>
+        <View style={ui.card}><SectionHeading title="Workspace"/><View style={[ui.row,{justifyContent:'space-between'}]}><Text style={ui.body}>Device Capture</Text><Text style={ui.label}>v{appConfig.expo.version}</Text></View><Button title="Sync & Uploads" secondary icon="sync" onPress={()=>push('sync')}/><Button title="Refresh Projects & Access" secondary disabled={busy} onPress={()=>{void refresh();}}/></View><Text style={ui.muted}>Manage your account and CableMint Pro on cableminttools.com.</Text><Button title="Sign Out" secondary disabled={busy} onPress={()=>{void signOut();}}/>
+      </>:null}
+    </ScrollView></View>}
+    <BottomNavigation active={activeTab} capturePending={scanMounted} disabled={busy||scannerBusy} onSelect={selectTab}/>
   </SafeAreaView>;
 }

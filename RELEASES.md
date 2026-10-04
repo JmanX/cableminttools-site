@@ -2,6 +2,21 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
+## 1.3.0 — October 4, 2026
+
+Android versionCode: **19**. UI/workflow overhaul from the user-confirmed stable v1.2.5 scanner. Native release build pending.
+
+- Original CableMint charcoal/green design system, shared components and line icons; approved logo unchanged. High-contrast controls, 48px touch targets and safe-area-aware persistent Projects / History / Capture / Tasks / Account navigation.
+- Field-job project cards, project overview with real counts/recent captures, concise type selection and remembered batch/location settings.
+- Simplified Scan → Verify → Location → Save flow, selected MAC/serial at the top, sourced explicit conflict choices and positive resolved state. Advanced OCR/barcode/diagnostic information is collapsed by default.
+- Open captures and safe retries survive tab changes; hidden camera preview stops. Existing native scan guide, optical recognition, zoom policy, duplicate safeguards, Supabase services and durable queue remain intact.
+- Compact searchable/filterable History and record details; app-wide sync badges and dedicated upload screen. Local-save confirmation is distinct from server-confirmed save. Account and honest Tasks empty state match the new shell.
+- Local TypeScript/core regressions and presentation-status tests pass. Actual production screens were exercised in a browser using synthetic camera/gallery/OCR/storage/server adapters at 360/390-point widths: source conflict/resolve, serial-only capture, manual zoom/torch controls, tab resume, location/save-next/reset, History formatting/search, empty-queue spinner/success/failure/retry. See UI_V1.3.0.md.
+
+Delivery target: CableMint-Device-Capture-v1.3.0.apk. Preserve all earlier versioned APKs.
+
+Known issues / remaining tests: A final physical Android smoke test is required for the redesigned keyboard/safe-area behavior and all 17 requested flows with real labels/cloud data. Browser camera/server adapters prove presentation/state wiring, not optical accuracy or live connectivity. v1.2.5 optical/cloud behavior is user-confirmed and its implementation is preserved. Uploads remain foreground-only; installed photos remain temporary and are not uploaded. Prototype signing; internal testing only.
+
 ## 1.2.5 — October 3, 2026
 
 Android versionCode: **18**. Implementation/diagnostics ready before preparing the build. [Native build 37166331749](https://github.com/JmanX/cableminttools-site/actions/runs/37166331749) passed from source c0028323ef32d86bb9ec683c254f60f596eb833b, and the downloaded APK was independently verified. Focused scanner correction; physical automatic zoom is not yet claimed fixed.

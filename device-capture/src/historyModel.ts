@@ -4,7 +4,7 @@ export function searchHistory(rows: Device[], projects: Project[], search: strin
   const names = new Map(projects.map(p => [p.id, p.name]));
   return rows.filter(row => (!projectId || row.project_id === projectId) && terms.every(term =>
     [names.get(row.project_id), row.unit_location, row.device_type, row.mac_address, row.serial_number, row.building, row.floor_area, row.manufacturer, row.model]
-      .filter(Boolean).join(' ').toLowerCase().includes(term)));
+      .filter(Boolean).join(' ').toLowerCase().includes(term) || (/^[a-f0-9:.-]{4,}$/i.test(term) && row.mac_address.replace(/[^a-f0-9]/gi,'').toLowerCase().includes(term.replace(/[^a-f0-9]/gi,'')))));
 }
 export type Screen = 'projects' | 'project' | 'types' | 'scan' | 'history' | 'tasks' | 'account' | 'create' | 'sync';
 export function previousScreen(stack: Screen[]) { return stack.length > 1 ? stack.slice(0, -1) : stack; }

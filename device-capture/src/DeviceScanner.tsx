@@ -14,16 +14,16 @@ import { SmartZoom } from './smartZoom';
 import { withTimeout } from './withTimeout';
 import { isAppCachePhoto } from './photoPrivacy';
 
-const BLUE = '#102B4B';
-const GREEN = '#26B67A';
+import type { ReactNode } from 'react';
+import { AdvancedPanel, AppHeader, Button, CaptureStepHeader, Field as FieldInput, colors, ui } from './components';
+import { IdentifierPanel, ConflictPanel } from './IdentifierPanel';
+import { Icon } from './Icon';
+import { readableError } from './presentation';
+const BLUE=colors.blue, GREEN=colors.green;
 const BARCODE_TYPES = ['qr', 'code128', 'code39', 'code93', 'datamatrix', 'pdf417', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf14', 'codabar', 'aztec'] as const;
 const BARCODE_SETTINGS = { barcodeTypes: [...BARCODE_TYPES] };
 
-function Action({ label, onPress, outline = false, disabled = false }: { label: string; onPress: () => void; outline?: boolean; disabled?: boolean }) {
-  return <Pressable onPress={onPress} disabled={disabled} style={[styles.action, outline && styles.actionOutline, disabled && styles.disabled]}>
-    <Text style={[styles.actionText, outline && styles.actionOutlineText]}>{label}</Text>
-  </Pressable>;
-}
+function Action({label,onPress,outline=false,disabled=false}:{label:string;onPress:()=>void;outline?:boolean;disabled?:boolean}){return <Button title={label} onPress={onPress} secondary={outline} disabled={disabled}/>;}
 
 function CandidateList({ title, candidates, onChoose }: { title: string; candidates: ValueCandidate[]; onChoose: (value: string) => void }) {
   return <View style={styles.section}>
@@ -36,9 +36,9 @@ function CandidateList({ title, candidates, onChoose }: { title: string; candida
   </View>;
 }
 
-export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, onExit, onDevices, savedMessage, batchStorageError }: {
+export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, onExit, onDevices, savedMessage, batchStorageError, active=true, onBusyChange, saveFeedback }: {
   project: Project; userId: string; batch: Batch; onSave: (attempt: SaveAttempt) => Promise<string>;
-  onExit: () => void; onDevices: () => void; savedMessage: string; batchStorageError: string;
+  onExit: () => void; onDevices: () => void; savedMessage: string; batchStorageError: string; active?:boolean; onBusyChange?:(busy:boolean)=>void; saveFeedback?:ReactNode;
   onBatchChange: (field: keyof Batch, value: string | boolean) => void;
 }) {
   const zoomControl=useRef(new SmartZoom());
@@ -50,6 +50,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [zoomReady,setZoomReady]=useState(false);
   const [zoomError,setZoomError]=useState('');
   const [showDiagnostics,setShowDiagnostics]=useState(false);
+  const [showDetails,setShowDetails]=useState(false);
   const [scannerStatus,setScannerStatus]=useState('Waiting for scanner frames');
   const [scannerDetails,setScannerDetails]=useState('');
   const [scannerNative,setScannerNative]=useState<NativeScannerState|null>(null);
@@ -84,7 +85,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
   const [captureStatus, setCaptureStatus] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
   useEffect(()=>{
-    if(!cameraReady || (stage!=='camera' && stage!=='installed') || !camera.current)return;
+    if(!active || !cameraReady || (stage!=='camera' && stage!=='installed') || !camera.current)return;
     let cancelled=false;
     const driver=new CameraZoom(camera.current,state=>{
       if(cancelled)return;
@@ -103,7 +104,7 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     }
     void driver.initialize(stage==='camera').then(()=>{if(!cancelled){setZoomReady(true);void poll();}}).catch(failure=>{if(!cancelled)setZoomError((failure as Error).message);});
     return()=>{cancelled=true;driver.dispose();if(timer)clearTimeout(timer);if(zoomDriver.current===driver)zoomDriver.current=null;};
-  },[cameraReady,stage]);
+  },[cameraReady,stage,active]);
   const [review, setReview] = useState<ScanReview | null>(null);
   const [resolution, setResolution] = useState<ConflictResolution>({});
   const [mac, setMac] = useState('');
@@ -136,7 +137,9 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     if (stage === 'review') { leaveScan(() => scanAgain()); return; }
     leaveScan(onExit);
   }
-  useEffect(() => { const sub = BackHandler.addEventListener('hardwareBackPress', () => { back(); return true; }); return () => sub.remove(); }, [stage, busy, pendingAttempt]);
+  useEffect(()=>{onBusyChange?.(busy);},[busy,onBusyChange]);
+  useEffect(()=>{if(!active){setCameraReady(false);setTorch(false);}},[active]);
+  useEffect(() => { if(!active)return; const sub = BackHandler.addEventListener('hardwareBackPress', () => { back(); return true; }); return () => sub.remove(); }, [stage, busy, pendingAttempt,active]);
 
   function onBarcodeScanned(result: BarcodeScanningResult) {
     if (captureInProgress.current || !result.data.trim()) return;
@@ -350,170 +353,92 @@ export function DeviceScanner({ project, userId, batch, onBatchChange, onSave, o
     setStage('camera');
   }
 
-  if (Platform.OS !== 'android') {
-    return <SafeAreaView style={styles.center}><Text style={styles.darkTitle}>CableMint Device Capture</Text><Text style={styles.muted}>This first prototype targets Android only.</Text></SafeAreaView>;
-  }
-  if (!permission) return <SafeAreaView style={styles.center}><ActivityIndicator color={GREEN} /></SafeAreaView>;
-  if ((stage === 'camera' || stage === 'installed') && !permission.granted) {
-    return <SafeAreaView style={styles.center}>
-      <Text style={styles.darkTitle}>Camera access</Text>
-      <Text style={styles.body}>CableMint uses the camera to read equipment labels on this phone. Photos are processed locally and removed after each scan.</Text>
-      <Action label="Scan with Camera" disabled={busy} onPress={() => { void requestPermission(); }} />
-      {stage==='camera' && <><Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} /><Action label="Enter MAC / Serial Manually" disabled={busy} outline onPress={() => showReview(analyzeScan(null, []))} /></>}
-      {busy && <><ActivityIndicator color={GREEN} /><Text style={styles.body}>{captureStatus}</Text></>}
-      {!!error && <Text style={styles.error}>{error}</Text>}
-      {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
-      <Action label="← Back" disabled={busy} outline onPress={back} />
-    </SafeAreaView>;
-  }
-
-  return <SafeAreaView style={styles.container}>
-    <StatusBar barStyle="light-content" backgroundColor={BLUE} />
-    <View style={styles.header}>
-      <Text style={styles.brand}>CABLEMINT TOOLS</Text>
-      <Text style={styles.title}>Device Capture</Text>
-      <Text style={styles.headerSub}>{project.name} · {batch.device_type} · {[batch.building, batch.floor_area, installationLocation].filter(Boolean).join(' / ')}</Text>
-      <Action label="← Back" disabled={busy} outline onPress={back} />
-      {!!batchStorageError && <Text style={{ color: '#FFDDCC' }}>{batchStorageError}</Text>}
-    </View>
-    {stage === 'camera' || stage==='installed' ? <View style={styles.cameraPage}>
+  if(!active)return null;
+  if(!permission)return <View style={styles.center}><ActivityIndicator color={GREEN}/><Text style={ui.body}>Preparing the camera…</Text></View>;
+  const cameraStage=stage==='camera'||stage==='installed';
+  const header=<CaptureStepHeader step={stage==='camera'?'Scan':stage==='review'?'Verify':stage==='installed'?'Photo':'Location'} project={project.name} type={batch.device_type} onBack={back} disabled={busy}/>;
+  if(cameraStage&&!permission.granted)return <View style={ui.page}>{header}<ScrollView contentContainerStyle={ui.content}><Text style={ui.heading}>Read the equipment label</Text><Text style={ui.body}>Allow camera access to scan on this phone. Photos are processed locally and removed.</Text><Button title="Allow Camera" icon="capture" disabled={busy} onPress={()=>{void requestPermission();}}/>{!permission.canAskAgain&&<Text style={ui.muted}>Enable Camera in Android Settings → Apps → CableMint Device Capture → Permissions.</Text>}{stage==='camera'&&<><Button title="Choose Existing Photo" icon="gallery" secondary disabled={busy} onPress={()=>{void chooseExistingPhoto();}}/><Button title="Enter MAC / Serial Manually" secondary disabled={busy} onPress={()=>showReview(analyzeScan(null,[]))}/></>}{!!error&&<Text style={ui.error}>{readableError(error)}</Text>}{busy&&<ActivityIndicator color={GREEN}/>}</ScrollView></View>;
+  return <View style={ui.page}>
+    {header}
+    {!!batchStorageError&&<Text style={[ui.error,{padding:8}]}>{readableError(batchStorageError)}</Text>}
+    {stage==='camera'&&saveFeedback&&<View style={{paddingHorizontal:14,paddingVertical:6}}>{saveFeedback}</View>}
+    {cameraStage?<View style={styles.cameraPage}>
       <View style={styles.cameraFrame} onLayout={e=>{previewSize.current=e.nativeEvent.layout;}}>
         <NativeZoomCamera ref={camera} style={StyleSheet.absoluteFill} facing="back" mode="picture" enableTorch={torch} autofocus="on"
-          barcodeScannerSettings={BARCODE_SETTINGS} onBarcodeScanned={stage==='camera' ? onBarcodeScanned : undefined}
-          onCameraReady={() => setCameraReady(true)} onMountError={event => setError(event.message)} />
-        <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2} onMoveShouldSetResponder={e=>zoomReady && e.nativeEvent.touches.length>=2}
-          onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomDriver.current?.requested ?? zoomControl.current.ratio};zoomControl.current.manual=true;void zoomDriver.current?.pauseAutomatic().catch(failure=>setZoomError((failure as Error).message));}}
+          barcodeScannerSettings={BARCODE_SETTINGS} onBarcodeScanned={stage==='camera'?onBarcodeScanned:undefined}
+          onCameraReady={()=>setCameraReady(true)} onMountError={event=>setError(event.message)}/>
+        <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={e=>zoomReady&&e.nativeEvent.touches.length>=2} onMoveShouldSetResponder={e=>zoomReady&&e.nativeEvent.touches.length>=2}
+          onResponderGrant={e=>{pinch.current={distance:distance(e.nativeEvent.touches),ratio:zoomDriver.current?.requested??zoomControl.current.ratio};zoomControl.current.manual=true;void zoomDriver.current?.pauseAutomatic().catch(failure=>setZoomError((failure as Error).message));}}
           onResponderMove={e=>{const d=distance(e.nativeEvent.touches);if(d>0&&pinch.current.distance>0)applyZoom(zoomControl.current.manualZoom(pinch.current.ratio*d/pinch.current.distance,Date.now()));}}
           onResponderRelease={()=>zoomControl.current.endManual(Date.now())} onResponderTerminate={()=>zoomControl.current.endManual(Date.now())}/>
-        <View pointerEvents="none" style={styles.guide} />
+        <View pointerEvents="none" style={styles.guide}/>
+        <View pointerEvents="none" style={styles.cameraInstruction}><Text style={styles.cameraText}>{stage==='installed'?'Frame the installed device':'Center the MAC / serial label'}</Text><Text style={styles.cameraHint}>{stage==='installed'?'Include its installation context':'Hold steady · automatic zoom is available'}</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel={torch?'Turn Off Flashlight':'Turn On Flashlight'} accessibilityState={{selected:torch,disabled:busy}} disabled={busy} onPress={()=>setTorch(!torch)} style={[styles.torch,{backgroundColor:torch?GREEN:'#20313BDD'}]}><Icon name="flash" color={torch?BLUE:'white'} size={23}/></Pressable>
       </View>
-      <ScrollView style={{maxHeight:'48%',backgroundColor:'#F4F8FA'}} contentContainerStyle={styles.controls}>
-        <View style={styles.controlRow}><View style={styles.flex}><Action label="Zoom Out" disabled={!zoomReady || busy || zoomRatio<=zoomControl.current.min} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)-.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View><Text style={styles.muted}>{zoomReady ? zoomRatio.toFixed(1)+'× · pinch to zoom' : 'Starting camera zoom…'}</Text><View style={styles.flex}><Action label="Zoom In" disabled={!zoomReady || busy || zoomRatio>=zoomControl.current.max} outline onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested ?? zoomRatio)+.2,Date.now()));zoomControl.current.endManual(Date.now());}}/></View></View>
-        {!!zoomError && <Text accessibilityRole="alert" style={styles.error}>{zoomError}</Text>}
-        {stage==='camera' && <View style={styles.diagnostics}>
-          <Text style={styles.label}>Live scanner diagnostics</Text>
-          <Text selectable style={styles.muted}>Potential undecoded: {scannerNative?.autoZoom?.potentialCount ?? '—'} · decoded: {scannerNative?.autoZoom?.decodedCount ?? '—'}</Text>
-          <Text selectable style={styles.muted}>Relevant candidates: {scannerNative?.autoZoom?.relevantCount ?? '—'} · irrelevant: {scannerNative?.autoZoom?.irrelevantCount ?? '—'} · unassigned: {scannerNative?.autoZoom?.unassignedCount ?? '—'}</Text>
-          <Text selectable style={styles.muted}>Automatic zoom: {scannerNative?.autoZoom?.enabled ? 'enabled' : 'disabled'} · callbacks: {scannerNative?.zoomCallbackInvocationCount ?? 0}</Text>
-          <Text selectable style={styles.muted}>Last suggestion: {scannerNative?.autoZoom?.suggestedZoom ? scannerNative.autoZoom.suggestedZoom.toFixed(2)+'×' : 'none'} · actual: {zoomRatio.toFixed(2)}×</Text>
-          <Text selectable style={styles.muted}>Automatic requests: {scannerNative?.autoZoom?.requestCount ?? 0} · CameraControl: {scannerNative?.automaticCameraRequestCount ?? 0} · applied: {scannerNative?.autoZoom?.appliedCount ?? 0}</Text>
-          <Text selectable style={styles.muted}>Last reason: {scannerStatus}</Text>
-          <Pressable onPress={()=>setShowDiagnostics(!showDiagnostics)}><Text style={styles.muted}>{showDiagnostics ? 'Hide detailed diagnostics' : 'Show detailed diagnostics'}</Text></Pressable>
-          {showDiagnostics && <><Text style={styles.muted}>Relevant means identifier-shaped, not confirmed MAC/SN ownership. All raw values remain available for review.</Text><Text selectable style={styles.ocrText}>{scannerDetails}</Text></>}
-        </View>}
-        <Text style={styles.body}>{stage==='installed' ? 'Photograph the installed device in place. This temporary photo will be removed after saving.' : 'Read the label, then confirm its identifiers.'}</Text>
-        {stage==='camera' && <><Text style={styles.body}>Fill the guide with a sharp label. Native ML Kit has seen {barcodeCount} distinct barcode{barcodeCount === 1 ? '' : 's'}.</Text>
-        {!!liveCodes.length && <ScrollView style={{ maxHeight: 100 }}>
-          {liveCodes.map(code => <Text selectable key={`${code.type}:${code.data}`} style={styles.ocrText}>{code.type}: {code.data}</Text>)}
-        </ScrollView>}
-        <View style={styles.controlRow}>
-          <View style={styles.flex}><Action label={torch ? 'Turn Off Flashlight' : 'Turn On Flashlight'} disabled={busy} onPress={() => setTorch(!torch)} outline /></View>
-          <View style={styles.flex}><Action label="Clear codes" disabled={busy} onPress={() => { liveBarcodes.current.clear(); setBarcodeCount(0); setLiveCodes([]); }} outline /></View>
+      <ScrollView style={{maxHeight:showDiagnostics?'55%':'45%'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.controls}>
+        <View style={[ui.row,{justifyContent:'space-between'}]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Zoom Out" disabled={!zoomReady||busy||zoomRatio<=zoomControl.current.min} style={styles.zoomButton} onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested??zoomRatio)-.2,Date.now()));zoomControl.current.endManual(Date.now());}}><Text style={styles.zoomText}>−</Text></Pressable>
+          <Text style={ui.label}>{zoomReady?zoomRatio.toFixed(1)+'×':'Starting camera…'}<Text style={ui.caption}>{zoomReady?' · pinch to zoom':''}</Text></Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Zoom In" disabled={!zoomReady||busy||zoomRatio>=zoomControl.current.max} style={styles.zoomButton} onPress={()=>{applyZoom(zoomControl.current.manualZoom((zoomDriver.current?.requested??zoomRatio)+.2,Date.now()));zoomControl.current.endManual(Date.now());}}><Text style={styles.zoomText}>+</Text></Pressable>
         </View>
-        </>}<Action label={busy ? captureStatus : stage==='installed' ? 'Take Installed Photo' : 'Scan with Camera'} onPress={() => { void (stage==='installed' ? captureInstalled() : captureLabel()); }} disabled={busy || !cameraReady} />
-        {stage==='camera' && <><Action label="Choose Existing Photo" disabled={busy} outline onPress={() => { void chooseExistingPhoto(); }} />
-        <Action label="Enter MAC / Serial Manually" disabled={busy} outline onPress={()=>showReview(analyzeScan(null,[]))}/>
-        {!!liveCodes.length && <Action label="Review read codes" disabled={busy} outline onPress={() => showReview(analyzeScan(null, liveValues()))} />}</>}
-        {busy && <ActivityIndicator color={GREEN} />}
-        {!!error && <Text style={styles.error}>{error}</Text>}
-        {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
-        {!!savedMessage && <Text accessibilityLiveRegion="polite" style={styles.body}>{savedMessage}</Text>}
+        <Button title={busy?captureStatus||'Reading label…':stage==='installed'?'Take Installed Photo':'Scan Label'} icon="capture" busy={busy} disabled={!cameraReady} onPress={()=>{void(stage==='installed'?captureInstalled():captureLabel());}}/>
+        {stage==='camera'&&<View style={ui.row}><View style={ui.flex}><Button title="Gallery" icon="gallery" secondary disabled={busy} onPress={()=>{void chooseExistingPhoto();}}/></View><View style={ui.flex}><Button title="Enter Manually" secondary disabled={busy} onPress={()=>showReview(analyzeScan(null,[]))}/></View></View>}
+        {!!error&&<Text accessibilityRole="alert" style={ui.error}>{readableError(error)}</Text>}{!!cleanupWarning&&<Text style={ui.error}>{cleanupWarning}</Text>}
+        {stage==='camera'&&<AdvancedPanel title="Developer · scanner diagnostics" open={showDiagnostics} onToggle={()=>setShowDiagnostics(!showDiagnostics)}>
+          {!!zoomError&&<Text style={ui.error}>{zoomError}</Text>}
+          <Text selectable style={ui.muted}>Potential undecoded: {scannerNative?.autoZoom?.potentialCount??'—'} · decoded: {scannerNative?.autoZoom?.decodedCount??'—'}</Text>
+          <Text selectable style={ui.muted}>Relevant: {scannerNative?.autoZoom?.relevantCount??'—'} · irrelevant: {scannerNative?.autoZoom?.irrelevantCount??'—'} · unassigned: {scannerNative?.autoZoom?.unassignedCount??'—'}</Text>
+          <Text selectable style={ui.muted}>Auto zoom: {scannerNative?.autoZoom?.enabled?'enabled':'disabled'} · callbacks: {scannerNative?.zoomCallbackInvocationCount??0}</Text>
+          <Text selectable style={ui.muted}>Last suggestion: {scannerNative?.autoZoom?.suggestedZoom?scannerNative.autoZoom.suggestedZoom.toFixed(2)+'×':'none'} · actual: {zoomRatio.toFixed(2)}×</Text>
+          <Text selectable style={ui.muted}>Requests: {scannerNative?.autoZoom?.requestCount??0} · CameraControl: {scannerNative?.automaticCameraRequestCount??0} · applied: {scannerNative?.autoZoom?.appliedCount??0}</Text>
+          <Text selectable style={ui.muted}>Last reason: {scannerStatus}</Text><Text selectable style={styles.ocrText}>{scannerDetails}</Text>
+          <Text style={ui.muted}>{barcodeCount} distinct live barcode{barcodeCount===1?'':'s'}</Text>{liveCodes.map(code=><Text selectable key={`${code.type}:${code.data}`} style={styles.ocrText}>{code.type}: {code.data}</Text>)}
+          {!!liveCodes.length&&<Button title="Review Live Codes" secondary disabled={busy} onPress={()=>showReview(analyzeScan(null,liveValues()))}/>}
+          <Button title="Clear Codes" secondary disabled={busy} onPress={()=>{liveBarcodes.current.clear();setBarcodeCount(0);setLiveCodes([]);}}/>
+        </AdvancedPanel>}
       </ScrollView>
-    </View> : <ScrollView key="review" style={{backgroundColor:'#F4F8FA'}} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.reviewPage}>
-      <Text style={styles.darkTitle}>{stage === 'location' ? 'Installation Location & Save' : 'Identify Device'}</Text>
-      <Text style={styles.muted}>Candidates use printed MAC or SN labels and proximity. Conflicting readings require your explicit choice. Confirm every value against the device.</Text>
-      {!!error && <Text style={styles.error}>{error}</Text>}
-      {!!cleanupWarning && <Text style={styles.error}>{cleanupWarning}</Text>}
-      {!!review?.conflicts.length && <View style={[styles.section, {backgroundColor:'#FFF1EE',borderWidth:2,borderColor:'#B32626'}]}>
-        <Text accessibilityRole="alert" style={styles.error}>{unresolved.length ? 'Identifier conflict — action required' : 'Conflict resolved — verify your selected value'}</Text>
-        {unresolved.length>0 && <Text style={styles.body}>Saving is blocked until you explicitly choose a reading or confirm a manual correction.</Text>}
-        {review.conflicts.map(conflict => <View key={conflict.id} style={styles.codeRow}>
-          <Text style={styles.label}>{conflict.field.toUpperCase()} · {conflict.reason}</Text>
-          <Text selectable style={styles.candidateValue}>{conflict.barcode.raw}</Text><Text style={styles.candidateMeta}>{conflict.barcode.source}</Text>
-          <Action label="Choose decoded barcode" disabled={busy || !!pendingAttempt || !conflict.barcode.value} outline onPress={() => resolveConflict(conflict.field, conflict.barcode.value!)} />
-          <Text selectable style={styles.candidateValue}>{conflict.ocr.raw}</Text><Text style={styles.candidateMeta}>{conflict.ocr.source}</Text>
-          <Action label="Choose printed-text reading" disabled={busy || !!pendingAttempt || !conflict.ocr.value} outline onPress={() => resolveConflict(conflict.field, conflict.ocr.value!)} />
-          {!conflict.ocr.value && <Text style={styles.error}>Printed-text reading is not valid. Correct it in Technician check.</Text>}
-        </View>)}
-        {(['mac','serial'] as const).filter(field => review.conflicts.some(c => c.field === field)).map(field => <View key={field}>
-          <Text selectable style={styles.label}>Selected {field.toUpperCase()}: {(field === 'mac' ? mac : serial) || '(blank)'}</Text>
-          <Action label={'Confirm my manually checked '+field.toUpperCase()} disabled={busy || !!pendingAttempt || (field === 'mac' ? !normalizeMac(mac) : !serial.trim())} outline onPress={() => resolveConflict(field, field === 'mac' ? normalizeMac(mac)! : serial.trim())} />
-          {field === 'mac' && <Action label="Confirm this is serial-only; omit MAC" disabled={busy || !!pendingAttempt || !serial.trim()} outline onPress={() => resolveConflict('mac','')} />}
-        </View>)}
-      </View>}
-      {stage === 'review' && <>
-      <Text style={styles.muted}>Confidence: {review?.macs.some(c => c.corroboratedByBarcode) || review?.serials.some(c => c.corroboratedByBarcode) ? 'Barcode corroborates a printed label; verify before saving.' : 'Manual review required. Ambiguous values remain unassigned.'}</Text>
-      <CandidateList title="Printed MAC candidates" candidates={review?.macs ?? []} onChoose={chooseMac} />
-      <CandidateList title="Printed serial candidates" candidates={review?.serials ?? []} onChoose={chooseSerial} />
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>All barcode values</Text>
-        {review?.barcodes.length ? review.barcodes.map((code, index) => <View key={`${code.type}:${code.data}:${index}`} style={styles.codeRow}>
-          <Text selectable style={styles.candidateValue}>{code.data}</Text><Text style={styles.candidateMeta}>{code.type} · {code.assignmentReason ?? 'unassigned — confirm manually'}</Text>
-          <View style={styles.controlRow}>
-            <View style={styles.flex}><Action label="Use as MAC" disabled={busy || !!pendingAttempt || !normalizeMac(code.data)} outline onPress={() => chooseMac(normalizeMac(code.data)!)} /></View>
-            <View style={styles.flex}><Action label="Use as Serial" disabled={busy || !!pendingAttempt || code.data.length > 160} outline onPress={() => chooseSerial(code.data)} /></View>
-          </View>
-          {!normalizeMac(code.data) && <Text style={styles.muted}>This code is not a valid 12-hex MAC. It can still be selected as a serial.</Text>}
-        </View>) : <Text style={styles.muted}>No barcode decoded.</Text>}
-      </View></>}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Technician check</Text>
-        <Text style={styles.muted}>{[batch.building, batch.floor_area, batch.device_type, batch.manufacturer, batch.model].filter(Boolean).join(' / ')}</Text>
-        {stage === 'location' && <>
-        {([['building','Building',100],['floor_area','Floor / Area',100]] as const).map(([field,label,limit]) => <View key={field}><Text style={styles.label}>{label}</Text><TextInput style={styles.input} value={batch[field]} maxLength={limit} editable={!busy && !pendingAttempt} onChangeText={value => { onBatchChange(field,value); setVerified(false); }} /></View>)}
-        <Text style={styles.label}>Unit / Room / Location</Text>
-        <TextInput value={installationLocation} editable={!busy && !pendingAttempt} onChangeText={value => { setInstallationLocation(value); setVerified(false); setConfirmationError(''); }} maxLength={120}
-          placeholder="Room 204" style={styles.input} /></>}
-        <Text style={styles.label}>Wrong? Edit MAC (blank for serial-only devices)</Text>
-        <TextInput value={mac} editable={!busy && !pendingAttempt} onChangeText={chooseMac} onBlur={() => { const normalized = normalizeMac(mac); if (normalized) setMac(normalized); }} autoCapitalize="characters" placeholder="AA:BB:CC:DD:EE:FF" style={styles.input} />
-        <Text style={styles.label}>Wrong? Edit Serial</Text>
-        <TextInput value={serial} editable={!busy && !pendingAttempt} onChangeText={chooseSerial} autoCapitalize="characters" placeholder="Enter or choose a serial" style={styles.input} />
-        {!!mac && !normalizeMac(mac) && <Text style={styles.error}>This does not look like a 12-digit MAC address.</Text>}
-        {stage === 'location' ? <><Text style={styles.muted}>I checked the MAC, serial, and location against this device.</Text>
-        <Switch accessibilityLabel="Technician verified device fields" value={verified} disabled={busy || !!pendingAttempt} onValueChange={setVerified} />
-        {!!pendingAttempt && <Text style={styles.muted}>These fields are held for a safe retry. Retry the same save or inspect Current Project Devices before leaving this scan.</Text>}
-        {!!confirmationError && <Text accessibilityRole="alert" style={styles.error}>{confirmationError}</Text>}
-        {duplicates.map(d => <View key={d.id} style={styles.candidate}><Text style={styles.candidateValue}>Existing {d.device_type} · {d.unit_location}</Text><Text selectable style={styles.muted}>{d.mac_address}{'\n'}{d.serial_number}{'\n'}{d.building} / {d.floor_area}</Text></View>)}
-        {!!installedUri && <><Image source={{uri:installedUri}} style={{height:180,borderRadius:10}} resizeMode="contain"/><Text style={styles.muted}>Temporary installed photo · not uploaded or retained.</Text><Action label="Retake Installed Photo" disabled={busy || !!pendingAttempt} outline onPress={()=>{setCameraReady(false);resetZoom();setStage('installed');}}/></>}
-        <Action label={busy ? 'Saving capture…' : batch.requireInstalledPhoto && !installedUri ? 'Next: Installed Photo' : pendingAttempt ? 'Retry Save Device' : 'Save Device & Next'} disabled={busy || !verified || unresolved.length > 0} onPress={() => { if(!identificationReady())return; if(batch.requireInstalledPhoto && !installedUri){setCameraReady(false);resetZoom();setStage('installed');}else void saveAndNext(); }} /></>
-        : <><Text style={styles.muted}>Confirm identification, then enter the installation location.</Text><Action label="Continue to Location" disabled={busy || unresolved.length > 0 || (!mac.trim() && !serial.trim()) || (!!mac && !normalizeMac(mac))} onPress={() => { if(!identificationReady())return; setStage('location'); setVerified(false); Keyboard.dismiss(); }} /></>}
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Raw OCR text</Text>
-        <Text selectable style={styles.ocrText}>{review?.ocrText || 'No printed text recognized.'}</Text>
-      </View>
-      <Action label="Rescan with Camera" disabled={busy || !!pendingAttempt} onPress={() => { setVerified(false); scanAgain(); }} />
-      <Action label="Choose Existing Photo" disabled={busy || !!pendingAttempt} outline onPress={() => { void chooseExistingPhoto(); }} />
-      <Action label="Current Project Devices" disabled={busy} outline onPress={() => leaveScan(onDevices)} />
-      {busy && <><ActivityIndicator color={GREEN} /><Text style={styles.body}>{captureStatus}</Text></>}
+    </View>:<ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
+      <Text style={ui.heading}>{stage==='review'?'Verify identification':'Where is this device?'}</Text>
+      <Text style={ui.muted}>{stage==='review'?'Check the selected values against the equipment label.':'Your batch location carries forward to the next capture.'}</Text>
+      {stage==='review'&&<IdentifierPanel mac={mac} serial={serial} onMac={chooseMac} onSerial={chooseSerial} disabled={busy||!!pendingAttempt}/>}
+      <ConflictPanel conflicts={review?.conflicts??[]} unresolved={unresolved} mac={mac} serial={serial} onResolve={resolveConflict} disabled={busy||!!pendingAttempt}/>
+      {!!error&&<Text accessibilityRole="alert" style={ui.error}>{readableError(error)}</Text>}{!!cleanupWarning&&<Text style={ui.error}>{cleanupWarning}</Text>}
+      {stage==='location'?<>
+        <View style={ui.card}><View style={ui.row}><Icon name="location"/><Text style={ui.sectionTitle}>Installation location</Text></View>
+          <View style={[ui.row,{alignItems:'flex-start'}]}>{([['building','Building',100],['floor_area','Floor / Area',100]] as const).map(([field,label,limit])=><FieldInput key={field} label={label} value={batch[field]} maxLength={limit} disabled={busy||!!pendingAttempt} onChange={value=>{onBatchChange(field,value);setVerified(false);}}/>)}</View>
+          <FieldInput label="Unit / Room / Location" value={installationLocation} maxLength={120} placeholder="e.g. Room 204" disabled={busy||!!pendingAttempt} onChange={value=>{setInstallationLocation(value);setVerified(false);setConfirmationError('');}}/>
+          <Text style={ui.caption}>{batch.autoAdvance?'Next save advances the final room number.':'This location is remembered for the next device.'}</Text>
+        </View>
+        <View style={ui.card}><Text style={ui.eyebrow}>READY TO SAVE</Text><Text selectable style={ui.identifier}>{mac||'Serial-only device'}</Text><Text selectable style={ui.body}>{serial||'No serial supplied'}</Text><Text style={ui.muted}>{batch.device_type} · {[batch.building,batch.floor_area,installationLocation].filter(Boolean).join(' / ')||'No location set'}</Text>
+          <View style={ui.row}><Text style={[ui.label,ui.flex]}>I checked identifiers and location</Text><Switch accessibilityLabel="Technician verified device fields" value={verified} disabled={busy||!!pendingAttempt} trackColor={{true:GREEN}} onValueChange={setVerified}/></View>
+        </View>
+        {!!pendingAttempt&&<Text style={ui.muted}>Values are held for a safe retry. Retry this save or check project History before leaving.</Text>}
+        {!!confirmationError&&<Text accessibilityRole="alert" style={ui.error}>{readableError(confirmationError)}</Text>}
+        {duplicates.map(d=><View key={d.id} style={[ui.card,{backgroundColor:colors.warningSoft}]}><Text style={ui.label}>Already captured · {d.device_type}</Text><Text style={ui.body}>{d.unit_location}</Text><Text selectable style={ui.identifier}>{d.mac_address||d.serial_number}</Text><Button title="View Project History" secondary onPress={()=>leaveScan(onDevices)}/></View>)}
+        {!!installedUri&&<View style={ui.card}><Image source={{uri:installedUri}} style={{height:140,borderRadius:10}} resizeMode="contain"/><Text style={ui.caption}>Installed photo checked · temporary, not uploaded.</Text><Button title="Retake Installed Photo" secondary disabled={busy||!!pendingAttempt} onPress={()=>{setCameraReady(false);resetZoom();setStage('installed');}}/></View>}
+        <Button title={busy?'Saving…':batch.requireInstalledPhoto&&!installedUri?'Next · Installed Photo':pendingAttempt?'Retry Save':'Save & Capture Next'} icon="check" busy={busy} disabled={!verified||unresolved.length>0} onPress={()=>{if(!identificationReady())return;if(batch.requireInstalledPhoto&&!installedUri){setCameraReady(false);resetZoom();setStage('installed');}else void saveAndNext();}}/>
+        <Text style={ui.caption}>Saves on this phone first. Cloud sync is confirmed separately.</Text>
+      </>:<>
+        {!!confirmationError&&<Text accessibilityRole="alert" style={ui.error}>{readableError(confirmationError)}</Text>}
+        <Button title="Continue to Location" icon="next" disabled={busy||unresolved.length>0||(!mac.trim()&&!serial.trim())||(!!mac&&!normalizeMac(mac))} onPress={()=>{if(!identificationReady())return;setStage('location');setVerified(false);Keyboard.dismiss();}}/>
+        <AdvancedPanel title="Advanced scan details" open={showDetails} onToggle={()=>setShowDetails(!showDetails)}>
+          <CandidateList title="Printed MAC candidates" candidates={review?.macs??[]} onChoose={chooseMac}/>
+          <CandidateList title="Printed serial candidates" candidates={review?.serials??[]} onChoose={chooseSerial}/>
+          <Text style={ui.label}>Barcode values</Text>
+          {review?.barcodes.map((code,index)=><View key={`${code.type}:${code.data}:${index}`} style={ui.card}><Text selectable style={ui.identifier}>{code.data}</Text><Text style={ui.muted}>{code.type} · {code.assignmentReason??'Unassigned'}</Text><View style={ui.row}><View style={ui.flex}><Button title="Use as MAC" secondary disabled={busy||!!pendingAttempt||!normalizeMac(code.data)} onPress={()=>chooseMac(normalizeMac(code.data)!)}/></View><View style={ui.flex}><Button title="Use as Serial" secondary disabled={busy||!!pendingAttempt||code.data.length>160} onPress={()=>chooseSerial(code.data)}/></View></View></View>)}
+          <Text style={ui.label}>Confidence</Text><Text style={ui.muted}>{review?.macs.some(c=>c.corroboratedByBarcode)||review?.serials.some(c=>c.corroboratedByBarcode)?'Barcode corroborates printed text; technician verification is required.':'Manual review required. Ambiguous values remain unassigned.'}</Text>
+          <Text style={ui.label}>Raw OCR text</Text><Text selectable style={styles.ocrText}>{review?.ocrText||'No printed text recognized.'}</Text>
+        </AdvancedPanel>
+        <View style={ui.row}><View style={ui.flex}><Button title="Rescan" secondary icon="capture" disabled={busy||!!pendingAttempt} onPress={()=>{setVerified(false);scanAgain();}}/></View><View style={ui.flex}><Button title="Gallery" secondary icon="gallery" disabled={busy||!!pendingAttempt} onPress={()=>{void chooseExistingPhoto();}}/></View></View>
+      </>}
     </ScrollView>}
-  </SafeAreaView>;
+  </View>;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0, backgroundColor: BLUE },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 26, gap: 16, backgroundColor: '#F4F8FA' },
-  header: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16, backgroundColor: BLUE },
-  brand: { color: GREEN, fontWeight: '800', letterSpacing: 2, fontSize: 12 },
-  title: { color: 'white', fontSize: 21, fontWeight: '700', marginTop: 5 },
-  darkTitle: { color: BLUE, fontSize: 22, fontWeight: '800' },
-  headerSub: { color: '#B7CEDB', fontSize: 12, marginTop: 4 },
-  cameraPage: { flex: 1 }, cameraFrame: { flex: 1, overflow: 'hidden', backgroundColor: '#071726' },
-  guide: { position: 'absolute', left: '8%', right: '8%', top: '27%', bottom: '27%', borderColor: GREEN, borderWidth: 2, borderRadius: 14 },
-  diagnostics: { padding: 10, gap: 3, backgroundColor: 'white', borderRadius: 8 },
-  controls: { padding: 18, gap: 10 }, controlRow: { flexDirection: 'row', gap: 8 }, flex: { flex: 1 },
-  action: { backgroundColor: GREEN, borderRadius: 10, paddingVertical: 13, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
-  actionOutline: { backgroundColor: 'white', borderWidth: 1, borderColor: '#B8CDD7' },
-  actionText: { color: '#06231A', fontWeight: '700', textAlign: 'center' },
-  actionOutlineText: { color: BLUE }, disabled: { opacity: 0.55 },
-  body: { color: '#254354', fontSize: 14, lineHeight: 21, textAlign: 'center' },
-  muted: { color: '#587080', fontSize: 13, lineHeight: 19 }, error: { color: '#A32626', fontSize: 13, lineHeight: 19 },
-  reviewPage: { padding: 18, paddingBottom: 40, gap: 14 }, section: { padding: 15, backgroundColor: 'white', borderRadius: 12, gap: 10 },
-  sectionTitle: { color: BLUE, fontSize: 16, fontWeight: '700' },
-  candidate: { borderWidth: 1, borderColor: '#C7EADA', borderRadius: 9, padding: 10, backgroundColor: '#F2FCF7' },
-  candidateValue: { color: BLUE, fontWeight: '700', fontSize: 14 }, candidateMeta: { color: '#587080', fontSize: 12, marginTop: 3 },
-  codeRow: { paddingVertical: 7, borderBottomColor: '#E5EEF2', borderBottomWidth: 1 },
-  label: { color: '#254354', fontSize: 13, fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#B8CDD7', borderRadius: 8, padding: 10, color: BLUE, fontSize: 15 },
-  ocrText: { color: '#254354', fontSize: 13, lineHeight: 20, fontFamily: 'monospace' },
+const styles=StyleSheet.create({
+ center:{flex:1,alignItems:'center',justifyContent:'center',padding:26,gap:16,backgroundColor:colors.paper},cameraPage:{flex:1},cameraFrame:{flex:1,minHeight:120,overflow:'hidden',backgroundColor:BLUE},
+ // Keep the native policy's tested 8–92% / 27–73% scan-guide coordinates.
+ guide:{position:'absolute',left:'8%',right:'8%',top:'27%',bottom:'27%',borderColor:GREEN,borderWidth:2,borderRadius:10},
+ cameraInstruction:{position:'absolute',left:18,right:76,top:14,padding:10,borderRadius:8,backgroundColor:'#20313BE8'},cameraText:{color:'white',fontWeight:'700',fontSize:14},cameraHint:{color:'#D0E1DC',fontSize:12,marginTop:3},torch:{position:'absolute',right:14,top:14,width:48,height:48,borderRadius:12,alignItems:'center',justifyContent:'center'},
+ controls:{padding:14,gap:10,backgroundColor:colors.paper},zoomButton:{height:48,width:60,backgroundColor:'white',borderWidth:1,borderColor:colors.line,borderRadius:10,alignItems:'center',justifyContent:'center'},zoomText:{color:BLUE,fontWeight:'600',fontSize:28},
+ section:{gap:8},sectionTitle:{fontSize:15,fontWeight:'700',color:BLUE},muted:{fontSize:13,lineHeight:19,color:colors.muted},candidate:{borderWidth:1,borderColor:colors.line,borderRadius:8,padding:10},candidateValue:{color:BLUE,fontWeight:'600',fontFamily:'monospace',fontSize:14},candidateMeta:{color:colors.muted,fontSize:12},ocrText:{fontFamily:'monospace',fontSize:12,color:colors.muted,lineHeight:18},
 });
