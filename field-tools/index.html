@@ -237,6 +237,7 @@ const SUPABASE_KEY='sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null;
 let currentIsPro=false;
+let deviceRefreshSeq=0;
 
 async function refreshAccount(){
   const {data:{user}}=await sb.auth.getUser();
@@ -1001,12 +1002,15 @@ async function currentProjectForDevices(){
 }
 async function refreshDeviceList(){
   if(!$('deviceList'))return;
+  const requestId=++deviceRefreshSeq;
   if(!currentUser||!currentIsPro){
     $('deviceList').innerHTML='<span class="note">Device Capture is available with CableMint Pro.</span>';
     return;
   }
+  $('deviceList').innerHTML='<span class="note">Loading devices…</span>';
   try{
     const proj=await currentProjectForDevices();
+    if(requestId!==deviceRefreshSeq)return;
     if(!proj){
       $('deviceList').innerHTML='<span class="note">No devices saved for this project yet.</span>';
       return;
@@ -1015,6 +1019,7 @@ async function refreshDeviceList(){
       .select('id,building,floor_area,unit_location,device_type,manufacturer,model,mac_address,serial_number,captured_at')
       .eq('project_id',proj.id).eq('user_id',currentUser.id)
       .order('captured_at',{ascending:false}).limit(50);
+    if(requestId!==deviceRefreshSeq)return;
     if(error)throw error;
     if(!data||!data.length){
       $('deviceList').innerHTML='<span class="note">No devices saved for this project yet.</span>';
@@ -1027,6 +1032,7 @@ async function refreshDeviceList(){
       '<button class="del" type="button" onclick="deleteCapturedDevice(\''+d.id+'\')">Delete</button></div>'
     ).join('');
   }catch(e){
+    if(requestId!==deviceRefreshSeq)return;
     console.error(e);
     $('deviceList').innerHTML='<span class="note">Could not load captured devices.</span>';
   }
@@ -1037,6 +1043,7 @@ async function deleteCapturedDevice(id){
   const {error}=await sb.from('field_devices').delete().eq('id',id).eq('user_id',currentUser.id);
   if(error)return alert('Could not delete device.');
   await refreshDeviceList();
+  await renderSaved();
 }
 loadCaptureDefaults();
 $('projectName').addEventListener('change',refreshDeviceList);
@@ -1048,15 +1055,25 @@ async function renderSaved(){
     if(pErr){$('savedList').innerHTML='<span class="note">Could not load cloud projects.</span>';summary.textContent='';return}
     if(!projects||!projects.length){$('savedList').innerHTML='<span class="note">No cloud-saved projects yet. Enter a project name, calculate, and tap Save Result.</span>';summary.textContent='0 projects';return}
     const ids=projects.map(p=>p.id);
-    const {data:calcs,error:cErr}=await sb.from('field_project_calculations').select('id,project_id,tool_name,result_text,created_at').in('project_id',ids).order('created_at',{ascending:false}).limit(500);
+    const [{data:calcs,error:cErr},deviceCountPairs]=await Promise.all([
+      sb.from('field_project_calculations').select('id,project_id,tool_name,result_text,created_at').in('project_id',ids).order('created_at',{ascending:false}).limit(500),
+      Promise.all(projects.map(async p=>{
+        const {count,error}=await sb.from('field_devices').select('id',{count:'exact',head:true}).eq('project_id',p.id).eq('user_id',currentUser.id);
+        if(error)throw error;
+        return [p.id,count||0];
+      }))
+    ]);
     if(cErr){$('savedList').innerHTML='<span class="note">Could not load cloud calculations.</span>';summary.textContent='';return}
     const byProject={};
     (calcs||[]).forEach(x=>{(byProject[x.project_id]||(byProject[x.project_id]=[])).push(x)});
-    const total=(calcs||[]).length;
-    summary.textContent=projects.length+' project'+(projects.length===1?'':'s')+' · '+total+' saved result'+(total===1?'':'s');
+    const deviceCounts=Object.fromEntries(deviceCountPairs);
+    const totalCalculations=(calcs||[]).length;
+    const totalDevices=Object.values(deviceCounts).reduce((sum,n)=>sum+n,0);
+    summary.textContent=projects.length+' project'+(projects.length===1?'':'s')+' · '+totalDevices+' device'+(totalDevices===1?'':'s')+' · '+totalCalculations+' saved calculation'+(totalCalculations===1?'':'s');
     $('savedList').innerHTML='<div class="projectcards">'+projects.map(p=>{
       const rows=byProject[p.id]||[];
-      return '<details class="projectcard"><summary><div><div class="projectname">'+escapeHtml(p.name)+'</div><div class="projectmeta">'+rows.length+' saved result'+(rows.length===1?'':'s')+' · Updated '+new Date(p.updated_at).toLocaleString()+'</div></div><div class="projecttools"><button type="button" onclick="event.preventDefault();event.stopPropagation();useCloudProject(\''+p.id+'\',\''+escapeJs(p.name)+'\')">Use Project</button><button class="reportbtn" type="button" onclick="event.preventDefault();event.stopPropagation();generateProjectPdf(\''+p.id+'\',\''+escapeJs(p.name)+'\',this)">PDF Report</button></div></summary><div class="projectbody">'+(rows.length?rows.map(x=>'<div class="savedrow"><div><strong>'+escapeHtml(x.tool_name)+'</strong><br><small>'+escapeHtml(x.result_text)+' · '+new Date(x.created_at).toLocaleString()+'</small></div><button class="del" onclick="delCloudSaved(\''+x.id+'\')">Delete</button></div>').join(''):'<span class="note">No saved calculations in this project.</span>')+'</div></details>';
+      const deviceCount=deviceCounts[p.id]||0;
+      return '<details class="projectcard"><summary><div><div class="projectname">'+escapeHtml(p.name)+'</div><div class="projectmeta">'+deviceCount+' device'+(deviceCount===1?'':'s')+' · '+rows.length+' saved calculation'+(rows.length===1?'':'s')+' · Updated '+new Date(p.updated_at).toLocaleString()+'</div></div><div class="projecttools"><button type="button" onclick="event.preventDefault();event.stopPropagation();useCloudProject(\''+p.id+'\',\''+escapeJs(p.name)+'\')">Use Project</button><button class="reportbtn" type="button" onclick="event.preventDefault();event.stopPropagation();generateProjectPdf(\''+p.id+'\',\''+escapeJs(p.name)+'\',this)">PDF Report</button></div></summary><div class="projectbody">'+(rows.length?rows.map(x=>'<div class="savedrow"><div><strong>'+escapeHtml(x.tool_name)+'</strong><br><small>'+escapeHtml(x.result_text)+' · '+new Date(x.created_at).toLocaleString()+'</small></div><button class="del" onclick="delCloudSaved(\''+x.id+'\')">Delete</button></div>').join(''):'<span class="note">No saved calculations in this project.</span>')+'</div></details>';
     }).join('')+'</div>';
     return;
   }
@@ -1070,14 +1087,16 @@ async function renderSaved(){
 }
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ')}
-function useCloudProject(id,name){
+async function useCloudProject(id,name){
   $('projectName').value=name;
   localStorage.setItem('cm_project_name',name);
+  await refreshDeviceList();
   window.scrollTo({top:$('accountBar').offsetTop,behavior:'smooth'});
 }
-function useLocalProject(name){
+async function useLocalProject(name){
   $('projectName').value=name;
   localStorage.setItem('cm_project_name',name);
+  await refreshDeviceList();
   window.scrollTo({top:$('accountBar').offsetTop,behavior:'smooth'});
 }
 
@@ -1214,8 +1233,13 @@ async function cleanupEmptyCloudProjects(){
   if(!currentUser)return;
   const {data:projects}=await sb.from('field_projects').select('id').eq('user_id',currentUser.id);
   for(const p of projects||[]){
-    const {count}=await sb.from('field_project_calculations').select('id',{count:'exact',head:true}).eq('project_id',p.id);
-    if(count===0) await sb.from('field_projects').delete().eq('id',p.id).eq('user_id',currentUser.id);
+    const [{count:calcCount},{count:deviceCount}]=await Promise.all([
+      sb.from('field_project_calculations').select('id',{count:'exact',head:true}).eq('project_id',p.id).eq('user_id',currentUser.id),
+      sb.from('field_devices').select('id',{count:'exact',head:true}).eq('project_id',p.id).eq('user_id',currentUser.id)
+    ]);
+    if((calcCount||0)===0&&(deviceCount||0)===0){
+      await sb.from('field_projects').delete().eq('id',p.id).eq('user_id',currentUser.id);
+    }
   }
 }
 async function delSaved(i){
