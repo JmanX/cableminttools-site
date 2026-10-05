@@ -2,7 +2,7 @@
 
 **Status:** v1.3.1 / Android versionCode 20 is the current stable baseline. On October 4, 2026, the user reported that this build is working properly and designated it stable. This field confirmation supersedes the prior pending overall v1.3.1 phone-acceptance note. The approved v1.3.0 design, stable scanner/recognition/zoom and synchronization remain the baseline for future changes. Local/CI regressions, twelve native tests, release assembly and independent APK verification passed.
 
-**v1.4.0 in preparation:** Authorized Gap/private-evidence additions applied and locally tested; native build and phone acceptance remain pending. v1.3.1 remains the last user-confirmed stable build. See device-capture/PROJECT_GAPS_V1.4.0.md.
+**v1.4.0 verified internal candidate:** Authorized Gap/private-evidence additions applied. Local/CI regressions, native compilation and independent versioned APK verification passed; delivered October 5, 2026. Physical Android acceptance of the new workflow remains pending. v1.3.1 remains the last user-confirmed stable build. See device-capture/PROJECT_GAPS_V1.4.0.md.
 
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
@@ -325,4 +325,16 @@ The user explicitly authorized field_gaps, project_files and minimal field_gap_d
 
 New native Gap flow has real project modules, 1–3 durable compressed JPEG photos, stable idempotent UUID/path queues, private short-lived photo access, complete upload acknowledgement, status resolution/reopen, and retryable confirmed deletion. Scanner/device recognition/native camera policy and device queue/service are unchanged. Optional calculation counts use authenticated reads of the existing table only. Foreground upload coordination extends Sync & Uploads and Account storage counts. Never automatically retain/upload scanner label photos.
 
-Version 1.4.0/code22 is the internal candidate; local TypeScript/full existing/new regressions pass and synthetic screen QA passes. Native CI compilation, APK verification and field acceptance are recorded separately. See device-capture/PROJECT_GAPS_V1.4.0.md for exact schema/policy names, changed files, deletion behavior, privacy and physical-device checklist. v1.3.1 remains user-confirmed stable until acceptance.
+Version 1.4.0/code22 is the verified internal candidate; local/CI TypeScript/full existing/new regressions, twelve native tests, synthetic screen QA, native release compilation and independent APK inspection pass. Field acceptance remains pending. See device-capture/PROJECT_GAPS_V1.4.0.md for exact schema/policy names, changed files, deletion behavior, privacy and physical-device checklist. v1.3.1 remains user-confirmed stable until acceptance.
+
+### Verified v1.4.0 internal delivery — October 5, 2026
+
+Source 15a64ffb44adea0d8404a9ce833ee56c3d9635a5 passed [GitHub Actions run 37247593583](https://github.com/JmanX/cableminttools-site/actions/runs/37247593583) / job 111568448885. TypeScript and all existing/new regressions, fresh Android generation, twelve native automatic/manual zoom policy and CameraControl tests, native release assembly, packaging and binary gates passed. Independent native requests acknowledged 1.12× and 1.24× with a camera test double, not physical optics.
+
+Artifact 11320125290 was downloaded and independently verified on October 5, 2026. Actual manifest: package com.cableminttools.devicecapture.prototype, versionName 1.4.0 / versionCode 22. All native zoom commands/suggestions, standalone JavaScript, 32 ML Kit assets and the native Expo ImageManipulator module are present. The Gap workflow/table/bucket strings are in the release bundle; synthetic preview identifiers/photos are absent.
+
+Size: 145,943,480 bytes. SHA-256: `24ea6de116793137a7f549796143f3745b025c6fef34a6f3742c6797d307b032` (matches CI). Older APKs preserved. Independent binary evidence is saved beside the APK as apk-verification.json and native-ci-evidence.txt.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.0\CableMint-Device-Capture-v1.4.0.apk`
+
+The APK is ready for physical Android testing. Real camera/rotated gallery compression, authenticated private Storage-byte uploads, offline saved-Gap restart/reconnection, cross-phone cleanup/account isolation and the full stable capture checklist remain unverified on this new build. Automated/synthetic and live transactional RLS results do not replace these checks. See device-capture/PROJECT_GAPS_V1.4.0.md for the full acceptance checklist. v1.3.1 remains user-confirmed stable.

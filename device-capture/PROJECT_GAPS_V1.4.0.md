@@ -1,6 +1,6 @@
 # Project Dashboard and private Gap evidence — v1.4.0
 
-Release date: October 4, 2026 (America/New_York). Expo/package version 1.4.0; Android versionName 1.4.0 and versionCode 22. Internal candidate from user-confirmed stable v1.3.1/code20. Field acceptance of this new workflow is pending.
+Release date: October 5, 2026 (America/New_York). Expo/package version 1.4.0; Android versionName 1.4.0 and versionCode 22. Internal candidate from user-confirmed stable v1.3.1/code20. Field acceptance of this new workflow is pending.
 
 ## Scope and preserved baseline
 
@@ -100,4 +100,4 @@ Synthetic SDK/UI tests and transactional RLS tests are not physical camera or re
 
 `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.0\CableMint-Device-Capture-v1.4.0.apk`
 
-Native build and independent binary verification must complete before delivery is reported. Final source/run/hash are recorded in root RELEASES.md and CABLEMINT_CONTEXT.md.
+Native compilation, twelve native tests and independent binary verification passed. Delivered APK: versionName 1.4.0 / versionCode 22, 145,943,480 bytes; SHA-256 24ea6de116793137a7f549796143f3745b025c6fef34a6f3742c6797d307b032. Final source 15a64ffb44adea0d8404a9ce833ee56c3d9635a5 / GitHub Actions run 37247593583 / artifact 11320125290 are also recorded in root RELEASES.md and CABLEMINT_CONTEXT.md. Field acceptance remains pending.

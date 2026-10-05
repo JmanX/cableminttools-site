@@ -2,9 +2,9 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
-## 1.4.0 — October 4, 2026
+## 1.4.0 — October 5, 2026
 
-Android versionCode: **22**. Internal release candidate from user-confirmed stable v1.3.1. Native build/verification pending at preparation; field acceptance pending.
+Android versionCode: **22**. Internal release candidate from user-confirmed stable v1.3.1. Native compilation, regression gates, twelve native tests, release assembly and independent APK verification passed; field acceptance pending.
 
 - Project Dashboard with real Captures/open-Gap counts, recent captures/batch context, honest Project Report coming soon and read-only existing Saved Calculations counts.
 - Project Gaps/Punch List: Location → Category → Description → 1–3 optimized photos → Save; Open/Resolved/All, private evidence detail, Resolve/Reopen preserving photos and confirmed deletion with safe cleanup.
@@ -13,7 +13,13 @@ Android versionCode: **22**. Internal release candidate from user-confirmed stab
 - Combined device/Gap/photo Sync & Uploads, actionable retries, confirmed server checks, Account storage-used/last-check display. Scanner/recognition/zoom pipeline and stable Capture Next behavior unchanged.
 - Local TypeScript/core regressions and new Gap service/journal tests pass. Live transactional RLS ownership/cleanup tests pass and roll back. Synthetic browser QA covers 360/390 width, photos/status/context/reset/offline retry/deletion and zero-queue feedback. See device-capture/PROJECT_GAPS_V1.4.0.md for exact files, policies and test boundaries.
 
-Expected delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.0\CableMint-Device-Capture-v1.4.0.apk`. Older artifacts preserved.
+Source 15a64ffb44adea0d8404a9ce833ee56c3d9635a5 passed [GitHub Actions run 37247593583](https://github.com/JmanX/cableminttools-site/actions/runs/37247593583) / job 111568448885. TypeScript and all existing/new regressions, fresh Android generation, twelve native automatic/manual zoom policy and CameraControl tests, native release assembly, packaging and binary gates passed. Independent native requests acknowledged 1.12× and 1.24× with a camera test double, not physical optics.
+
+Artifact 11320125290 was downloaded and independently verified on October 5, 2026. Actual manifest: package com.cableminttools.devicecapture.prototype, versionName 1.4.0 / versionCode 22. All native zoom commands/suggestions, standalone JavaScript, 32 ML Kit assets and the native Expo ImageManipulator module are present. The Gap workflow/table/bucket strings are in the release bundle; synthetic preview identifiers/photos are absent.
+
+Size: 145,943,480 bytes. SHA-256: `24ea6de116793137a7f549796143f3745b025c6fef34a6f3742c6797d307b032` (matches CI). Older APKs preserved. Independent binary evidence is saved beside the APK as apk-verification.json and native-ci-evidence.txt.
+
+Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.0\CableMint-Device-Capture-v1.4.0.apk`. Older artifacts preserved.
 
 Known issues / required field tests: real Gap camera/gallery/compression/private Storage upload, offline app restart/reconnection, cross-phone cleanup and account isolation need physical Android acceptance; all stable capture flows remain on the checklist. Uploads remain foreground-only; unsaved Gap drafts are memory-only; synced Gap photos remain locally until deletion. Projects with remaining evidence require Gap cleanup first. Generic file schema is prepared for future entities; v1.4.0 writes only Gap JPEG evidence. Internal prototype signing; no customer storage quota or combined report.
 
