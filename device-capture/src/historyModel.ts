@@ -6,5 +6,5 @@ export function searchHistory(rows: Device[], projects: Project[], search: strin
     [names.get(row.project_id), row.unit_location, row.device_type, row.mac_address, row.serial_number, row.building, row.floor_area, row.manufacturer, row.model]
       .filter(Boolean).join(' ').toLowerCase().includes(term) || (/^[a-f0-9:.-]{4,}$/i.test(term) && row.mac_address.replace(/[^a-f0-9]/gi,'').toLowerCase().includes(term.replace(/[^a-f0-9]/gi,'')))));
 }
-export type Screen = 'projects' | 'project' | 'types' | 'scan' | 'history' | 'tasks' | 'account' | 'create' | 'sync';
+export type Screen = 'projects' | 'project' | 'types' | 'scan' | 'history' | 'tasks' | 'account' | 'create' | 'sync' | 'gaps';
 export function previousScreen(stack: Screen[]) { return stack.length > 1 ? stack.slice(0, -1) : stack; }

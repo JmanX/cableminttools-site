@@ -2,6 +2,21 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
+## 1.4.0 — October 4, 2026
+
+Android versionCode: **21**. Internal release candidate from user-confirmed stable v1.3.1. Native build/verification pending at preparation; field acceptance pending.
+
+- Project Dashboard with real Captures/open-Gap counts, recent captures/batch context, honest Project Report coming soon and read-only existing Saved Calculations counts.
+- Project Gaps/Punch List: Location → Category → Description → 1–3 optimized photos → Save; Open/Resolved/All, private evidence detail, Resolve/Reopen preserving photos and confirmed deletion with safe cleanup.
+- Authorized backend additions only: field_gaps, generic project_files, field_gap_deletions retry tombstones; private project-files bucket; ten authenticated ownership table policies, four Storage policies and four invoker identity/path/cleanup helpers. Existing field_devices schema, production website, Dodo/payment/Edge Functions are unchanged.
+- Durable app-document JPEG evidence (1800 px max long edge, .8 quality); user-scoped offline journal, stable client IDs/paths, retryable failures and complete database/Storage/metadata acknowledgement before Synced. Scanner photos remain temporary.
+- Combined device/Gap/photo Sync & Uploads, actionable retries, confirmed server checks, Account storage-used/last-check display. Scanner/recognition/zoom pipeline and stable Capture Next behavior unchanged.
+- Local TypeScript/core regressions and new Gap service/journal tests pass. Live transactional RLS ownership/cleanup tests pass and roll back. Synthetic browser QA covers 360/390 width, photos/status/context/reset/offline retry/deletion and zero-queue feedback. See device-capture/PROJECT_GAPS_V1.4.0.md for exact files, policies and test boundaries.
+
+Expected delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.0\CableMint-Device-Capture-v1.4.0.apk`. Older artifacts preserved.
+
+Known issues / required field tests: real Gap camera/gallery/compression/private Storage upload, offline app restart/reconnection, cross-phone cleanup and account isolation need physical Android acceptance; all stable capture flows remain on the checklist. Uploads remain foreground-only; unsaved Gap drafts are memory-only; synced Gap photos remain locally until deletion. Projects with remaining evidence require Gap cleanup first. Generic file schema is prepared for future entities; v1.4.0 writes only Gap JPEG evidence. Internal prototype signing; no customer storage quota or combined report.
+
 ## 1.3.1 — October 4, 2026
 
 **Current stable baseline — user-confirmed October 4, 2026.** The user reported this delivered build is working properly and designated it stable.

@@ -2,6 +2,8 @@
 
 **Status:** v1.3.1 / Android versionCode 20 is the current stable baseline. On October 4, 2026, the user reported that this build is working properly and designated it stable. This field confirmation supersedes the prior pending overall v1.3.1 phone-acceptance note. The approved v1.3.0 design, stable scanner/recognition/zoom and synchronization remain the baseline for future changes. Local/CI regressions, twelve native tests, release assembly and independent APK verification passed.
 
+**v1.4.0 in preparation:** Authorized Gap/private-evidence additions applied and locally tested; native build and phone acceptance remain pending. v1.3.1 remains the last user-confirmed stable build. See device-capture/PROJECT_GAPS_V1.4.0.md.
+
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
 ## Sources and precedence
@@ -18,7 +20,7 @@ CableMint Tools serves low-voltage and IT infrastructure technicians. The existi
 
 The website/PWA is already usable, and its project PDF can report saved calculations. The conversation describes later expansion of closeout reports to devices, notes, and punch items; that is future web work, not part of the first native milestone. Native billing/checkout is also outside the first app scope. The app should consume existing entitlement state rather than process payments or hold Dodo secrets.
 
-## Current Supabase architecture (live read-only snapshot)
+## Supabase architecture (September 27 snapshot; v1.4.0 additions below)
 
 Project ref: `kgbrhdjbeosljpwghxte` (`https://kgbrhdjbeosljpwghxte.supabase.co`). Public tables observed:
 
@@ -98,7 +100,7 @@ Use EAS configuration for an internal Android build. On September 27, 2026, Chro
 
 ## Build constraints and unresolved checks
 
-- Do **not** modify the production website, deployed Edge Functions, Dodo setup, or Supabase schema for this handoff or the scanner prototype. If a later requirement truly needs such a change, explain the specific gap, migration/rollout, and effect on existing users before making it.
+- Do **not** modify the production website, deployed Edge Functions, Dodo setup, or Supabase schema for this handoff or the scanner prototype. The user’s v1.4.0 authorization permits only the Gap tables, generic file metadata, one private bucket and their ownership policies documented below. If a later requirement truly needs such a change, explain the specific gap, migration/rollout, and effect on existing users before making it.
 - Verify the current website's actual client mapping and Pro entitlement query before implementing mobile access; the conversation reports behavior, while this file's live check verified tables/policies/function existence, not deployed source code.
 - Verify `field_devices` column nullability, length checks, and RLS with an authenticated non-production/test account before the first write. Do not test by inserting production-like records into a user's real project without an explicit test plan.
 - Decide how to handle project-scoped duplicate queries, serial-only captures, verification state, and retry safety in code. The current schema permits an empty `mac_address`; it does not itself enforce MAC/serial uniqueness.
@@ -315,3 +317,12 @@ The user subsequently confirmed v1.3.1 is working properly and designated it the
 ### Stable baseline acceptance — October 4, 2026
 
 The user stated: “this is working properly, now this the stable version.” Current baseline: CableMint Device Capture v1.3.1, Android versionCode 20, built source 117264a1c943c77d1bffd8cb4f5d970d276cf404. Keep the existing versioned APK and use its working capture/scanner/sync/UI behavior for future regressions. This acceptance changes documentation only; it does not create a new release/build or modify application behavior.
+
+
+## v1.4.0 Project Dashboard and private Gap evidence — October 4, 2026
+
+The user explicitly authorized field_gaps, project_files and minimal field_gap_deletions retry tombstones plus the PRIVATE project-files bucket and required owner/project RLS. Four CLI-generated additive migrations are applied to kgbrhdjbeosljpwghxte. Table ownership policies (10), Storage policies (4), identity/path/completion invoker helpers (4), expected-photo count and staged-deletion guards are verified live. Existing field_devices column fingerprint remains 61d6ac3a3bc49e50ff5c80aa4509ff0c; existing website/billing/functions/cloud records unchanged. Live owner/other/anon transactional RLS probes pass and roll back, including safe cleanup and no deleted-Gap resurrection. No real Storage-byte upload test was performed.
+
+New native Gap flow has real project modules, 1–3 durable compressed JPEG photos, stable idempotent UUID/path queues, private short-lived photo access, complete upload acknowledgement, status resolution/reopen, and retryable confirmed deletion. Scanner/device recognition/native camera policy and device queue/service are unchanged. Optional calculation counts use authenticated reads of the existing table only. Foreground upload coordination extends Sync & Uploads and Account storage counts. Never automatically retain/upload scanner label photos.
+
+Version 1.4.0/code21 is the internal candidate; local TypeScript/full existing/new regressions pass and synthetic screen QA passes. Native CI compilation, APK verification and field acceptance are recorded separately. See device-capture/PROJECT_GAPS_V1.4.0.md for exact schema/policy names, changed files, deletion behavior, privacy and physical-device checklist. v1.3.1 remains user-confirmed stable until acceptance.
