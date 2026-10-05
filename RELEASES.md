@@ -4,7 +4,7 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.4.0 — October 4, 2026
 
-Android versionCode: **21**. Internal release candidate from user-confirmed stable v1.3.1. Native build/verification pending at preparation; field acceptance pending.
+Android versionCode: **22**. Internal release candidate from user-confirmed stable v1.3.1. Native build/verification pending at preparation; field acceptance pending.
 
 - Project Dashboard with real Captures/open-Gap counts, recent captures/batch context, honest Project Report coming soon and read-only existing Saved Calculations counts.
 - Project Gaps/Punch List: Location → Category → Description → 1–3 optimized photos → Save; Open/Resolved/All, private evidence detail, Resolve/Reopen preserving photos and confirmed deletion with safe cleanup.

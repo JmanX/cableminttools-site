@@ -23,6 +23,8 @@ export class GapQueue {
  async cache(gaps:Gap[],files:ProjectFile[],checkedAt:string,calculations?:Record<string,number>,deletions:GapDeletion[]=[]){
   if(gaps.some(g=>g.user_id!==this.user)||files.some(f=>f.user_id!==this.user)||deletions.some(d=>d.user_id!==this.user))throw Error('Server returned another account’s Gap data.');
   await this.change(s=>{s.gaps=gaps;s.files=files;for(const i of s.items)if(i.action!=='delete'&&deletions.some(d=>d.gap_id===i.gap.id&&d.project_id===i.gap.project_id)){i.action='delete';i.state='pending';i.error='';i.nextRetry=undefined;i.revision++;}s.checkedAt=checkedAt;if(calculations){s.calculations=calculations;s.calculationsCheckedAt=checkedAt;}
+   // A confirmed local copy must reflect another phone’s latest status after a server check.
+   for(const i of s.items)if(i.state==='uploaded'&&i.action==='save'){const remote=gaps.find(g=>g.id===i.gap.id&&!g.deletion_requested_at);if(remote)i.gap=remote;}
    // A remote deletion must not be resurrected from an already acknowledged local row.
    s.items=s.items.filter(i=>!!this.worker||i.state!=='uploaded'||i.action!=='save'||gaps.some(g=>g.id===i.gap.id&&!g.deletion_requested_at));
   });

@@ -1,6 +1,6 @@
 # Project Dashboard and private Gap evidence — v1.4.0
 
-Release date: October 4, 2026 (America/New_York). Expo/package version 1.4.0; Android versionName 1.4.0 and versionCode 21. Internal candidate from user-confirmed stable v1.3.1/code20. Field acceptance of this new workflow is pending.
+Release date: October 4, 2026 (America/New_York). Expo/package version 1.4.0; Android versionName 1.4.0 and versionCode 22. Internal candidate from user-confirmed stable v1.3.1/code20. Field acceptance of this new workflow is pending.
 
 ## Scope and preserved baseline
 
