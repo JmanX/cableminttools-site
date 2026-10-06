@@ -6,15 +6,7 @@ Date: October 6, 2026. Expo/package version 1.4.1; Android versionName 1.4.1 / v
 
 The SELECT, UPDATE and DELETE project-files policies used an unqualified name inside the field_projects subquery. PostgreSQL bound that reference to p.name (the project title), instead of the Storage object path. Valid object paths consequently failed those policies; Storage upsert also needs SELECT/UPDATE authorization.
 
-A direct PostgreSQL probe of the live write helper showed its stored JPG pattern already had one backslash and matched a normal UUID.jpg. JSON-rendered escaping was misleading. The migration explicitly retains the correct single-backslash literal-dot pattern, `\.jpg# v1.4.1 — Gap photo synchronization hotfix
-
-Date: October 6, 2026. Expo/package version 1.4.1; Android versionName 1.4.1 / versionCode 23. Focused hotfix to v1.4.0; no redesign.
-
-## Verified cause and live fix
-
-The SELECT, UPDATE and DELETE project-files policies used an unqualified name inside the field_projects subquery. PostgreSQL bound that reference to p.name (the project title), instead of the Storage object path. Valid object paths consequently failed those policies; Storage upsert also needs SELECT/UPDATE authorization.
-
-A direct PostgreSQL probe of the live write helper showed its stored JPG pattern already had one backslash and matched a normal UUID.jpg. JSON-rendered escaping was misleading. The migration explicitly retains the correct single-backslash literal-dot pattern, , in the helper and every filename policy. The verified live defect was object-name shadowing, not a proven double-escaped live regex.
+A direct PostgreSQL probe of the live write helper showed its stored JPG pattern already had one backslash and matched a normal UUID.jpg. JSON-rendered escaping was misleading. The migration explicitly retains the correct single-backslash literal-dot pattern, `\.jpg$`, in the helper and every filename policy. The verified live defect was object-name shadowing, not a proven double-escaped live regex.
 
 Applied migration:
 

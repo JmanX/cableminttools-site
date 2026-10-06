@@ -6,15 +6,7 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 Android versionCode: **23**. Focused Gap photo synchronization hotfix; no visual/scanner redesign.
 
-- Applied migration 20261006213127_gap_storage_rls_hotfix.sql: all four authenticated project-files policies validate the Storage object's name, including project subqueries. Single-backslash `\.jpg# CableMint Device Capture releases
-
-Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
-
-## 1.4.1 — October 6, 2026
-
-Android versionCode: **23**. Focused Gap photo synchronization hotfix; no visual/scanner redesign.
-
-- Applied migration 20261006213127_gap_storage_rls_hotfix.sql: all four authenticated project-files policies validate the Storage object's name, including project subqueries. Single-backslash  filename matching is explicit. The live stored helper regex already matched normal JPGs; the verified defect was project-name shadowing in SELECT/UPDATE/DELETE.
+- Applied migration 20261006213127_gap_storage_rls_hotfix.sql: all four authenticated project-files policies validate the Storage object's name, including project subqueries. Single-backslash `\.jpg$` filename matching is explicit. The live stored helper regex already matched normal JPGs; the verified defect was project-name shadowing in SELECT/UPDATE/DELETE.
 - Bucket remains private; user/project/Gap ownership, stable UUID paths, idempotent insert/update and deletion protections remain.
 - Independent Gap record/photo acknowledgements, accurate Gap synced · Photo upload failed feedback/counts and project-specific status. Confirmed operations are skipped on retry; metadata failures do not force another byte upload.
 - AccessDenied/RLS/42501/permission failures wait for manual retry. Transient network/timeout/5xx failures retain automatic backoff. Existing v1.4.0 retained IDs/paths/photos upgrade without recreation.
@@ -28,7 +20,6 @@ Artifact 11446274323 independently verified: versionName 1.4.1 / versionCode 23,
 Size: 145,950,036 bytes. SHA-256: 58539c302515f3c9978b8b35a56292e0b431da6fcbcdf034f3951e54c043bb07.
 
 Delivery: C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.1\CableMint-Device-Capture-v1.4.1.apk. Older artifacts preserved.
-
 
 Known issues / remaining tests: v1.4.1 phone validation of new record/photo states, per-project badges/counts, permission retry pause and offline/restart recovery. Foreground-only uploads and internal prototype signing remain. Scanner/recognition/auto-zoom, field_devices schema, production website, Dodo and Edge Functions unchanged.
 
