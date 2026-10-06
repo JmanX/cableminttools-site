@@ -68,11 +68,11 @@ Security and performance advisors ran after the migration on October 6. No findi
 | Auth RLS initialization | Eight existing project/calculation/device/Dodo policies | [RLS initialization](https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan) |
 | Unused indexes | v1.4.0 project_files_project_fk and field_gap_deletions_project_fk; retained as FK covering indexes | [Unused-index review](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index) |
 
-## Remaining physical-device checks
+## Field acceptance and test boundaries
 
-The live v1.4.0 retained photo already recovered. After installing v1.4.1, check the new independent Gap/photo badges and upload counts, C1 Synced versus unrelated projects, manual-only authorization retry and offline/restart/backoff behavior. Confirm cloud photos and safe Storage API cleanup on the phone. Run the stable capture/scanner/Capture Next smoke checklist; preserved source and native tests do not substitute for physical optics.
+On October 6, after delivery of the v1.4.1/code23 build, the user reported that everything seems to be working perfectly. The retained failed photo had already recovered on v1.4.0 after the live policy fix. This confirms overall field acceptance of v1.4.1 and establishes it as the stable baseline.
 
-Existing limits remain: foreground-only uploads, unsaved Gap drafts in memory, no storage quota, internal prototype signing. v1.3.1 remains the last explicitly user-designated stable baseline until newer overall field acceptance.
+The user report is distinct from automated/native evidence and is not an itemized independent observation of every authorization, offline/restart or cross-phone fault scenario. Existing limits remain: foreground-only uploads, unsaved Gap drafts in memory, no storage quota and internal prototype signing.
 
 ## Delivery
 
@@ -84,4 +84,4 @@ APK size: 145,950,036 bytes. SHA-256: 58539c302515f3c9978b8b35a56292e0b431da6fcb
 
 Exact delivery: C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.1\CableMint-Device-Capture-v1.4.1.apk
 
-Older versioned APKs are preserved. Local evidence beside this APK: apk-verification.json, hotfix-bundle-verification.json, native-ci-evidence.txt and post-migration-advisors.json. New v1.4.1 physical status/count/retry checks remain pending; the real retained-photo recovery on v1.4.0 is already user-confirmed.
+Older versioned APKs are preserved. Local evidence beside this APK: apk-verification.json, hotfix-bundle-verification.json, native-ci-evidence.txt and post-migration-advisors.json. Overall v1.4.1 field behavior was subsequently confirmed by the user on October 6; retained-photo recovery on v1.4.0 was also user-confirmed.

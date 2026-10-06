@@ -4,6 +4,8 @@ Internal Android builds use the existing prototype package and signing setup. Up
 
 ## 1.4.1 — October 6, 2026
 
+**Current stable baseline — user field-confirmed October 6, 2026.** After delivery, the user reported that everything seems to be working perfectly. This supersedes pending overall field acceptance.
+
 Android versionCode: **23**. Focused Gap photo synchronization hotfix; no visual/scanner redesign.
 
 - Applied migration 20261006213127_gap_storage_rls_hotfix.sql: all four authenticated project-files policies validate the Storage object's name, including project subqueries. Single-backslash `\.jpg$` filename matching is explicit. The live stored helper regex already matched normal JPGs; the verified defect was project-name shadowing in SELECT/UPDATE/DELETE.
@@ -21,7 +23,7 @@ Size: 145,950,036 bytes. SHA-256: 58539c302515f3c9978b8b35a56292e0b431da6fcbcdf0
 
 Delivery: C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.1\CableMint-Device-Capture-v1.4.1.apk. Older artifacts preserved.
 
-Known issues / remaining tests: v1.4.1 phone validation of new record/photo states, per-project badges/counts, permission retry pause and offline/restart recovery. Foreground-only uploads and internal prototype signing remain. Scanner/recognition/auto-zoom, field_devices schema, production website, Dodo and Edge Functions unchanged.
+Field acceptance: the user confirmed overall v1.4.1 operation after delivery. Automated, native and live-policy test boundaries remain documented in the hotfix report. Existing limits remain foreground-only uploads and internal prototype signing. Scanner/recognition/auto-zoom, field_devices schema, production website, Dodo and Edge Functions unchanged.
 
 ## 1.4.0 — October 5, 2026
 
@@ -46,7 +48,7 @@ Known issues / required field tests: real Gap camera/gallery/compression/private
 
 ## 1.3.1 — October 4, 2026
 
-**Current stable baseline — user-confirmed October 4, 2026.** The user reported this delivered build is working properly and designated it stable.
+**Previous stable baseline — user-confirmed October 4, 2026; superseded by v1.4.1 field acceptance.** The user reported this delivered build is working properly and designated it stable.
 
 Android versionCode: **20**. Focused Capture Next workflow update from the user-approved stable v1.3.0 UI. Local/CI regression gates, native compilation, twelve native tests, release assembly and independent APK verification passed.
 

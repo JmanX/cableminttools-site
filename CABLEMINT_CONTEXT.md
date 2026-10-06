@@ -1,8 +1,8 @@
 # CableMint Device Capture: technical context
 
-**Status:** v1.3.1 / Android versionCode 20 is the current stable baseline. On October 4, 2026, the user reported that this build is working properly and designated it stable. This field confirmation supersedes the prior pending overall v1.3.1 phone-acceptance note. The approved v1.3.0 design, stable scanner/recognition/zoom and synchronization remain the baseline for future changes. Local/CI regressions, twelve native tests, release assembly and independent APK verification passed.
+**Status:** v1.4.1 / Android versionCode 23 is the current field-confirmed stable baseline. On October 6, 2026, after delivery, the user reported that everything seems to be working perfectly. This supersedes pending overall v1.4.1 field acceptance and the previous v1.3.1 baseline. Preserve its working scanner/recognition/zoom, capture/navigation, device synchronization and Gap/private-photo workflow. Local/CI regressions, twelve native camera tests, release assembly and independent APK verification passed.
 
-**v1.4.1 verified internal hotfix:** Real v1.4.0 Gap photo upload failed under Storage RLS. The October 6 live ownership-policy fix is applied, and the user confirmed the retained photo uploads and appears without recreating the Gap. Version 1.4.1/code23 adds independent record/photo feedback, project status isolation and authorization retry controls; native compilation and independent versioned APK verification passed. See device-capture/GAP_PHOTO_SYNC_V1.4.1.md. v1.3.1 remains the last explicitly user-designated stable build.
+**v1.4.1 accepted hotfix:** Real v1.4.0 Gap photo upload failed under Storage RLS. The October 6 live ownership-policy fix is applied, and the user confirmed the retained photo uploads and appears without recreating the Gap. Version 1.4.1/code23 adds independent record/photo feedback, project status isolation and authorization retry controls; native compilation and independent versioned APK verification passed. See device-capture/GAP_PHOTO_SYNC_V1.4.1.md. Overall field acceptance was confirmed by the user on October 6.
 
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
@@ -349,7 +349,7 @@ The user confirmed on the existing v1.4.0 installation that the retained failed 
 
 App v1.4.1/code23 persists Gap record acknowledgement separately from evidence state, counts records/photos independently and isolates project badges. Permanent permission/RLS failures require manual retry; transient network/timeout/5xx retain backoff. Targeted retries skip confirmed rows/photos and recover existing bytes/metadata acknowledgements without new IDs. Legacy v1 journal/local photos remain compatible. Native scanner, recognition, device queue/service and capture workflow unchanged.
 
-Local/CI full regressions, twelve native camera tests, release compilation and independent APK verification pass. New v1.4.1 physical status/count/retry acceptance remains pending. v1.3.1 remains the last explicitly designated stable baseline.
+Local/CI full regressions, twelve native camera tests, release compilation and independent APK verification pass. The user subsequently confirmed overall v1.4.1 field behavior on October 6; it is now the stable baseline.
 
 ### Verified v1.4.1 internal delivery — October 6, 2026
 
@@ -361,4 +361,12 @@ APK size: 145,950,036 bytes. SHA-256: 58539c302515f3c9978b8b35a56292e0b431da6fcb
 
 Exact delivery: C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.1\CableMint-Device-Capture-v1.4.1.apk
 
-Older versioned APKs are preserved. Local evidence beside this APK: apk-verification.json, hotfix-bundle-verification.json, native-ci-evidence.txt and post-migration-advisors.json. New v1.4.1 physical status/count/retry checks remain pending; the real retained-photo recovery on v1.4.0 is already user-confirmed.
+Older versioned APKs are preserved. Local evidence beside this APK: apk-verification.json, hotfix-bundle-verification.json, native-ci-evidence.txt and post-migration-advisors.json. The user subsequently confirmed overall v1.4.1 field behavior on October 6; earlier retained-photo recovery on v1.4.0 was also user-confirmed.
+
+## v1.4.1 field acceptance — October 6, 2026
+
+After delivery of CableMint-Device-Capture-v1.4.1.apk (Android versionCode 23), the user reported: “everything seem to be working perfectly now.”
+
+Treat the delivered v1.4.1 build as the field-confirmed stable baseline for future app work. This supersedes its pending overall field-acceptance notes and the previous v1.3.1 baseline. Preserve the working scanner/recognition/zoom, device and Gap/photo synchronization, project status, navigation and capture workflow.
+
+This is the user's overall field confirmation, separate from the automated/native/build evidence. It does not assert an independently observed, itemized fault-injection test for every offline, authorization or cross-phone scenario. APK/source/version remain unchanged; this acceptance updates documentation only.
