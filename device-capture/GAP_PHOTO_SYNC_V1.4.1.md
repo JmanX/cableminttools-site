@@ -6,7 +6,15 @@ Date: October 6, 2026. Expo/package version 1.4.1; Android versionName 1.4.1 / v
 
 The SELECT, UPDATE and DELETE project-files policies used an unqualified name inside the field_projects subquery. PostgreSQL bound that reference to p.name (the project title), instead of the Storage object path. Valid object paths consequently failed those policies; Storage upsert also needs SELECT/UPDATE authorization.
 
-A direct PostgreSQL probe of the live write helper showed its stored JPG pattern already had one backslash and matched a normal UUID.jpg. JSON-rendered escaping was misleading. The migration explicitly retains the correct single-backslash literal-dot pattern, \.jpg$, in the helper and every filename policy. The verified live defect was object-name shadowing, not a proven double-escaped live regex.
+A direct PostgreSQL probe of the live write helper showed its stored JPG pattern already had one backslash and matched a normal UUID.jpg. JSON-rendered escaping was misleading. The migration explicitly retains the correct single-backslash literal-dot pattern, `\.jpg# v1.4.1 — Gap photo synchronization hotfix
+
+Date: October 6, 2026. Expo/package version 1.4.1; Android versionName 1.4.1 / versionCode 23. Focused hotfix to v1.4.0; no redesign.
+
+## Verified cause and live fix
+
+The SELECT, UPDATE and DELETE project-files policies used an unqualified name inside the field_projects subquery. PostgreSQL bound that reference to p.name (the project title), instead of the Storage object path. Valid object paths consequently failed those policies; Storage upsert also needs SELECT/UPDATE authorization.
+
+A direct PostgreSQL probe of the live write helper showed its stored JPG pattern already had one backslash and matched a normal UUID.jpg. JSON-rendered escaping was misleading. The migration explicitly retains the correct single-backslash literal-dot pattern, , in the helper and every filename policy. The verified live defect was object-name shadowing, not a proven double-escaped live regex.
 
 Applied migration:
 
@@ -53,7 +61,7 @@ Live rollback-only supabase/tests/gap_storage_rls_hotfix.sql passed under authen
 
 Live final policy audit: four authenticated Storage policies, zero project-name path references, one literal regex backslash, normal JPG accepted, private bucket, invoker helper with empty search_path.
 
-Native compilation, CI regressions and APK verification will be recorded in the delivery section after the release build.
+Native compilation, CI regressions and independent APK verification passed; twelve native tests and artifact evidence are recorded below.
 
 ## Post-migration advisors
 
@@ -76,4 +84,12 @@ Existing limits remain: foreground-only uploads, unsaved Gap drafts in memory, n
 
 ## Delivery
 
-Release build and final artifact verification pending.
+Source 3c98c1bb319c8481320af3f3ecbddd2d999119d4 passed [GitHub Actions run 37535636205](https://github.com/JmanX/cableminttools-site/actions/runs/37535636205), job 112515701967, on October 6, 2026. Fresh dependency installation, TypeScript/full existing and hotfix regressions, Android generation, twelve native camera/automatic/manual zoom tests, release assembly, versioned packaging and binary gates passed. Native tests acknowledged independent 1.12× / 1.24× requests with a test-double camera, not physical optics.
+
+Artifact 11446274323 was downloaded and independently verified. ZIP SHA-256 matches GitHub's digest. Actual manifest: package com.cableminttools.devicecapture.prototype, versionName 1.4.1 / versionCode 23. All native zoom commands/suggestion/controller fields, standalone JavaScript, 32 ML Kit model entries and native Expo ImageManipulator are present. The full compiled Gap synced · Photo upload failed string uses UTF-16 and is verified, alongside the retained journal key and new retry reconciliation/permission feedback. Test-only synthetic fixtures are absent from the bundle.
+
+APK size: 145,950,036 bytes. SHA-256: 58539c302515f3c9978b8b35a56292e0b431da6fcbcdf034f3951e54c043bb07 (matches CI).
+
+Exact delivery: C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.1\CableMint-Device-Capture-v1.4.1.apk
+
+Older versioned APKs are preserved. Local evidence beside this APK: apk-verification.json, hotfix-bundle-verification.json, native-ci-evidence.txt and post-migration-advisors.json. New v1.4.1 physical status/count/retry checks remain pending; the real retained-photo recovery on v1.4.0 is already user-confirmed.
