@@ -2,7 +2,7 @@
 
 **Status:** v1.3.1 / Android versionCode 20 is the current stable baseline. On October 4, 2026, the user reported that this build is working properly and designated it stable. This field confirmation supersedes the prior pending overall v1.3.1 phone-acceptance note. The approved v1.3.0 design, stable scanner/recognition/zoom and synchronization remain the baseline for future changes. Local/CI regressions, twelve native tests, release assembly and independent APK verification passed.
 
-**v1.4.0 verified internal candidate:** Authorized Gap/private-evidence additions applied. Local/CI regressions, native compilation and independent versioned APK verification passed; delivered October 5, 2026. Physical Android acceptance of the new workflow remains pending. v1.3.1 remains the last user-confirmed stable build. See device-capture/PROJECT_GAPS_V1.4.0.md.
+**v1.4.1 hotfix in preparation:** Real v1.4.0 Gap photo upload failed under Storage RLS. The October 6 live ownership-policy fix is applied, and the user confirmed the retained photo uploads and appears without recreating the Gap. Version 1.4.1/code23 adds independent record/photo feedback, project status isolation and authorization retry controls; native build pending. See device-capture/GAP_PHOTO_SYNC_V1.4.1.md. v1.3.1 remains the last explicitly user-designated stable build.
 
 **Milestone 1 implementation, September 27, 2026:** The Android scanner prototype now lives in `device-capture/`. It uses Expo SDK 57, `expo-camera`'s native Android ML Kit barcode scanner, and a local Android Expo module with bundled ML Kit Latin OCR. It presents printed-label MAC/serial candidates and all raw barcodes for technician review, with no Supabase/Dodo connection or record writes. See `device-capture/README.md` for build and field-test steps. TypeScript and parser checks passed. GitHub Actions run 36362683802 successfully compiled the native Android release variant with prototype debug signing and uploaded artifact 10946452017. The APK contains the JavaScript bundle and bundled barcode/OCR models. Real-label accuracy remains unverified until phone testing.
 
@@ -338,3 +338,15 @@ Size: 145,943,480 bytes. SHA-256: `24ea6de116793137a7f549796143f3745b025c6fef34a
 Delivery: `C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.0\CableMint-Device-Capture-v1.4.0.apk`
 
 The APK is ready for physical Android testing. Real camera/rotated gallery compression, authenticated private Storage-byte uploads, offline saved-Gap restart/reconnection, cross-phone cleanup/account isolation and the full stable capture checklist remain unverified on this new build. Automated/synthetic and live transactional RLS results do not replace these checks. See device-capture/PROJECT_GAPS_V1.4.0.md for the full acceptance checklist. v1.3.1 remains user-confirmed stable.
+
+## v1.4.1 Gap evidence hotfix — October 6, 2026
+
+Real v1.4.0 field testing found a confirmed private Storage AccessDenied failure after field_gaps had already synced. Live SELECT/UPDATE/DELETE policies bound unqualified name inside field_projects subqueries to the project title. Applied 20261006213127_gap_storage_rls_hotfix.sql explicitly uses storage.objects.name in all four policies. A direct live regex probe found one backslash and successful UUID.jpg matching; the migration explicitly retains \.jpg$ everywhere. Do not misreport JSON display escaping as proof of a bad stored regex.
+
+Private bucket, authenticated project/Gap ownership, stable UUID paths, row locking and deletion markers remain. No new table/schema/billing/site/Edge Function changes. Rollback-only tests on actual storage.objects INSERT/SELECT/UPDATE/upsert plus policy-expression DELETE checks passed; no trigger bypass or permanent fixture writes. Security/performance advisors ran and existing unrelated findings are documented in device-capture/GAP_PHOTO_SYNC_V1.4.1.md.
+
+The user confirmed on the existing v1.4.0 installation that the retained failed photo uploads and appears after Retry Gap & Photos, without Gap recreation. Read-only C1 verification found one file metadata record/unique ID/path, one matching current Storage object and matching size.
+
+App v1.4.1/code23 persists Gap record acknowledgement separately from evidence state, counts records/photos independently and isolates project badges. Permanent permission/RLS failures require manual retry; transient network/timeout/5xx retain backoff. Targeted retries skip confirmed rows/photos and recover existing bytes/metadata acknowledgements without new IDs. Legacy v1 journal/local photos remain compatible. Native scanner, recognition, device queue/service and capture workflow unchanged.
+
+Local full regressions pass; native compilation/versioned delivery pending. New v1.4.1 physical status/count/retry acceptance remains pending. v1.3.1 remains the last explicitly designated stable baseline.

@@ -9,6 +9,7 @@ export function runPresentationChecks(){
  if(syncBadge('idle',journal,true)!=='Pending'||syncBadge('idle',journal,true,'other')!=='Synced')throw Error('Project badges must scope queue state');
  journal.items[0].state='uploading';if(syncBadge('idle',journal,true)!=='Syncing')throw Error('Uploading state');
  journal.items[0].state='failed';if(syncBadge('idle',journal,true)!=='Failed')throw Error('Failed state');
+ if(syncBadge('failure',journal,true,'other')!=='Synced'||syncBadge('syncing',journal,true,'other')!=='Synced')throw Error('Global operation state leaked to an unrelated project');
  journal.items[0].state='uploaded';if(syncBadge('idle',journal,true)!=='Synced')throw Error('Uploaded confirmation');
  if(queueStatus('pending')==='Synced'||queueStatus('uploading')==='Synced'||queueStatus('failed')==='Synced')throw Error('Only server-confirmed records may appear synced');
  if(readableError('PGRST relation missing').includes('PGRST')||!readableError('fetch failed').includes('retry'))throw Error('Actionable error copy');

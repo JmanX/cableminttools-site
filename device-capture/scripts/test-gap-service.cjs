@@ -21,7 +21,7 @@ const mock={auth:{getUser:async()=>({data:{user:{id:auth}},error:null})},from(ta
  }};return b;
 },storage:{from(bucket){
  assert.equal(bucket,'project-files');return {
- async upload(key,bytes,options){calls.push({storage:'upload',key});assert(bytes instanceof ArrayBuffer);assert.deepEqual(options,{contentType:'image/jpeg',cacheControl:'60',upsert:true});objects.set(key,bytes.byteLength);return {data:{path:mode==='wrongPath'?'wrong.jpg':key},error:null};},
+ async upload(key,bytes,options){calls.push({storage:'upload',key});if(mode==='rlsDenied')return {data:null,error:{message:'new row violates row-level security policy for table objects',code:'AccessDenied',statusCode:'403'}};if(mode==='service503')return {data:null,error:{message:'temporarily unavailable',statusCode:'503'}};assert(bytes instanceof ArrayBuffer);assert.deepEqual(options,{contentType:'image/jpeg',cacheControl:'60',upsert:true});objects.set(key,bytes.byteLength);return {data:{path:mode==='wrongPath'?'wrong.jpg':key},error:null};},
  async info(key){calls.push({storage:'info',key});return {data:{size:mode==='wrongSize'?1:objects.get(key)},error:null};},
  async list(prefix){calls.push({storage:'list',prefix});return {data:[...objects.keys()].filter(k=>k.startsWith(prefix+'/')).map(k=>({name:k.slice(prefix.length+1)})),error:null};},
  async remove(keys){calls.push({storage:'remove',keys});if(mode==='removeFail')return {error:{message:'photo cleanup network failed'}};for(const key of keys)objects.delete(key);return {data:[],error:null};},
@@ -33,8 +33,10 @@ const service=require(path.join(root,'gapService.js'));
 (async()=>{
  auth=P;await assert.rejects(service.saveGap(gap),/sign in again/);assert.equal(calls.length,0);auth=U;projectAvailable=false;await assert.rejects(service.saveGap(gap),/project.*no longer/);assert(!calls.some(c=>c.operation==='upsert'));projectAvailable=true;calls=[];
  assert.deepEqual(await service.saveGap(gap),gap);
+ mode='rlsDenied';await assert.rejects(service.saveGapFile(file),e=>e.code==='AccessDenied'&&e.status===403);assert.equal(objects.size,0);mode='service503';await assert.rejects(service.saveGapFile(file),e=>e.status===503&&e.message.includes('503'));mode='';
  mode='metadataFail';await assert.rejects(service.saveGapFile(file),/metadata/);assert.equal(objects.size,1);assert.equal(rows.project_files.length,0);mode='';
- assert.deepEqual(await service.saveGapFile(file),metadata);assert.equal(objects.size,1);assert.equal(rows.project_files.length,1);
+ const priorUploads=calls.filter(c=>c.storage==='upload').length;assert.deepEqual(await service.saveGapFile({...file,state:'failed',retries:1}),metadata);assert.equal(calls.filter(c=>c.storage==='upload').length,priorUploads,'metadata retry must not repeat confirmed bytes');assert.equal(objects.size,1);assert.equal(rows.project_files.length,1);
+ const priorMetaWrites=calls.filter(c=>c.table==='project_files'&&c.operation==='upsert').length;await service.saveGapFile({...file,state:'failed',retries:2});assert.equal(calls.filter(c=>c.table==='project_files'&&c.operation==='upsert').length,priorMetaWrites,'lost metadata response recovery must not repeat confirmed metadata');
  mode='wrongPath';await assert.rejects(service.saveGapFile(file),/path.*not confirmed/);mode='wrongSize';await assert.rejects(service.saveGapFile(file),/size.*not confirmed/);mode='';
  rows.field_gaps[0].deletion_requested_at=now;const uploads=calls.filter(c=>c.storage==='upload').length;await assert.rejects(service.saveGapFile(file),/being deleted/);assert.equal(calls.filter(c=>c.storage==='upload').length,uploads);rows.field_gaps[0].deletion_requested_at=null;
  await service.gapPhotoUrl(metadata);assert.equal(calls.at(-1).storage,'signed');

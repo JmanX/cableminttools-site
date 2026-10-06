@@ -4,7 +4,7 @@ export type GapCategory=typeof GAP_CATEGORIES[number];
 export type Gap={id:string;user_id:string;project_id:string;building:string;floor_area:string;unit_location:string;category:GapCategory;description:string;status:'open'|'resolved';created_at:string;updated_at:string;resolved_at:string|null;photo_count:number;deletion_requested_at:string|null};
 export type ProjectFile={id:string;user_id:string;project_id:string;entity_type:'gap'|'device'|'drawing'|'report';entity_id:string;storage_path:string;file_name:string;mime_type:'image/jpeg';file_size:number;created_at:string};
 export type Evidence={metadata:ProjectFile;local_uri:string;state:UploadState;error:string;retries:number};
-export type GapItem={gap:Gap;files:Evidence[];action:'save'|'delete';state:UploadState;error:string;retries:number;revision:number;nextRetry?:number};
+export type GapItem={gap:Gap;files:Evidence[];action:'save'|'delete';state:UploadState;error:string;retries:number;revision:number;nextRetry?:number;recordState?:UploadState;recordError?:string;confirmedRevision?:number;retryable?:boolean};
 export type GapDeletion={user_id:string;project_id:string;gap_id:string;created_at:string};
 export type GapSnapshot={version:1;items:GapItem[];gaps:Gap[];files:ProjectFile[];checkedAt:string;calculations:Record<string,number>;calculationsCheckedAt:string};
 export const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -30,6 +30,7 @@ export function visibleGaps(s:GapSnapshot|null,project?:string){
  return [...map.values()].filter(g=>!project||g.project_id===project).sort((a,b)=>b.created_at.localeCompare(a.created_at));
 }
 export function gapFiles(s:GapSnapshot|null,id:string){const map=new Map((s?.files??[]).filter(f=>f.entity_type==='gap'&&f.entity_id===id).map(f=>[f.id,{metadata:f,local_uri:'',state:'uploaded' as UploadState,error:'',retries:0}]));for(const f of s?.items.find(i=>i.gap.id===id)?.files??[])map.set(f.metadata.id,f);return [...map.values()];}
-export function gapCounts(s:GapSnapshot|null){const counts={pending:0,uploading:0,uploaded:0,failed:0};for(const i of s?.items??[]){counts[i.state]++;if(i.action==='save')for(const f of i.files)counts[f.state]++;}return counts;}
+export function gapRecordState(i:GapItem):UploadState{return i.recordState??(i.state==='uploaded'?'uploaded':'pending');}
+export function gapCounts(s:GapSnapshot|null){const counts={pending:0,uploading:0,uploaded:0,failed:0};for(const i of s?.items??[]){counts[i.action==='delete'?i.state:gapRecordState(i)]++;if(i.action==='save')for(const f of i.files)counts[f.state]++;}return counts;}
 export function gapLocation(g:Pick<Gap,'building'|'floor_area'|'unit_location'>){return [g.building,g.floor_area,g.unit_location].filter(Boolean).join(' / ');}
 export function gapResize(width:number,height:number){if(width<=0||height<=0)throw Error('Photo dimensions unavailable. Choose the photo again.');return Math.max(width,height)>1800?(width>=height?{width:1800}:{height:1800}):null;}

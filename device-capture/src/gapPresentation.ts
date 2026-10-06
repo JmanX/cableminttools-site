@@ -1,7 +1,12 @@
-import { gapCounts, gapFiles, visibleGaps, type GapSnapshot } from './gapWorkflow';
+import { gapCounts, gapFiles, gapRecordState, visibleGaps, type GapSnapshot } from './gapWorkflow';
 import { syncFeedback, uploadCounts } from './syncFeedback';
 import type { Snapshot, SyncReport } from './captureQueue';
 import type { Status } from './theme';
+import { queueStatus } from './presentation';
+export function gapRecordStatus(snapshot:GapSnapshot|null,g:import('./gapWorkflow').Gap):Status{const item=snapshot?.items.find(i=>i.gap.id===g.id);return item?queueStatus(gapRecordState(item)):snapshot?.gaps.some(remote=>remote.id===g.id)?'Synced':'Pending';}
+export function gapRowStatus(snapshot:GapSnapshot|null,g:import('./gapWorkflow').Gap):Status{const item=snapshot?.items.find(i=>i.gap.id===g.id);if(item)return queueStatus(item.state);return gapFiles(snapshot,g.id).length===g.photo_count?'Synced':'Pending';}
+export function gapSyncSummary(snapshot:GapSnapshot|null,g:import('./gapWorkflow').Gap){const record=gapRecordStatus(snapshot,g),photos=gapFiles(snapshot,g.id);if(record==='Synced'){if(photos.some(f=>f.state==='failed'))return 'Gap synced · Photo upload failed';if(photos.some(f=>f.state==='uploading'))return 'Gap synced · Uploading photos';if(photos.length!==g.photo_count||photos.some(f=>f.state==='pending'))return 'Gap synced · Photos pending';return 'Gap and every photo confirmed by CableMint cloud.';}return record==='Failed'?'Gap record upload failed · Local evidence retained':'Saved locally · Waiting for Gap record confirmation';}
+
 export function combinedCounts(devices:Snapshot|null,gaps:GapSnapshot|null){const a=uploadCounts(devices),b=gapCounts(gaps);return {pending:a.pending+b.pending,uploading:a.uploading+b.uploading,uploaded:a.uploaded+b.uploaded,failed:a.failed+b.failed};}
 export function withGapStatus(base:Status,gaps:GapSnapshot|null,project?:string):Status{
  if(base==='Failed'||base==='Syncing')return base;

@@ -1,6 +1,12 @@
 import { supabase } from './supabase';
-import { requireUser, serverError } from './deviceService';
-import { sameFile, sameGap, validateGap, type Evidence, type Gap, type GapDeletion, type ProjectFile } from './gapWorkflow';
+import { requireUser, serverError as deviceServerError } from './deviceService';
+// Retain Storage HTTP/code diagnostics so the durable Gap queue can classify retries.
+function serverError(operation:string,error:{message?:string;code?:string;details?:string;hint?:string;status?:number|string;statusCode?:number|string}){
+ const rawStatus=error.status??error.statusCode,status=rawStatus===undefined?undefined:Number(rawStatus), failure=deviceServerError(operation,error);
+ if(status!==undefined)failure.message+='\nStatus: '+status;
+ return Object.assign(failure,{code:error.code,status});
+}
+import { sameFile, sameGap, validateEvidence, validateGap, type Evidence, type Gap, type GapDeletion, type ProjectFile } from './gapWorkflow';
 import { readEvidenceBytes, removeEvidence } from './gapEvidence';
 import type { GapTransport } from './gapQueue';
 const BUCKET='project-files';
@@ -22,11 +28,27 @@ export async function saveGapFile(f:Evidence){
  const m=f.metadata;await ownProject(m.user_id,m.project_id);
  const {data:gap,error:gapError}=await supabase.from('field_gaps').select(GAP_COLUMNS).eq('id',m.entity_id).eq('user_id',m.user_id).eq('project_id',m.project_id).maybeSingle();
  if(gapError)throw serverError('Photo parent check failed',gapError);if(!gap||gap.deletion_requested_at)throw Error('Photo cannot upload because its Gap is missing or being deleted.');
- const bytes=await readEvidenceBytes(f,gap as Gap);
- await requireUser(m.user_id);
- const {data:uploaded,error:uploadError}=await supabase.storage.from(BUCKET).upload(m.storage_path,bytes,{contentType:'image/jpeg',cacheControl:'60',upsert:true});
- if(uploadError)throw serverError('Photo upload failed; retained on this phone',uploadError);
- if(uploaded?.path!==m.storage_path)throw Error('Photo upload path was not confirmed. Retry this same photo.');
+ validateEvidence(f,gap as Gap);
+ let objectConfirmed=false;
+ if(f.state==='failed'||f.retries>0){
+  await requireUser(m.user_id);
+  const {data:prior,error:priorError}=await supabase.storage.from(BUCKET).info(m.storage_path);
+  const detail=priorError as {status?:number|string;statusCode?:number|string;code?:string;message?:string}|null;
+  if(detail&&Number(detail.status??detail.statusCode)!==404&&!/NoSuchKey|ObjectNotFound|Object not found/i.test([detail.code,detail.message].join(' ')))throw serverError('Photo retry check failed; retained on this phone',detail);
+  objectConfirmed=!priorError&&Number(prior?.size??prior?.metadata?.size)===m.file_size;
+  if(objectConfirmed){
+   const {data:ack,error:ackError}=await supabase.from('project_files').select(FILE_COLUMNS).eq('id',m.id).eq('user_id',m.user_id).eq('project_id',m.project_id).maybeSingle();
+   if(ackError)throw serverError('Photo metadata retry check failed',ackError);
+   if(ack){if(!sameFile(ack as ProjectFile,m))throw Error('Existing photo metadata differs. Keep the local evidence and review.');return ack as ProjectFile;}
+  }
+ }
+ if(!objectConfirmed){
+  const bytes=await readEvidenceBytes(f,gap as Gap);
+  await requireUser(m.user_id);
+  const {data:uploaded,error:uploadError}=await supabase.storage.from(BUCKET).upload(m.storage_path,bytes,{contentType:'image/jpeg',cacheControl:'60',upsert:true});
+  if(uploadError)throw serverError('Photo upload failed; retained on this phone',uploadError);
+  if(uploaded?.path!==m.storage_path)throw Error('Photo upload path was not confirmed. Retry this same photo.');
+ }
  await requireUser(m.user_id);
  const {data:info,error:infoError}=await supabase.storage.from(BUCKET).info(m.storage_path);
  if(infoError)throw serverError('Photo upload verification failed',infoError);

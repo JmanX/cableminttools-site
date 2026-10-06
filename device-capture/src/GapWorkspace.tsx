@@ -6,11 +6,12 @@ import { Icon } from './Icon';
 import { queueStatus, readableError } from './presentation';
 import { GAP_CATEGORIES, gapFiles, gapLocation, visibleGaps, type Evidence, type Gap, type GapSnapshot } from './gapWorkflow';
 import type { GapQueue } from './gapQueue';
+import { gapRecordStatus, gapRowStatus, gapSyncSummary } from './gapPresentation';
 import { addGapPhoto, localEvidenceExists, removeEvidence } from './gapEvidence';
 import { gapPhotoUrl } from './gapService';
 export type GapNavigation={back:()=>boolean;hasDraft:()=>boolean;discard:()=>Promise<void>};
-type Props={userId:string;project:{id:string;name:string};snapshot:GapSnapshot|null;queue:GapQueue|null;active:boolean;context:{building:string;floor_area:string};onBusy:(busy:boolean)=>void;onChange:(context?:{building:string;floor_area:string})=>void;onSync:()=>void};
-export function gapRowState(snapshot:GapSnapshot|null,g:Gap){const item=snapshot?.items.find(i=>i.gap.id===g.id);if(item)return queueStatus(item.state);return gapFiles(snapshot,g.id).length===g.photo_count?'Synced':'Pending';}
+type Props={userId:string;project:{id:string;name:string};snapshot:GapSnapshot|null;queue:GapQueue|null;active:boolean;context:{building:string;floor_area:string};onBusy:(busy:boolean)=>void;onChange:(context?:{building:string;floor_area:string})=>void;onSync:(id?:string)=>void};
+export const gapRowState=gapRowStatus;
 function EvidencePhoto({file,onRemove}:{file:Evidence;onRemove?:()=>void}){
  const [url,setUrl]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(false),[open,setOpen]=useState(false);const signedAt=useRef(0),alive=useRef(true);
  const local=localEvidenceExists(file)?file.local_uri:'';
@@ -53,7 +54,7 @@ export const GapWorkspace=forwardRef<GapNavigation,Props>(function GapWorkspace(
    <View style={ui.row}><View style={ui.flex}><Text style={ui.heading}>Gaps / Punch List</Text><Text style={ui.muted}>{project.name} · {all.filter(g=>g.status==='open').length} open</Text></View></View>
    <Button title="Record Gap" icon="plus" disabled={!queue||busy} onPress={begin}/>
    <View style={[ui.row,{gap:6}]}>{(['open','resolved','all'] as const).map(f=><Pressable key={f} accessibilityRole="button" accessibilityState={{selected:filter===f}} onPress={()=>setFilter(f)} style={{flex:1,minHeight:48,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:filter===f?colors.blue:'white',borderWidth:1,borderColor:colors.line}}><Text style={{fontWeight:'700',color:filter===f?'white':colors.ink}}>{f[0].toUpperCase()+f.slice(1)}</Text></Pressable>)}</View>
-   {visible.map(g=><Pressable key={g.id} accessibilityRole="button" accessibilityLabel={g.category+', '+gapLocation(g)} onPress={()=>{setSelected(g.id);setSavedId('');setMode('detail');}} style={ui.historyRow}><View style={ui.row}><View style={ui.tile}><Icon name={g.status==='resolved'?'check':'warning'}/></View><View style={ui.flex}><Text style={ui.label}>{gapLocation(g)}</Text><Text style={ui.sectionTitle}>{g.category}</Text></View><StatusBadge status={gapRowState(snapshot,g)}/></View><Text numberOfLines={2} style={[ui.body,{marginTop:10}]}>{g.description}</Text><Text style={[ui.caption,{marginTop:8}]}>{g.status==='open'?'Open':'Resolved'} · {gapFiles(snapshot,g.id).length}/{g.photo_count} photos · {captureTime(g.created_at)}</Text></Pressable>)}
+   {visible.map(g=><Pressable key={g.id} accessibilityRole="button" accessibilityLabel={g.category+', '+gapLocation(g)} onPress={()=>{setSelected(g.id);setSavedId('');setMode('detail');}} style={ui.historyRow}><View style={ui.row}><View style={ui.tile}><Icon name={g.status==='resolved'?'check':'warning'}/></View><View style={ui.flex}><Text style={ui.label}>{gapLocation(g)}</Text><Text style={ui.sectionTitle}>{g.category}</Text></View><StatusBadge status={gapRowState(snapshot,g)}/></View><Text numberOfLines={2} style={[ui.body,{marginTop:10}]}>{g.description}</Text><Text style={[ui.caption,{marginTop:8}]}>{g.status==='open'?'Open':'Resolved'} · {gapFiles(snapshot,g.id).length}/{g.photo_count} photos · {captureTime(g.created_at)}</Text>{gapRowState(snapshot,g)!=='Synced'&&<Text style={gapRowState(snapshot,g)==='Failed'?ui.error:ui.caption}>{gapSyncSummary(snapshot,g)}</Text>}</Pressable>)}
    {!visible.length&&<EmptyState icon="tasks" title={all.length?'No '+filter+' Gaps':'No Gaps recorded'} description={all.length?'Choose another filter to see this project’s issues.':'Document missing, damaged or incomplete work with private photo evidence.'} action="Record Gap" onPress={begin}/>}
    {(snapshot?.items??[]).some(i=>i.action==='delete'&&i.gap.project_id===project.id)&&<View style={ui.card}><Text style={ui.muted}>A deletion is queued. Photos are retained until cloud cleanup succeeds.</Text><Button title="Sync / Retry Cleanup" secondary onPress={onSync}/></View>}
   </>:mode==='create'?<>
@@ -65,11 +66,12 @@ export const GapWorkspace=forwardRef<GapNavigation,Props>(function GapWorkspace(
    <Button title={busy?'Saving…':step===3?'Save Gap': 'Next: '+steps[step+1]} busy={busy} disabled={step===0?!location.trim():step===1?!category:step===2?!description.trim():photos.length<1} onPress={()=>{if(step===3)void save();else{setError('');setStep(step+1);}}}/>
    <Button title={step?'Previous Step':'Cancel Gap'} icon="back" secondary disabled={busy} onPress={()=>{if(step)setStep(step-1);else cancel();}}/>
   </>:g?<>
-   {savedId===g.id&&<ConfirmationPanel title={gapRowState(snapshot,g)==='Synced'?'Gap saved & synced ✓':'Gap saved ✓'} status={gapRowState(snapshot,g)} detail={gapRowState(snapshot,g)==='Synced'?'Gap and every photo confirmed by CableMint cloud.':'Saved locally · Waiting for Gap and photo confirmation'}/>}
+   {savedId===g.id&&<ConfirmationPanel title={gapRowState(snapshot,g)==='Synced'?'Gap saved & synced ✓':'Gap saved ✓'} status={gapRowState(snapshot,g)} detail={gapSyncSummary(snapshot,g)}/>}
    <View style={ui.projectCard}><View style={ui.row}><Text style={[ui.heading,ui.flex]}>{g.category}</Text><StatusBadge status={gapRowState(snapshot,g)}/></View><Text style={ui.label}>{gapLocation(g)}</Text><Text style={ui.body}>{g.description}</Text><Text style={ui.caption}>{g.status==='open'?'Open':'Resolved'} · Created {captureTime(g.created_at)}{g.resolved_at?' · Resolved '+captureTime(g.resolved_at):''}</Text></View>
+   <View style={ui.row}><Text style={[ui.caption,ui.flex]}>Gap record</Text><StatusBadge status={gapRecordStatus(snapshot,g)}/></View><Text style={gapRowState(snapshot,g)==='Failed'?ui.error:ui.muted}>{gapSyncSummary(snapshot,g)}</Text>
    <SectionHeading title="Photo evidence"/><View style={[ui.row,{alignItems:'flex-start',flexWrap:'wrap'}]}>{gapFiles(snapshot,g.id).map(f=><EvidencePhoto key={f.metadata.id} file={f}/>)}</View>
    {gapFiles(snapshot,g.id).length<g.photo_count&&<Text style={ui.muted}>Evidence upload is incomplete. Sync from the phone that recorded this Gap.</Text>}
-   {gapRowState(snapshot,g)==='Failed'&&<Button title="Retry Gap & Photos" icon="sync" onPress={onSync}/>}
+   {gapRowState(snapshot,g)==='Failed'&&<Button title="Retry Gap & Photos" icon="sync" onPress={()=>onSync(g.id)}/>}
    <Button title={g.status==='open'?'Mark Resolved':'Reopen Gap'} icon={g.status==='open'?'check':'warning'} disabled={busy||gapFiles(snapshot,g.id).length!==g.photo_count} onPress={()=>{void changeStatus(g);}}/>
    <Button title="Record Another Gap" icon="plus" onPress={begin} disabled={busy}/>
    <Button title="Back to Gaps" secondary icon="back" disabled={busy} onPress={()=>{setMode('list');setSavedId('');}}/>

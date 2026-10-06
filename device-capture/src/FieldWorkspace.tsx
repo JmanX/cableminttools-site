@@ -21,7 +21,7 @@ import { nextCaptureBatch, completedCaptureScreens } from './captureNext';
 import { GapQueue } from './gapQueue';
 import { gapTransport, loadGapCloud, loadCalculationCounts } from './gapService';
 import { visibleGaps, type GapSnapshot } from './gapWorkflow';
-import { combinedCounts, combinedFeedback, withGapStatus } from './gapPresentation';
+import { combinedCounts, combinedFeedback, gapRecordStatus, gapSyncSummary, withGapStatus } from './gapPresentation';
 import { GapWorkspace, type GapNavigation } from './GapWorkspace';
 
 const TYPES = ['WAP', 'Intercom', 'Network Switch', 'Security Camera', 'Access Control', 'Fiber / Other'];
@@ -66,7 +66,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
   const [syncPhase,setSyncPhase]=useState<SyncPhase>('idle');
   const [syncMessage,setSyncMessage]=useState('');
   useEffect(()=>()=>{if(successTimer.current)clearTimeout(successTimer.current);},[]);
-  async function syncQueue(manual=false,onlyId?:string) {
+  async function syncQueue(manual=false,onlyId?:string,onlyGapId?:string) {
     const q=queue.current,gq=gapQueue.current;
     if (!q || !gq || !workspaceReady.current || syncWork.current || uploadPaused.current || (manual && op.current)) return;
     const items=q.read().items;
@@ -78,7 +78,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
     setSyncPhase('syncing');setSyncMessage(manual ? 'Checking the server and synchronizing records and photos…' : 'Uploading saved records and photo evidence…');
     try {
       const active=()=>alive.current && !uploadPaused.current && AppState.currentState==='active';
-      const upload=async()=>{const devices=await q.sync(saveDevice,id=>loadDevices(userId,id),active,{retryFailed:manual,onlyId});const gaps=onlyId?{attempted:0,confirmed:0,failed:0}:await gq.sync(gapTransport,active,manual);return {attempted:devices.attempted+gaps.attempted,confirmed:devices.confirmed+gaps.confirmed,failed:devices.failed+gaps.failed};};
+      const upload=async()=>{const devices=onlyGapId?{attempted:0,confirmed:0,failed:0}:await q.sync(saveDevice,id=>loadDevices(userId,id),active,{retryFailed:manual,onlyId});const gaps=onlyId?{attempted:0,confirmed:0,failed:0}:await gq.sync(gapTransport,active,manual,onlyGapId);return {attempted:devices.attempted+gaps.attempted,confirmed:devices.confirmed+gaps.confirmed,failed:devices.failed+gaps.failed};};
       const report=manual ? await checkedSync(upload,async()=>{
         const [captures,gapCloud]=await Promise.all([loadHistory(userId),loadGapCloud(userId)]);
         if(!alive.current || uploadPaused.current)throw Error('Server check interrupted. Retry when the app is ready.');
@@ -228,7 +228,8 @@ export function FieldWorkspace({ session }: { session: Session }) {
     setScanMounted(false);setScannerBusy(false);setStack(completedCaptureScreens);
   }
   const counts=combinedCounts(journal,gapJournal);
-  const status=withGapStatus(syncBadge(syncPhase,journal,serverFresh),gapJournal);
+  const scopedProject=['project','gaps','types','scan'].includes(screen)?project?.id:undefined;
+  const status=withGapStatus(syncBadge(syncPhase,journal,serverFresh,scopedProject),gapJournal,scopedProject);
   const projectGaps=visibleGaps(gapJournal,project?.id);
   const localItems=(journal?.items??[]).filter(i=>i.state!=='uploaded'&&!rows.some(d=>d.id===i.attempt.id));
   const localDevices:Device[]=localItems.map(i=>({...i.attempt.draft,id:i.attempt.id,project_id:i.attempt.project_id,user_id:i.attempt.user_id,captured_at:i.attempt.captured_at??'',verified:true}));
@@ -257,7 +258,7 @@ export function FieldWorkspace({ session }: { session: Session }) {
     <AppHeader title={title} subtitle={subtitles[screen]} status={status} onSync={()=>push('sync')} onBack={stack.length>1?()=>{if(selectedDevice)setSelectedDevice(null);else back();}:undefined} disabled={busy||gapBusy}/>
     {screen==='types'&&project&&<CaptureStepHeader step="Type" project={project.name}/>}
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
-      {project&&<GapWorkspace key={project.id} ref={gapNavigation} userId={userId} project={project} active={screen==='gaps'} snapshot={gapJournal} queue={gapJournal?gapQueue.current:null} context={batch} onBusy={setGapBusy} onSync={()=>{void syncQueue(true);}} onChange={context=>{if(context)setBatch(b=>({...b,...context}));void syncQueue();}}/>}
+      {project&&<GapWorkspace key={project.id} ref={gapNavigation} userId={userId} project={project} active={screen==='gaps'} snapshot={gapJournal} queue={gapJournal?gapQueue.current:null} context={batch} onBusy={setGapBusy} onSync={id=>{void syncQueue(true,undefined,id);}} onChange={context=>{if(context)setBatch(b=>({...b,...context}));void syncQueue();}}/>}
       {(!serverFresh&&!busy)&&screen!=='sync'&&<View style={[ui.row,{padding:10,backgroundColor:'#E2EBEF',borderRadius:8}]}><Icon name="offline" size={18}/><Text style={[ui.muted,ui.flex]}>Using saved data. Refresh or sync to check the server.</Text></View>}
       {!!error&&<View style={[ui.card,{borderColor:'#AA302A'}]}><Text accessibilityRole="alert" style={ui.error}>{readableError(error)}</Text><AdvancedPanel title="Technical error details" open={showError} onToggle={()=>setShowError(!showError)}><Text selectable style={ui.muted}>{error}</Text></AdvancedPanel></View>}
       {!!storageError&&<Text accessibilityRole="alert" style={ui.error}>{readableError(storageError)}</Text>}
@@ -318,10 +319,11 @@ export function FieldWorkspace({ session }: { session: Session }) {
         <SyncStatus phase={syncPhase} message={syncMessage} lastChecked={serverTime} counts={counts} disabled={!journal||!gapJournal||busy||gapBusy} onSync={()=>{void syncQueue(true);}}/>
         <Text style={ui.muted}>Device records, Gaps and photos stay on this phone until the server confirms them. Counts include each record and photo upload. Keep CableMint open to sync.</Text>
         {(journal?.items??[]).slice().reverse().map(item=><View key={item.attempt.id} style={ui.card}><View style={ui.row}><Text style={[ui.label,ui.flex]}>{item.attempt.draft.unit_location||item.attempt.draft.device_type}</Text><StatusBadge status={queueStatus(item.state)}/></View><Text selectable style={ui.identifier}>{item.attempt.draft.mac_address||item.attempt.draft.serial_number}</Text><Text style={ui.caption}>{item.attempt.draft.device_type} · {item.retries} upload attempt{item.retries===1?'':'s'}</Text>{!!item.error&&<><Text style={ui.error}>{readableError(item.error)}</Text><AdvancedPanel title="Upload error details" open={showError} onToggle={()=>setShowError(!showError)}><Text selectable style={ui.muted}>{item.error}</Text></AdvancedPanel></>}{item.state==='failed'&&<Button title="Retry Upload" disabled={syncPhase==='syncing'||busy} onPress={()=>{void syncQueue(true,item.attempt.id);}}/>}</View>)}
-        {(gapJournal?.items??[]).slice().reverse().map(item=><View key={item.gap.id} style={ui.card}><View style={ui.row}><Icon name={item.action==='delete'?'trash':'tasks'}/><Text style={[ui.label,ui.flex]}>{item.action==='delete'?'Delete Gap & photos':item.gap.category}</Text><StatusBadge status={queueStatus(item.state)}/></View><Text style={ui.body}>{item.gap.unit_location}</Text><Text style={ui.caption}>{projects.find(p=>p.id===item.gap.project_id)?.name??'Project'} · {item.retries} attempt{item.retries===1?'':'s'}</Text>
+        {(gapJournal?.items??[]).slice().reverse().map(item=><View key={item.gap.id} style={ui.card}><View style={ui.row}><Icon name={item.action==='delete'?'trash':'tasks'}/><Text style={[ui.label,ui.flex]}>{item.action==='delete'?'Delete Gap & photos':item.gap.category}</Text><StatusBadge status={item.action==='delete'?queueStatus(item.state):gapRecordStatus(gapJournal,item.gap)}/></View><Text style={ui.body}>{item.gap.unit_location}</Text><Text style={ui.caption}>{projects.find(p=>p.id===item.gap.project_id)?.name??'Project'} · {item.retries} attempt{item.retries===1?'':'s'}</Text>
+          {item.action==='save'&&<Text style={item.state==='failed'?ui.error:ui.caption}>{gapSyncSummary(gapJournal,item.gap)}</Text>}
           {item.action==='save'&&item.files.map((f,i)=><View key={f.metadata.id} style={[ui.row,{flexWrap:'wrap'}]}><Icon name="gallery" size={18}/><Text style={[ui.caption,ui.flex]}>Photo {i+1} · {(f.metadata.file_size/1024).toFixed(0)} KB · {f.retries} attempt{f.retries===1?'':'s'}</Text><StatusBadge status={queueStatus(f.state)}/>{!!f.error&&<Text style={ui.error}>{readableError(f.error)}</Text>}</View>)}
           {!!item.error&&<><Text style={ui.error}>{readableError(item.error)}</Text><AdvancedPanel title="Upload / cleanup error details" open={showError} onToggle={()=>setShowError(!showError)}><Text selectable style={ui.muted}>{item.error}</Text></AdvancedPanel></>}
-          {item.state==='failed'&&<Button title={item.action==='delete'?'Retry Gap Cleanup':'Retry Gap & Photos'} icon="sync" disabled={syncPhase==='syncing'||busy||gapBusy} onPress={()=>{void syncQueue(true);}}/>}
+          {item.state==='failed'&&<Button title={item.action==='delete'?'Retry Gap Cleanup':'Retry Gap & Photos'} icon="sync" disabled={syncPhase==='syncing'||busy||gapBusy} onPress={()=>{void syncQueue(true,undefined,item.gap.id);}}/>}
         </View>)}
         {!journal?.items.length&&!gapJournal?.items.length&&<EmptyState icon="sync" title="No local uploads" description="Sync Now checks the server even when the local upload queue is empty."/>}
       </>:screen==='account'?<>

@@ -2,6 +2,20 @@
 
 Internal Android builds use the existing prototype package and signing setup. Update Expo version, package version, visible Account version (from Expo config), and Android versionName together. Increment Android versionCode for every testing/release build. Each release has a versioned APK copy; retain the original Gradle output and older versioned artifacts. APKs are excluded from Git.
 
+## 1.4.1 — October 6, 2026
+
+Android versionCode: **23**. Focused Gap photo synchronization hotfix; no visual/scanner redesign.
+
+- Applied migration 20261006213127_gap_storage_rls_hotfix.sql: all four authenticated project-files policies validate the Storage object's name, including project subqueries. Single-backslash \.jpg$ filename matching is explicit. The live stored helper regex already matched normal JPGs; the verified defect was project-name shadowing in SELECT/UPDATE/DELETE.
+- Bucket remains private; user/project/Gap ownership, stable UUID paths, idempotent insert/update and deletion protections remain.
+- Independent Gap record/photo acknowledgements, accurate Gap synced · Photo upload failed feedback/counts and project-specific status. Confirmed operations are skipped on retry; metadata failures do not force another byte upload.
+- AccessDenied/RLS/42501/permission failures wait for manual retry. Transient network/timeout/5xx failures retain automatic backoff. Existing v1.4.0 retained IDs/paths/photos upgrade without recreation.
+- Local TypeScript/full regressions and rollback-only live Storage-row RLS tests passed. The user confirmed the existing v1.4.0 retained photo uploads and appears after the live fix; a read-only C1 audit confirms one file metadata record and one matching current object.
+- Post-migration security/performance advisors ran; existing unrelated findings and test boundaries are documented in device-capture/GAP_PHOTO_SYNC_V1.4.1.md.
+- Native release build and independent APK verification pending. Planned delivery: C:\Users\jman1\Desktop\CableMint\cableminttools-site\device-capture\.artifacts\1.4.1\CableMint-Device-Capture-v1.4.1.apk.
+
+Known issues / remaining tests: v1.4.1 phone validation of new record/photo states, per-project badges/counts, permission retry pause and offline/restart recovery. Foreground-only uploads and internal prototype signing remain. Scanner/recognition/auto-zoom, field_devices schema, production website, Dodo and Edge Functions unchanged.
+
 ## 1.4.0 — October 5, 2026
 
 Android versionCode: **22**. Internal release candidate from user-confirmed stable v1.3.1. Native compilation, regression gates, twelve native tests, release assembly and independent APK verification passed; field acceptance pending.
