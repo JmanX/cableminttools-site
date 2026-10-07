@@ -6,6 +6,7 @@
 <title>CableMint Field Tools</title>
 <meta name="description" content="Free low-voltage field calculators for CCTV, PoE, electrical power, battery runtime, fiber loss, voltage drop, bandwidth, and estimating.">
 <meta name="theme-color" content="#102732">
+<link rel="canonical" href="https://cableminttools.com/field-tools/">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="../logo.png">
 <link rel="apple-touch-icon" href="../logo.png">
@@ -1553,10 +1554,21 @@ $('projectName').value=localStorage.getItem('cm_project_name')||'';
 $('projectName').addEventListener('input',e=>{localStorage.setItem('cm_project_name',e.target.value);refreshWorkspaceProjectLabel()});
 refreshWorkspaceProjectLabel();
 renderQuickLinks();
-const requestedTool=new URLSearchParams(window.location.search).get('tool');
+const hashToken=window.location.hash.replace(/^#/,'');
+const hashTool=Object.prototype.hasOwnProperty.call(toolNames,hashToken)?hashToken:'';
+const queryTool=new URLSearchParams(window.location.search).get('tool');
+const queryToolValid=queryTool&&Object.prototype.hasOwnProperty.call(toolNames,queryTool);
+const requestedTool=hashTool||(queryToolValid?queryTool:'');
 const lastTool=localStorage.getItem('cm_last_tool');
-// Calculator deep links force the calculator view. Otherwise remember the user's last section.
-if(requestedTool&&Object.prototype.hasOwnProperty.call(toolNames,requestedTool)){
+// Tool fragments (#cctv, #poe, etc.) are the preferred deep links because they do not create duplicate crawlable pages.
+// Keep old ?tool= links working, but clean them to the canonical fragment form in the address bar.
+if(queryToolValid&&!hashTool){
+  const cleanUrl=new URL(window.location.href);
+  cleanUrl.searchParams.delete('tool');
+  cleanUrl.hash=queryTool;
+  history.replaceState(null,'',cleanUrl.pathname+(cleanUrl.search||'')+cleanUrl.hash);
+}
+if(requestedTool){
   openTool(requestedTool,false);
   setFieldView('calculators',false);
 }else{
