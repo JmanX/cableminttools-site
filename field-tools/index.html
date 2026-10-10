@@ -313,6 +313,7 @@ let currentGapFilter='open';
 async function refreshAccount(){
   const {data:{user}}=await sb.auth.getUser();
   currentUser=user||null;
+  if(user)$('authForm').classList.remove('show');
   currentIsPro=false;
   const meta=$('accountMeta'),chip=$('proChip'),toggle=$('accountToggle'),out=$('signOutBtn'),upgrade=$('upgradeBtn');
   if(!user){
