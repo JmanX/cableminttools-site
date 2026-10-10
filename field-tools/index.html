@@ -35,7 +35,7 @@ main{padding:34px 0 70px}.accountbar{background:#fff;border:1px solid var(--line
 .footcta{margin-top:28px;background:var(--ink);color:#fff;border-radius:18px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.footcta p{margin:4px 0 0;color:#c8d5da}.footcta a{background:var(--green);padding:12px 16px;border-radius:10px;font-weight:900;white-space:nowrap}
 footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:820px){.viewbtn{padding:11px 8px}.workspacehero{display:block}.workspaceproject{margin-top:14px;min-width:0}.capturegrid{grid-template-columns:1fr}.deviceeditgrid{grid-template-columns:1fr}.devicerow{grid-template-columns:1fr auto}.devicerow .deviceextra{grid-column:1/-1}.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
-</style>
+.passwordwrap{position:relative}.passwordwrap input{width:100%;padding-right:76px}.passwordwrap .passwordtoggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid #cadcd4;background:#f3f8f5;color:var(--ink);border-radius:7px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;min-width:54px}.passwordtoggle:focus-visible{outline:2px solid var(--green);outline-offset:2px}</style>
 </head>
 <body>
 <header><div class="wrap"><div class="top"><a class="brand" href="../"><img src="../logo.png" alt="CableMint Tools"><span>CableMint Field Tools</span></a><a class="home" href="../">Main Site</a></div><div class="hero"><h1>Field math without the spreadsheet hunt.</h1><p>Fast calculators for low-voltage, security, fiber, networking, and estimating work. Free to use and built for phones in the field.</p><div class="badges"><span class="badge">Free MVP</span><span class="badge">Mobile Friendly</span><span class="badge">Works Offline After First Load</span><span class="badge">Saved Locally</span></div></div></div></header>
@@ -46,7 +46,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <div class="authform" id="authForm" style="flex-basis:100%">
 <div class="authgrid">
 <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
-<div class="field"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters"></div>
+<div class="field"><label for="authPassword">Password</label><div class="passwordwrap"><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters"><button id="authPasswordToggle" class="passwordtoggle" type="button" aria-label="Show password" aria-pressed="false" aria-controls="authPassword">Show</button></div></div>
 <button id="signInBtn" class="acctprimary" type="button">Sign In</button>
 <button id="signUpBtn" class="acctsecondary" type="button">Create Account</button>
 </div><div class="authmsg" id="authMsg">Use the same email address you use at Dodo checkout so Pro access can be matched automatically.</div>
@@ -345,7 +345,9 @@ async function refreshAccount(){
   }
   refreshCaptureAccess();
   await Promise.all([renderSaved(),refreshGapList()]);
-}$('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
+}
+$('authPasswordToggle').addEventListener('click',()=>{const input=$('authPassword'),button=$('authPasswordToggle'),visible=input.type==='password';input.type=visible?'text':'password';button.textContent=visible?'Hide':'Show';button.setAttribute('aria-label',visible?'Hide password':'Show password');button.setAttribute('aria-pressed',String(visible));});
+$('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
 $('signInBtn').addEventListener('click',async()=>{
   $('authMsg').textContent='Signing in…';
   const {error}=await sb.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
@@ -365,6 +367,13 @@ $('signUpBtn').addEventListener('click',async()=>{
 $('signOutBtn').addEventListener('click',async()=>{await sb.auth.signOut();await refreshAccount()});
 sb.auth.onAuthStateChange(()=>setTimeout(refreshAccount,0));
 refreshAccount();
+const requestedAuthView=new URLSearchParams(window.location.search).get('auth');
+if(requestedAuthView==='login'||requestedAuthView==='signup'){
+  $('authForm').classList.add('show');
+  $('authMsg').textContent=requestedAuthView==='signup'?'New to CableMint? Enter an email and password, then select Create Account. You may need to confirm your email.':'Welcome back. Enter your email and password, then select Sign In.';
+  $('accountBar').scrollIntoView({block:'start'});
+  $('authEmail').focus({preventScroll:true});
+}
 
 function refreshWorkspaceProjectLabel(){
   const raw=$('projectName')?$('projectName').value.trim():'';
