@@ -35,7 +35,7 @@ main{padding:34px 0 70px}.accountbar{background:#fff;border:1px solid var(--line
 .footcta{margin-top:28px;background:var(--ink);color:#fff;border-radius:18px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.footcta p{margin:4px 0 0;color:#c8d5da}.footcta a{background:var(--green);padding:12px 16px;border-radius:10px;font-weight:900;white-space:nowrap}
 footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:820px){.viewbtn{padding:11px 8px}.workspacehero{display:block}.workspaceproject{margin-top:14px;min-width:0}.capturegrid{grid-template-columns:1fr}.deviceeditgrid{grid-template-columns:1fr}.devicerow{grid-template-columns:1fr auto}.devicerow .deviceextra{grid-column:1/-1}.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
-.passwordwrap{position:relative}.passwordwrap input{width:100%;padding-right:76px}.passwordwrap .passwordtoggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid #cadcd4;background:#f3f8f5;color:var(--ink);border-radius:7px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;min-width:54px}.passwordtoggle:focus-visible{outline:2px solid var(--green);outline-offset:2px}</style>
+.passwordwrap{position:relative}.passwordwrap input{width:100%;padding-right:76px}.passwordwrap .passwordtoggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid #cadcd4;background:#f3f8f5;color:var(--ink);border-radius:7px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;min-width:54px}.passwordtoggle:focus-visible{outline:2px solid var(--green);outline-offset:2px}.authaux{margin-top:10px;text-align:right}.authaux button{border:0;background:transparent;color:#137e56;text-decoration:underline;font-size:13px;font-weight:800;cursor:pointer;padding:8px}.recoverynote{font-size:13px;color:var(--muted);margin:0 0 12px}.recoveryactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.recoveryactions button{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.recoveryactions .confirm{background:var(--green);color:#fff}.recoveryactions .cancel{background:#e8f0ed;color:var(--ink)}</style>
 </head>
 <body>
 <header><div class="wrap"><div class="top"><a class="brand" href="../"><img src="../logo.png" alt="CableMint Tools"><span>CableMint Field Tools</span></a><a class="home" href="../">Main Site</a></div><div class="hero"><h1>Field math without the spreadsheet hunt.</h1><p>Fast calculators for low-voltage, security, fiber, networking, and estimating work. Free to use and built for phones in the field.</p><div class="badges"><span class="badge">Free MVP</span><span class="badge">Mobile Friendly</span><span class="badge">Works Offline After First Load</span><span class="badge">Saved Locally</span></div></div></div></header>
@@ -49,7 +49,15 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 <div class="field"><label for="authPassword">Password</label><div class="passwordwrap"><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters"><button id="authPasswordToggle" class="passwordtoggle" type="button" aria-label="Show password" aria-pressed="false" aria-controls="authPassword">Show</button></div></div>
 <button id="signInBtn" class="acctprimary" type="button">Sign In</button>
 <button id="signUpBtn" class="acctsecondary" type="button">Create Account</button>
-</div><div class="authmsg" id="authMsg">Use the same email address you use at Dodo checkout so Pro access can be matched automatically.</div>
+</div><div class="authaux"><button id="forgotPasswordBtn" type="button">Forgot password?</button></div>
+<div class="authmsg" id="authMsg" role="status">Use the same email address you use at Dodo checkout so Pro access can be matched automatically.</div>
+</div>
+<div class="authform" id="recoveryForm" style="flex-basis:100%">
+  <h2 style="font-size:20px;margin-bottom:8px">Set a new password</h2>
+  <p class="recoverynote">Enter a new password for your CableMint Tools account.</p>
+  <div class="field"><label for="recoveryPassword">New password</label><div class="passwordwrap"><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"><button id="recoveryPasswordToggle" class="passwordtoggle" type="button" aria-label="Show new password" aria-pressed="false" aria-controls="recoveryPassword">Show</button></div></div>
+  <div class="recoveryactions"><button id="recoveryUpdate" class="confirm" type="button">Update password</button><button id="recoveryCancel" class="cancel" type="button">Cancel</button></div>
+  <div class="authmsg" id="recoveryMsg" role="status"></div>
 </div>
 </div>
 <div class="viewtoggle" role="tablist" aria-label="Field Tools sections">
@@ -348,6 +356,29 @@ async function refreshAccount(){
   await Promise.all([renderSaved(),refreshGapList()]);
 }
 $('authPasswordToggle').addEventListener('click',()=>{const input=$('authPassword'),button=$('authPasswordToggle'),visible=input.type==='password';input.type=visible?'text':'password';button.textContent=visible?'Hide':'Show';button.setAttribute('aria-label',visible?'Hide password':'Show password');button.setAttribute('aria-pressed',String(visible));});
+$('recoveryPasswordToggle').addEventListener('click',()=>{const input=$('recoveryPassword'),button=$('recoveryPasswordToggle'),visible=input.type==='password';input.type=visible?'text':'password';button.textContent=visible?'Hide':'Show';button.setAttribute('aria-label',visible?'Hide new password':'Show new password');button.setAttribute('aria-pressed',String(visible));});
+$('forgotPasswordBtn').addEventListener('click',async()=>{
+  const email=$('authEmail').value.trim();
+  if(!email){$('authMsg').textContent='Enter your email address above, then select Forgot password.';$('authEmail').focus();return;}
+  $('authMsg').textContent='Sending password reset instructions…';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://www.cableminttools.com/field-tools/'});
+  $('authMsg').textContent=error?error.message:'If this account exists, we sent a password reset link. Check your inbox and spam folder.';
+});
+$('recoveryUpdate').addEventListener('click',async()=>{
+  const password=$('recoveryPassword').value;
+  if(password.length<8){$('recoveryMsg').textContent='Use at least 8 characters.';return;}
+  $('recoveryUpdate').disabled=true;
+  $('recoveryMsg').textContent='Updating password…';
+  const {error}=await sb.auth.updateUser({password});
+  $('recoveryUpdate').disabled=false;
+  if(error){$('recoveryMsg').textContent=error.message;return;}
+  $('recoveryPassword').value='';
+  $('recoveryForm').classList.remove('show');
+  await sb.auth.signOut();
+  $('authForm').classList.add('show');
+  $('authMsg').textContent='Password updated successfully. Sign in using your new password.';
+});
+$('recoveryCancel').addEventListener('click',async()=>{$('recoveryForm').classList.remove('show');$('recoveryPassword').value='';await sb.auth.signOut();});
 $('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
 $('signInBtn').addEventListener('click',async()=>{
   $('authMsg').textContent='Signing in…';
@@ -366,12 +397,21 @@ $('signUpBtn').addEventListener('click',async()=>{
   else $('authMsg').textContent='Account created. Check your email to confirm your address, then return here and sign in.';
 });
 $('signOutBtn').addEventListener('click',async()=>{await sb.auth.signOut();await refreshAccount()});
-sb.auth.onAuthStateChange(()=>setTimeout(refreshAccount,0));
+sb.auth.onAuthStateChange(event=>setTimeout(()=>{
+  if(event==='PASSWORD_RECOVERY'){
+    $('authForm').classList.remove('show');
+    $('recoveryForm').classList.add('show');
+    $('recoveryMsg').textContent='Your recovery link is valid. Choose a new password.';
+    $('accountBar').scrollIntoView({block:'start'});
+    $('recoveryPassword').focus({preventScroll:true});
+  }
+  refreshAccount();
+},0));
 refreshAccount();
 const requestedAuthView=new URLSearchParams(window.location.search).get('auth');
-if(requestedAuthView==='login'||requestedAuthView==='signup'){
+if(requestedAuthView==='login'||requestedAuthView==='signup'||requestedAuthView==='forgot'){
   $('authForm').classList.add('show');
-  $('authMsg').textContent=requestedAuthView==='signup'?'New to CableMint? Enter an email and password, then select Create Account. You may need to confirm your email.':'Welcome back. Enter your email and password, then select Sign In.';
+  $('authMsg').textContent=requestedAuthView==='signup'?'New to CableMint? Enter an email and password, then select Create Account. You may need to confirm your email.':requestedAuthView==='forgot'?'Enter the email address for your account, then click Forgot password?.':'Welcome back. Enter your email and password, then select Sign In.';
   $('accountBar').scrollIntoView({block:'start'});
   $('authEmail').focus({preventScroll:true});
 }
