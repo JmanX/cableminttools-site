@@ -52,6 +52,13 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 </div><div class="authaux"><button id="forgotPasswordBtn" type="button">Forgot password?</button></div>
 <div class="authmsg" id="authMsg" role="status">Use the same email address you use at Dodo checkout so Pro access can be matched automatically.</div>
 </div>
+<div class="authform" id="resetRequestForm" style="flex-basis:100%">
+<h2 style="font-size:22px;margin:0 0 8px">Reset your CableMint password</h2>
+<p class="recoverynote">Enter the email for your CableMint account. We'll email you a secure link to choose a new password.</p>
+<div class="field"><label for="resetRequestEmail">Account email address</label><input id="resetRequestEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required></div>
+<div class="recoveryactions"><button id="resetRequestSubmit" class="confirm" type="button">Send reset link</button><button id="resetRequestCancel" class="cancel" type="button">Back to Sign In</button></div>
+<div class="authmsg" id="resetRequestMsg" role="status"></div>
+</div>
 <div class="authform" id="recoveryForm" style="flex-basis:100%">
   <h2 style="font-size:20px;margin-bottom:8px">Set a new password</h2>
   <p class="recoverynote">Enter a new password for your CableMint Tools account.</p>
@@ -357,12 +364,33 @@ async function refreshAccount(){
 }
 $('authPasswordToggle').addEventListener('click',()=>{const input=$('authPassword'),button=$('authPasswordToggle'),visible=input.type==='password';input.type=visible?'text':'password';button.textContent=visible?'Hide':'Show';button.setAttribute('aria-label',visible?'Hide password':'Show password');button.setAttribute('aria-pressed',String(visible));});
 $('recoveryPasswordToggle').addEventListener('click',()=>{const input=$('recoveryPassword'),button=$('recoveryPasswordToggle'),visible=input.type==='password';input.type=visible?'text':'password';button.textContent=visible?'Hide':'Show';button.setAttribute('aria-label',visible?'Hide new password':'Show new password');button.setAttribute('aria-pressed',String(visible));});
-$('forgotPasswordBtn').addEventListener('click',async()=>{
-  const email=$('authEmail').value.trim();
-  if(!email){$('authMsg').textContent='Enter your email address above, then select Forgot password.';$('authEmail').focus();return;}
-  $('authMsg').textContent='Sending password reset instructions…';
-  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://www.cableminttools.com/field-tools/'});
-  $('authMsg').textContent=error?error.message:'If this account exists, we sent a password reset link. Check your inbox and spam folder.';
+function showResetRequest(prefill=''){
+  $('authForm').classList.remove('show');
+  $('recoveryForm').classList.remove('show');
+  $('resetRequestForm').classList.add('show');
+  if(prefill)$('resetRequestEmail').value=prefill;
+  $('resetRequestMsg').textContent='';
+  $('accountBar').scrollIntoView({block:'start'});
+  $('resetRequestEmail').focus({preventScroll:true});
+}
+$('forgotPasswordBtn').addEventListener('click',()=>showResetRequest($('authEmail').value.trim()));
+$('resetRequestEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('resetRequestSubmit').click();});
+$('resetRequestSubmit').addEventListener('click',async()=>{
+  const input=$('resetRequestEmail'),button=$('resetRequestSubmit');
+  const email=input.value.trim();input.value=email;
+  if(!email||!input.checkValidity()){$('resetRequestMsg').textContent='Enter a valid email address.';input.focus();return;}
+  button.disabled=true;$('resetRequestMsg').textContent='Sending password reset link…';
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://www.cableminttools.com/field-tools/'});
+    $('resetRequestMsg').textContent=error?'Unable to send the link: '+error.message:'If this account exists, a reset link has been sent. Check your inbox and spam folder.';
+  }catch(e){$('resetRequestMsg').textContent='Unable to request a reset link right now. Please try again.';}
+  finally{button.disabled=false;}
+});
+$('resetRequestCancel').addEventListener('click',()=>{
+  $('resetRequestForm').classList.remove('show');$('authForm').classList.add('show');
+  $('authEmail').value=$('resetRequestEmail').value.trim();
+  const u=new URL(window.location.href);u.searchParams.set('auth','login');
+  history.replaceState(null,'',u.pathname+u.search+u.hash);
 });
 $('recoveryUpdate').addEventListener('click',async()=>{
   const password=$('recoveryPassword').value;
@@ -379,7 +407,7 @@ $('recoveryUpdate').addEventListener('click',async()=>{
   $('authMsg').textContent='Password updated successfully. Sign in using your new password.';
 });
 $('recoveryCancel').addEventListener('click',async()=>{$('recoveryForm').classList.remove('show');$('recoveryPassword').value='';await sb.auth.signOut();});
-$('accountToggle').addEventListener('click',()=>$('authForm').classList.toggle('show'));
+$('accountToggle').addEventListener('click',()=>{$('resetRequestForm').classList.remove('show');$('authForm').classList.toggle('show');});
 $('signInBtn').addEventListener('click',async()=>{
   $('authMsg').textContent='Signing in…';
   const {error}=await sb.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
@@ -400,6 +428,7 @@ $('signOutBtn').addEventListener('click',async()=>{await sb.auth.signOut();await
 sb.auth.onAuthStateChange(event=>setTimeout(()=>{
   if(event==='PASSWORD_RECOVERY'){
     $('authForm').classList.remove('show');
+    $('resetRequestForm').classList.remove('show');
     $('recoveryForm').classList.add('show');
     $('recoveryMsg').textContent='Your recovery link is valid. Choose a new password.';
     $('accountBar').scrollIntoView({block:'start'});
@@ -409,9 +438,11 @@ sb.auth.onAuthStateChange(event=>setTimeout(()=>{
 },0));
 refreshAccount();
 const requestedAuthView=new URLSearchParams(window.location.search).get('auth');
-if(requestedAuthView==='login'||requestedAuthView==='signup'||requestedAuthView==='forgot'){
+if(requestedAuthView==='forgot'){
+  showResetRequest();
+}else if(requestedAuthView==='login'||requestedAuthView==='signup'){
   $('authForm').classList.add('show');
-  $('authMsg').textContent=requestedAuthView==='signup'?'New to CableMint? Enter an email and password, then select Create Account. You may need to confirm your email.':requestedAuthView==='forgot'?'Enter the email address for your account, then click Forgot password?.':'Welcome back. Enter your email and password, then select Sign In.';
+  $('authMsg').textContent=requestedAuthView==='signup'?'New to CableMint? Enter an email and password, then select Create Account. You may need to confirm your email.':'Welcome back. Enter your email and password, then select Sign In.';
   $('accountBar').scrollIntoView({block:'start'});
   $('authEmail').focus({preventScroll:true});
 }
