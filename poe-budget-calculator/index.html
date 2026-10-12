@@ -4,19 +4,76 @@
 <meta property="og:type" content="website"><meta property="og:title" content="Free PoE Budget Calculator for Security Cameras & Switches | CableMint"><meta property="og:description" content="Calculate total PoE device power, headroom, and whether your switch's available PoE budget is enough. Free low-voltage planning calculator."><meta property="og:url" content="https://cableminttools.com/poe-budget-calculator/"><meta property="og:image" content="https://cableminttools.com/hero-v6.png">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5K0LXZLD9"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-R5K0LXZLD9');</script>
-<style>:root{--ink:#152733;--deep:#0f1f29;--green:#138756;--bg:#f4f7f6;--muted:#4e6067;--line:#dce6e1}*{box-sizing:border-box}body{font:16px/1.6 Inter,Arial,sans-serif;color:var(--ink);background:var(--bg);margin:0}a{color:#08764b}.wrap{width:min(1020px,92%);margin:auto}.nav{background:#fff;border-bottom:1px solid var(--line)}.nav .wrap{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-block:10px}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:800;text-decoration:none}.brand img{width:43px;height:43px}nav .links{display:flex;gap:18px;flex-wrap:wrap}nav .links a{font-size:14px;font-weight:700;text-decoration:none}.hero{background:var(--deep);color:white;padding:54px 0 40px}.hero h1{font-size:clamp(30px,5vw,47px);line-height:1.12;max-width:860px}.hero p{max-width:790px;color:#e0e9e9;font-size:18px}main{padding:35px 0 70px}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:clamp(20px,4vw,36px);margin-bottom:24px}.panel h2{margin-top:0;font-size:26px}form .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:block;font-weight:700;font-size:14px}input,select{font:inherit;padding:12px;width:100%;border:1px solid #a9c0b4;border-radius:8px;background:white;margin-top:6px}button,.btn{display:inline-block;background:#138756;border:0;color:white;font:inherit;font-weight:800;border-radius:9px;padding:12px 20px;margin-top:20px;cursor:pointer;text-decoration:none}.btn.secondary{background:white;color:#15563e;border:1px solid #25885e}.result{background:#eaf8f0;border-left:5px solid var(--green);padding:16px;margin-top:18px;border-radius:5px}.result strong{font-size:24px}.fine{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.grid .panel{height:100%}footer{background:#fff;border-top:1px solid var(--line);padding:26px 0}.crumb{font-size:14px}.crumb a{color:#d6ecdf}@media(max-width:650px){form .fields,.grid{grid-template-columns:1fr}nav .links{gap:10px}}nav .links .account-login{border:1px solid #bfd6ca;padding:5px 10px;border-radius:7px}nav .links .account-register{background:#138756;color:#fff;padding:6px 10px;border-radius:7px}</style></head>
+<style>:root{--ink:#152733;--deep:#0f1f29;--green:#138756;--bg:#f4f7f6;--muted:#4e6067;--line:#dce6e1}*{box-sizing:border-box}body{font:16px/1.6 Inter,Arial,sans-serif;color:var(--ink);background:var(--bg);margin:0}a{color:#08764b}.wrap{width:min(1020px,92%);margin:auto}.nav{background:#fff;border-bottom:1px solid var(--line)}.nav .wrap{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-block:10px}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:800;text-decoration:none}.brand img{width:43px;height:43px}nav .links{display:flex;gap:18px;flex-wrap:wrap}nav .links a{font-size:14px;font-weight:700;text-decoration:none}.hero{background:var(--deep);color:white;padding:54px 0 40px}.hero h1{font-size:clamp(30px,5vw,47px);line-height:1.12;max-width:860px}.hero p{max-width:790px;color:#e0e9e9;font-size:18px}main{padding:35px 0 70px}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:clamp(20px,4vw,36px);margin-bottom:24px}.panel h2{margin-top:0;font-size:26px}form .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:block;font-weight:700;font-size:14px}input,select{font:inherit;padding:12px;width:100%;border:1px solid #a9c0b4;border-radius:8px;background:white;margin-top:6px}button,.btn{display:inline-block;background:#138756;border:0;color:white;font:inherit;font-weight:800;border-radius:9px;padding:12px 20px;margin-top:20px;cursor:pointer;text-decoration:none}.btn.secondary{background:white;color:#15563e;border:1px solid #25885e}.result{background:#eaf8f0;border-left:5px solid var(--green);padding:16px;margin-top:18px;border-radius:5px}.result strong{font-size:24px}.fine{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.grid .panel{height:100%}footer{background:#fff;border-top:1px solid var(--line);padding:26px 0}.crumb{font-size:14px}.crumb a{color:#d6ecdf}@media(max-width:650px){form .fields,.grid{grid-template-columns:1fr}nav .links{gap:10px}}nav .links .account-login{border:1px solid #bfd6ca;padding:5px 10px;border-radius:7px}nav .links .account-register{background:#138756;color:#fff;padding:6px 10px;border-radius:7px}
+/* Free search landing-page calculators */
+.calc-intro{color:var(--muted);margin-top:-7px}
+.calc-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.calc-actions button,.calc-actions .btn{margin-top:16px}
+.calc-results{background:#eaf8f0;border:1px solid #b6e0ca;border-left:5px solid var(--green);padding:18px;margin-top:20px;border-radius:9px}
+.calc-results[hidden]{display:none}
+.calc-results h3{margin:0 0 12px}
+.calc-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.calc-stat{background:#fff;border-radius:9px;padding:12px}
+.calc-stat span{display:block;font-size:13px;color:var(--muted)}
+.calc-stat strong{font-size:22px;line-height:1.3;display:block;margin-top:3px}
+.calc-status{margin-top:13px;font-weight:800}
+.calc-upsell{padding-top:14px;margin-top:16px;border-top:1px solid #cde3d6}
+.calc-upsell a{font-weight:800}
+@media(max-width:650px){.calc-stats{grid-template-columns:1fr}}
+</style></head>
 <body><nav class="nav"><div class="wrap"><a class="brand" href="/"><img src="/logo.png" alt="CableMint Tools logo">CableMint Tools</a><div class="links"><a href="/">Home</a><a href="/field-tools/">All Field Tools</a><a href="/poe-budget-calculator/">PoE Budget</a><a href="/cctv-storage-calculator/">CCTV Storage</a><a class="account-login" href="/field-tools/?auth=login">Log In</a><a class="account-register" href="/field-tools/?auth=signup">Sign Up Free</a></div></div></nav>
 <header class="hero"><div class="wrap"><div class="crumb"><a href="/">Home</a> / Free field calculator</div><h1>Free PoE Budget Calculator</h1><p>Check whether a PoE switch has enough power for your cameras, access points, and other network devices. Use each device's manufacturer-rated draw for planning.</p></div></header>
 <main class="wrap"><section class="panel"><h2>Calculate your PoE requirements</h2>
-<p>Use CableMint Field Tools for the actual calculation. This keeps your results and project workflows in one place, with a consistent calculator across the website.</p>
-<a class="btn" id="openCalculator" href="/field-tools/#poe">Open PoE Budget Calculator in Field Tools →</a>
-<p class="fine">Free to calculate. You can use the rest of Field Tools from the same page.</p></section>
+<p class="calc-intro">Check your switch's total power budget before installing cameras, access points, or other powered devices. No sign-in required.</p>
+<form id="poeForm">
+<div class="fields">
+<div><label for="poeDevices">Number of PoE devices</label><input id="poeDevices" name="poeDevices" type="number" min="1" max="10000" step="1" value="12" required></div>
+<div><label for="poeWatts">Power per device (W)</label><input id="poeWatts" name="poeWatts" type="number" min="0.1" max="10000" step="any" value="12" required></div>
+<div><label for="poeBudget">Switch PoE budget (W)</label><input id="poeBudget" name="poeBudget" type="number" min="1" max="100000" step="any" value="370" required></div>
+<div><label for="poeHead">Reserve a portion of the switch budget</label><select id="poeHead" name="poeHead"><option value="0.1">10%</option><option value="0.2" selected>20%</option><option value="0.25">25%</option><option value="0.3">30%</option></select></div>
+</div>
+<div class="calc-actions"><button type="submit">Check PoE budget</button></div>
+</form>
+<div id="poeResults" class="calc-results" aria-live="polite" aria-atomic="true" hidden>
+<h3>PoE power budget check</h3>
+<div class="calc-stats">
+<div class="calc-stat"><span>Total estimated device load</span><strong id="poeLoad">—</strong></div>
+<div class="calc-stat"><span>Power remaining on the switch</span><strong id="poeRemaining">—</strong></div>
+<div class="calc-stat"><span>Max load with selected headroom</span><strong id="poeTarget">—</strong></div>
+<div class="calc-stat"><span>Planning result</span><strong id="poeStatus">—</strong></div>
+</div>
+<p class="fine">A total-budget check only. Verify the per-port wattage, IEEE PoE standard, switch specs, and peak device draw before installation.</p>
+<div class="calc-upsell"><strong>Need site documentation?</strong> Open Field Tools for saved calculations and project workflows; CableMint Pro adds branded PDF reports.
+<div class="calc-actions"><a class="btn" id="openCalculator" href="/field-tools/#poe">Open PoE in Field Tools →</a><a class="btn secondary" data-track-cta="poe_pricing" href="/pricing/">Explore Pro reports</a></div></div>
+</div>
+<p class="fine">Free to calculate. Use each device's rated maximum draw—including IR, heaters, or accessory loads where applicable.</p>
+</section>
 <section class="panel"><h2>How to size a PoE switch</h2>
-<p><strong>Device load:</strong> number of devices × maximum watts per device. <strong>Planning target:</strong> device load × (1 + headroom ÷ 100). Compare that target with your switch's total available PoE budget.</p>
-<h3>Example: 24 security cameras</h3><p>If 24 cameras each draw up to 12 W, the total is 288 W. With 20% planning headroom, target 345.6 W. A switch offering 370 W of <em>available PoE power</em> meets that total-budget target, provided its individual ports also support the devices.</p>
+<p><strong>Device load:</strong> number of devices × maximum watts per device. <strong>Headroom:</strong> reserve a portion of the switch's available PoE budget. <strong>Max planned load:</strong> switch PoE budget × (1 − reserve percentage). The estimated device load should be below that planned maximum.</p>
+<h3>Example: 24 security cameras</h3><p>If 24 cameras each draw up to 12 W, the total is 288 W. A switch providing 370 W of <em>available PoE power</em> has a 296 W planned device-load limit when reserving 20% of its budget (74 W). The 288 W camera load passes this total-budget check, provided each port can supply its attached device.</p>
 <h3>What else should you check?</h3><ul><li>Use manufacturer maximum draw, including IR illumination, heaters, or other peak loads where applicable.</li><li>Confirm the IEEE PoE standard and per-port power limit match each device.</li><li>Verify the quoted switch budget is available to powered devices, not only the switch's AC input rating.</li><li>Review cable length, wiring quality, voltage drop, and UPS runtime separately.</li></ul>
 <p>This is an estimate, not an electrical compliance determination or a replacement for manufacturer specifications.</p></section>
 <div class="grid"><section class="panel"><h2>More free field tools</h2><p>Need to size several device types, calculate CCTV storage, or document a full site? Use the existing CableMint Field Tools app.</p><a class="btn" href="/field-tools/">Open Field Tools</a><p><a href="/cctv-storage-calculator/">Also try the CCTV Storage Calculator →</a></p></section>
 <section class="panel"><h2>Document the installation</h2><p>Track cable runs, device locations, endpoints, and project records using the CableMint Cable + Device Tracker for Excel and Google Sheets.</p><a class="btn secondary" data-etsy="cable_tracker" href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener noreferrer">View Cable + Device Tracker</a><p class="fine">Paid digital download on Etsy. The calculator above is free.</p></section></div></main><footer><div class="wrap"><strong>CableMint Tools</strong> · Built around practical low-voltage field workflows · <a href="/support/">Support</a> · <a href="/privacy/">Privacy</a></div></footer>
 <script>document.querySelectorAll('[data-etsy]').forEach(a=>a.addEventListener('click',()=>{if(typeof gtag==='function')gtag('event','etsy_click',{product_name:a.dataset.etsy,link_url:a.href,link_text:a.textContent.trim()})}));
-const calcLink=document.getElementById('openCalculator');if(calcLink)calcLink.addEventListener('click',()=>{if(typeof gtag==='function')gtag('event','field_tool_link_click',{target_tool:'poe',link_url:calcLink.href})});</script></body></html>
+const calcLink=document.getElementById('openCalculator');if(calcLink)calcLink.addEventListener('click',()=>{if(typeof gtag==='function')gtag('event','field_tool_link_click',{target_tool:'poe',link_url:calcLink.href})});
+const poeForm=document.getElementById('poeForm');
+function renderPoe(track){
+  if(!poeForm.reportValidity())return;
+  const count=Number(document.getElementById('poeDevices').value),watts=Number(document.getElementById('poeWatts').value),
+    budget=Number(document.getElementById('poeBudget').value),reserve=Number(document.getElementById('poeHead').value);
+  if(![count,watts,budget,reserve].every(Number.isFinite)||count<=0||watts<=0||budget<=0||reserve<0||reserve>=1)return;
+  const load=count*watts,remaining=budget-load,target=budget*(1-reserve);
+  document.getElementById('poeLoad').textContent=load.toFixed(1)+' W';
+  document.getElementById('poeRemaining').textContent=remaining.toFixed(1)+' W';
+  document.getElementById('poeTarget').textContent=target.toFixed(1)+' W';
+  document.getElementById('poeStatus').textContent=load<=target?'PASS':load<=budget?'CAUTION':'FAIL';
+  document.getElementById('poeResults').hidden=false;
+  if(track&&typeof gtag==='function')gtag('event','calculator_used',{calculator_name:'poe_budget',page_location:location.href});
+}
+poeForm.addEventListener('submit',e=>{e.preventDefault();renderPoe(true)});
+renderPoe(false);
+
+document.querySelectorAll('[data-track-cta]').forEach(a=>a.addEventListener('click',()=>{
+  if(typeof gtag==='function')gtag('event','landing_cta_click',{cta_name:a.dataset.trackCta,link_url:a.href});
+}));</script></body></html>
