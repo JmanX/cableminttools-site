@@ -37,6 +37,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:820px){.viewbtn{padding:11px 8px}.workspacehero{display:block}.workspaceproject{margin-top:14px;min-width:0}.capturegrid{grid-template-columns:1fr}.deviceeditgrid{grid-template-columns:1fr}.devicerow{grid-template-columns:1fr auto}.devicerow .deviceextra{grid-column:1/-1}.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
 .passwordwrap{position:relative}.passwordwrap input{width:100%;padding-right:76px}.passwordwrap .passwordtoggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid #cadcd4;background:#f3f8f5;color:var(--ink);border-radius:7px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;min-width:54px}.passwordtoggle:focus-visible{outline:2px solid var(--green);outline-offset:2px}.authaux{margin-top:10px;text-align:right}.authaux button{border:0;background:transparent;color:#137e56;text-decoration:underline;font-size:13px;font-weight:800;cursor:pointer;padding:8px}.recoverynote{font-size:13px;color:var(--muted);margin:0 0 12px}.recoveryactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.recoveryactions button{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.recoveryactions .confirm{background:var(--green);color:#fff}.recoveryactions .cancel{background:#e8f0ed;color:var(--ink)}.workspacepanel{display:none}.workspacepanel.active{display:block}.workspaceactions button[aria-pressed="true"]{background:var(--green);color:#fff;border-color:var(--green)}#deviceListCard .devicelist{margin-top:0;border-top:0;padding-top:0}.deviceviewactions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.deviceviewactions button{border:0;border-radius:10px;background:var(--ink);color:#fff;padding:11px 15px;font-weight:900;cursor:pointer}@media(max-width:820px){.workspaceactions button{flex:1 1 42%}.deviceviewactions button{width:100%}}
 .createprojectform{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:16px 0 20px;padding:17px;border:1px solid var(--line);background:#f7fbf9;border-radius:14px}.createprojectform .field{flex:1 1 220px}.createprojectform button{border:0;border-radius:10px;background:var(--green);color:#fff;padding:12px 16px;font-weight:900;cursor:pointer;min-height:47px}.createprojectform button:disabled{opacity:.55;cursor:not-allowed}.createprojectform .note{flex-basis:100%;padding:0}.createprojectform input:disabled{background:#edf2f0;color:var(--muted)}
+.macformathelp{font-size:12px;color:var(--muted);font-weight:500}.validationerror{color:var(--bad)!important;font-weight:800!important}input[aria-invalid="true"]{border-color:var(--bad);outline:2px solid rgba(180,35,24,.16)}
 </style>
 </head>
 <body>
@@ -249,7 +250,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
     <div class="privacyline">Privacy: the photo is processed temporarily on this device to read label data. It is not uploaded or stored by CableMint.</div>
   </div>
   <div class="capturegrid" style="margin-top:14px">
-    <div class="field"><label>MAC Address</label><input id="capMac" type="text" maxlength="32" autocomplete="off" placeholder="AA:BB:CC:DD:EE:FF"></div>
+    <div class="field"><label for="capMac">MAC Address</label><input id="capMac" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="AA:BB:CC:DD:EE:FF" aria-describedby="capMacHelp deviceSaveStatus"><small class="macformathelp" id="capMacHelp">Use 0–9 and A–F only; leave blank if you have a serial number.</small></div>
     <div class="field"><label>Serial Number</label><input id="capSerial" type="text" maxlength="160" autocomplete="off" placeholder="Verify before saving"></div>
     <div class="field"><label>IP Address <span style="font-weight:500;color:var(--muted)">(optional)</span></label><input id="capIp" type="text" maxlength="64"></div>
     <div class="field"><label>Switch <span style="font-weight:500;color:var(--muted)">(optional)</span></label><input id="capSwitch" type="text" maxlength="120"></div>
@@ -285,7 +286,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
         <div class="field"><label>Device Type</label><input id="editType" type="text" maxlength="120"></div>
         <div class="field"><label>Manufacturer</label><input id="editManufacturer" type="text" maxlength="100"></div>
         <div class="field"><label>Model</label><input id="editModel" type="text" maxlength="120"></div>
-        <div class="field"><label>MAC Address</label><input id="editMac" type="text" maxlength="32" autocomplete="off"></div>
+        <div class="field"><label for="editMac">MAC Address</label><input id="editMac" type="text" maxlength="32" autocomplete="off" spellcheck="false" aria-describedby="editMacHelp deviceEditStatus"><small class="macformathelp" id="editMacHelp">Use 0–9 and A–F only; leave blank if you have a serial number.</small></div>
         <div class="field"><label>Serial Number</label><input id="editSerial" type="text" maxlength="160" autocomplete="off"></div>
         <div class="field"><label>IP Address</label><input id="editIp" type="text" maxlength="64"></div>
         <div class="field"><label>Switch</label><input id="editSwitch" type="text" maxlength="120"></div>
@@ -670,6 +671,26 @@ function normalizeMac(value){
   return hex.match(/.{2}/g).join(':');
 }
 function validMac(value){return /^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/.test(normalizeMac(value))}
+const INVALID_MAC_MESSAGE='Invalid MAC address — not saved. Use only 0–9 and A–F (example: 02:11:22:33:44:55). Correct the MAC, or leave it blank if you entered a serial number.';
+function showInvalidMac(fieldId,statusId){
+  const field=$(fieldId),status=$(statusId);
+  field.setAttribute('aria-invalid','true');
+  status.textContent=INVALID_MAC_MESSAGE;
+  status.classList.add('validationerror');
+  field.focus();
+}
+function clearInvalidMac(fieldId,statusId){
+  const field=$(fieldId),status=$(statusId);
+  field.removeAttribute('aria-invalid');
+  if(status.textContent===INVALID_MAC_MESSAGE){
+    status.textContent='';
+    status.classList.remove('validationerror');
+  }
+}
+['capMac','editMac'].forEach(fieldId=>{
+  const statusId=fieldId==='capMac'?'deviceSaveStatus':'deviceEditStatus';
+  $(fieldId).addEventListener('input',()=>clearInvalidMac(fieldId,statusId));
+});
 function captureDefaults(){
   try{return JSON.parse(localStorage.getItem('cm_capture_defaults')||'{}')}catch(e){return{}}
 }
@@ -1155,6 +1176,7 @@ function nextUnitValue(value){
   return s.slice(0,m.index)+n+s.slice(m.index+m[1].length);
 }
 function clearPerDeviceFields(advance=false){
+  clearInvalidMac('capMac','deviceSaveStatus');
   if(advance&&$('capAdvance').checked)$('capUnit').value=nextUnitValue($('capUnit').value);
   else if(!advance)$('capUnit').value='';
   ['capMac','capSerial','capIp','capPort','capVlan','capNotes'].forEach(id=>$(id).value='');
@@ -1167,7 +1189,7 @@ async function saveCapturedDevice(){
   const macRaw=$('capMac').value.trim();
   const mac=macRaw?normalizeMac(macRaw):'';
   const serial=$('capSerial').value.trim();
-  if(macRaw&&!validMac(mac))return alert('Verify the MAC address before saving. Expected format: AA:BB:CC:DD:EE:FF');
+  if(macRaw&&!validMac(mac))return showInvalidMac('capMac','deviceSaveStatus');
   if(!mac&&!serial)return alert('Scan or enter at least a MAC address or serial number before saving.');
   const projectName=localProjectKey($('projectName').value);
   $('deviceSaveStatus').textContent='Checking for duplicates…';
@@ -1339,6 +1361,7 @@ document.querySelectorAll('[data-gap-filter]').forEach(button=>button.addEventLi
 }));
 
 function editCapturedDevice(id){
+  clearInvalidMac('editMac','deviceEditStatus');
   const d=currentDeviceRows[id];
   if(!d)return;
   const panel=$('deviceEditPanel');
@@ -1362,6 +1385,7 @@ function editCapturedDevice(id){
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function closeDeviceEdit(){
+  clearInvalidMac('editMac','deviceEditStatus');
   const panel=$('deviceEditPanel');
   panel.classList.remove('show');
   panel.dataset.id='';
@@ -1377,7 +1401,7 @@ async function saveDeviceEdit(){
   const macRaw=$('editMac').value.trim();
   const mac=macRaw?normalizeMacCandidate(macRaw):'';
   const serial=$('editSerial').value.trim();
-  if(macRaw&&!mac)return alert('Enter a valid MAC address or leave it blank.');
+  if(macRaw&&!mac)return showInvalidMac('editMac','deviceEditStatus');
   if(!mac&&!serial)return alert('Enter at least a MAC address or serial number.');
   const saveBtn=$('saveDeviceEditBtn');
   saveBtn.disabled=true;
