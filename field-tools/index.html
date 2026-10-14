@@ -36,6 +36,7 @@ main{padding:34px 0 70px}.accountbar{background:#fff;border:1px solid var(--line
 footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:820px){.viewbtn{padding:11px 8px}.workspacehero{display:block}.workspaceproject{margin-top:14px;min-width:0}.capturegrid{grid-template-columns:1fr}.deviceeditgrid{grid-template-columns:1fr}.devicerow{grid-template-columns:1fr auto}.devicerow .deviceextra{grid-column:1/-1}.authgrid{grid-template-columns:1fr}.accountbar{align-items:stretch}.accountactions{width:100%}.accountactions button,.accountactions a{flex:1;text-align:center}.appbar{grid-template-columns:1fr}.projectline{align-items:stretch;flex-direction:column}.tabs{display:none}.mobilepicker{display:block}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}.footcta{display:block}.footcta a{display:inline-block;margin-top:16px}}
 .passwordwrap{position:relative}.passwordwrap input{width:100%;padding-right:76px}.passwordwrap .passwordtoggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid #cadcd4;background:#f3f8f5;color:var(--ink);border-radius:7px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;min-width:54px}.passwordtoggle:focus-visible{outline:2px solid var(--green);outline-offset:2px}.authaux{margin-top:10px;text-align:right}.authaux button{border:0;background:transparent;color:#137e56;text-decoration:underline;font-size:13px;font-weight:800;cursor:pointer;padding:8px}.recoverynote{font-size:13px;color:var(--muted);margin:0 0 12px}.recoveryactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.recoveryactions button{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.recoveryactions .confirm{background:var(--green);color:#fff}.recoveryactions .cancel{background:#e8f0ed;color:var(--ink)}.workspacepanel{display:none}.workspacepanel.active{display:block}.workspaceactions button[aria-pressed="true"]{background:var(--green);color:#fff;border-color:var(--green)}#deviceListCard .devicelist{margin-top:0;border-top:0;padding-top:0}.deviceviewactions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.deviceviewactions button{border:0;border-radius:10px;background:var(--ink);color:#fff;padding:11px 15px;font-weight:900;cursor:pointer}@media(max-width:820px){.workspaceactions button{flex:1 1 42%}.deviceviewactions button{width:100%}}
+.createprojectform{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:16px 0 20px;padding:17px;border:1px solid var(--line);background:#f7fbf9;border-radius:14px}.createprojectform .field{flex:1 1 220px}.createprojectform button{border:0;border-radius:10px;background:var(--green);color:#fff;padding:12px 16px;font-weight:900;cursor:pointer;min-height:47px}.createprojectform button:disabled{opacity:.55;cursor:not-allowed}.createprojectform .note{flex-basis:100%;padding:0}.createprojectform input:disabled{background:#edf2f0;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -317,7 +318,15 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
   <div class="gaplist" id="gapList"><span class="note">Choose a project above to view its Gap / Punch List.</span></div>
 </div>
 
-<div class="card saved workspacepanel" id="projectsCard" data-workspace-panel="projects"><div class="projectshead"><div><h2>Projects</h2><p class="sub" id="projectsSub">Free: 1 project saved on this device. Pro: cloud-synced projects across devices.</p></div><div class="projectsummary" id="projectsSummary"></div></div><div id="savedList"><span class="note">No saved projects yet.</span></div></div>
+<div class="card saved workspacepanel" id="projectsCard" data-workspace-panel="projects">
+  <div class="projectshead"><div><h2>Projects</h2><p class="sub" id="projectsSub">Free: 1 project saved on this device. Pro: cloud-synced projects across devices.</p></div><div class="projectsummary" id="projectsSummary"></div></div>
+  <form class="createprojectform" id="createProjectForm">
+    <div class="field"><label for="newProjectName">Create New Project</label><input id="newProjectName" type="text" maxlength="60" placeholder="Example: Building A — Camera Installation" autocomplete="off" required></div>
+    <button type="submit" id="createProjectBtn">+ Create Project</button>
+    <div class="note" id="createProjectMsg" role="status" aria-live="polite">Pro projects are saved to the cloud and available in the mobile app.</div>
+  </form>
+  <div id="savedList"><span class="note">No saved projects yet.</span></div>
+</div>
 
 </div><!-- /workspaceMode -->
 
@@ -1426,13 +1435,58 @@ async function deleteCapturedDevice(id){
 }
 loadCaptureDefaults();
 $('projectName').addEventListener('change',()=>{refreshDeviceList();refreshGapList()});
+async function createCloudProject(event){
+  event.preventDefault();
+  const status=$('createProjectMsg'),button=$('createProjectBtn'),input=$('newProjectName');
+  if(!currentUser||!currentIsPro){
+    status.textContent='Sign in with a CableMint Pro account to create cloud projects.';
+    return;
+  }
+  const projectName=input.value.trim().replace(/\s+/g,' ');
+  if(!projectName||projectName.length>60){
+    status.textContent='Enter a project name between 1 and 60 characters.';
+    input.focus();
+    return;
+  }
+  button.disabled=true;
+  status.textContent='Creating project…';
+  try{
+    const userId=currentUser.id;
+    const {data:existing,error:findError}=await sb.from('field_projects').select('id,name').eq('user_id',userId);
+    if(findError)throw findError;
+    const matching=(existing||[]).find(p=>p.name.trim().toLocaleLowerCase()===projectName.toLocaleLowerCase());
+    if(matching){
+      status.textContent='That project already exists. Select it with Use Project below.';
+      return;
+    }
+    const {data:created,error:createError}=await sb.from('field_projects')
+      .insert({user_id:userId,name:projectName}).select('id,name').single();
+    if(createError)throw createError;
+    if(!currentUser||currentUser.id!==userId)throw new Error('Account changed during project creation.');
+    $('projectName').value=created.name;
+    localStorage.setItem('cm_project_name',created.name);
+    refreshWorkspaceProjectLabel();
+    input.value='';
+    await Promise.all([refreshDeviceList(),refreshGapList(),renderSaved()]);
+    status.textContent='Project "'+created.name+'" created and selected. You can now capture devices or create reports.';
+  }catch(error){
+    console.error('Could not create project:',error);
+    status.textContent='Could not create project. Check your connection and try again.';
+  }finally{
+    button.disabled=!currentUser||!currentIsPro;
+  }
+}
+$('createProjectForm').addEventListener('submit',createCloudProject);
 async function renderSaved(){
+  $('newProjectName').disabled=!currentUser||!currentIsPro;
+  $('createProjectBtn').disabled=!currentUser||!currentIsPro;
+  if(!currentIsPro||!currentUser)$('createProjectMsg').textContent='Sign in with a CableMint Pro account to create projects directly in the cloud.';
   const summary=$('projectsSummary');
   if(currentIsPro&&currentUser){
     $('projectsSub').textContent='Pro: unlimited saved projects with cloud sync across your signed-in devices.';
     const {data:projects,error:pErr}=await sb.from('field_projects').select('id,name,updated_at').eq('user_id',currentUser.id).order('updated_at',{ascending:false});
     if(pErr){$('savedList').innerHTML='<span class="note">Could not load cloud projects.</span>';summary.textContent='';return}
-    if(!projects||!projects.length){$('savedList').innerHTML='<span class="note">No cloud-saved projects yet. Enter a project name, calculate, and tap Save Result.</span>';summary.textContent='0 projects';return}
+    if(!projects||!projects.length){$('savedList').innerHTML='<span class="note">No projects yet. Enter a name in Create New Project above to get started.</span>';summary.textContent='0 projects';return}
     const ids=projects.map(p=>p.id);
     const [{data:calcs,error:cErr},deviceCountPairs,gapCountPairs]=await Promise.all([
       sb.from('field_project_calculations').select('id,project_id,tool_name,result_text,created_at').in('project_id',ids).order('created_at',{ascending:false}).limit(500),
@@ -1632,21 +1686,8 @@ async function delCloudSaved(id){
   if(!currentUser)return;
   const {error}=await sb.from('field_project_calculations').delete().eq('id',id).eq('user_id',currentUser.id);
   if(error)return alert('Could not delete cloud result.');
-  await cleanupEmptyCloudProjects();
+  // Keep empty projects: newly created projects and projects containing Gaps or reports must survive.
   await renderSaved();
-}
-async function cleanupEmptyCloudProjects(){
-  if(!currentUser)return;
-  const {data:projects}=await sb.from('field_projects').select('id').eq('user_id',currentUser.id);
-  for(const p of projects||[]){
-    const [{count:calcCount},{count:deviceCount}]=await Promise.all([
-      sb.from('field_project_calculations').select('id',{count:'exact',head:true}).eq('project_id',p.id).eq('user_id',currentUser.id),
-      sb.from('field_devices').select('id',{count:'exact',head:true}).eq('project_id',p.id).eq('user_id',currentUser.id)
-    ]);
-    if((calcCount||0)===0&&(deviceCount||0)===0){
-      await sb.from('field_projects').delete().eq('id',p.id).eq('user_id',currentUser.id);
-    }
-  }
 }
 async function delSaved(i){
   const all=JSON.parse(localStorage.getItem('cm_saved')||'[]');
