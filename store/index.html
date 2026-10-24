@@ -44,7 +44,7 @@ footer{background:var(--navy2);color:#d2e2de;padding:29px 0}
 <body>
 <header><nav class="wrap"><a class="brand" href="/"><img src="/logo.png" alt="CableMint Tools logo">CableMint Tools</a><div class="navlinks"><a href="/#calculators">Free Calculators</a><a href="/field-tools/">Field Tools</a><a href="/">Home</a></div></nav></header>
 <section class="hero"><div class="wrap"><span class="eyebrow">Digital downloads for low-voltage professionals</span><h1>Tools made for work in the field.</h1><p>Estimate jobs, control change orders, and document your installations with editable spreadsheets designed for real-world workflows.</p><div class="pills"><span>Editable Excel workbooks delivered in ZIP files</span><span>Instant digital download after direct checkout</span><span>No CableMint account required to purchase</span></div></div></section>
-<div class="notice" id="direct-notice"><div class="wrap">Direct checkout is configured for our Estimate + Profit Calculator, Change Order Tracker, and Complete Documentation System. The Estimating + Change Order Bundle remains available through Etsy while its direct payment link and file delivery are prepared.</div></div>
+<div class="notice" id="direct-notice"><div class="wrap">If direct checkout is unavailable, each product also offers a link to the corresponding Etsy listing.</div></div>
 <main class="wrap">
 <div class="intro"><h2>Choose the workflow you need.</h2><p>All direct purchases arrive as ZIP downloads containing editable Excel (.xlsx) workbooks and instructions. Extract the ZIP before opening the workbook. Please check spreadsheet formulas and layout if converting the Excel files to Google Sheets.</p></div>
 <div class="cards">
@@ -76,6 +76,13 @@ footer{background:var(--navy2);color:#d2e2de;padding:29px 0}
  <ul><li>Estimate + Profit Calculator workbook</li><li>Change Order Tracker workbook</li><li>Both complete Excel workbooks in one download</li></ul>
  <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4588469096/low-voltage-estimating-change-order" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4588469096/low-voltage-estimating-change-order" target="_blank" rel="noopener">Prefer Etsy?</a></div>
 </article>
+<article class="card" data-product="cableDevice" id="cable-device">
+ <div class="top"><span class="type">Cable and device tracking · 7 tabs</span><span class="ico">ZIP</span></div>
+ <h3>Low Voltage Cable + Device Tracker Bundle</h3><div class="price">$12.99 <small>one-time</small></div>
+ <p>Keep cable runs, device details, patch-panel ports, and field documentation together in one editable Excel workbook.</p>
+ <ul><li>Cable run labels, endpoints, and installation records</li><li>Device/IP details, patch-panel schedules, and equipment inventory</li><li>Materials tracker, punch list, and built-in instructions</li></ul>
+ <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener">Prefer Etsy?</a></div>
+</article>
 </div>
 <details><summary>How digital downloads work</summary><p>After a successful direct checkout, Dodo Payments delivers a ZIP file. Download and extract the ZIP, read the included READ_ME_FIRST instructions, then open the Excel (.xlsx) workbook(s) and save a working copy before entering project data. On Etsy, individual workbooks may instead be delivered directly as .xlsx files. Digital files are not physical goods. For purchase or download support, visit <a href="/support/">CableMint support</a>.</p></details>
 </main>
@@ -89,7 +96,8 @@ const dodoLinks = {
   estimate: "https://checkout.dodopayments.com/buy/pdt_0NqOzKcHjBsHpAO7y3LIF?quantity=1",
   changeOrder: "https://checkout.dodopayments.com/buy/pdt_0NqP2A7vdpJYr2NMBdxI0?quantity=1",
   documentation: "https://checkout.dodopayments.com/buy/pdt_0NqP37Enokfq1shXyntlC?quantity=1",
-  combo: "https://checkout.dodopayments.com/buy/pdt_0NqP3uaedD1SZweHfwxWV?quantity=1"
+  combo: "https://checkout.dodopayments.com/buy/pdt_0NqP3uaedD1SZweHfwxWV?quantity=1",
+  cableDevice: "https://checkout.dodopayments.com/buy/pdt_0NqPPMCLAScTgFxRZpdyf?quantity=1"
 };
 let enabledCount = 0;
 document.querySelectorAll("[data-product]").forEach(function(card){
@@ -109,7 +117,7 @@ document.querySelectorAll("[data-product]").forEach(function(card){
     if (typeof gtag==="function") gtag("event",link ? "begin_checkout" : "etsy_click",{product_name:key,link_url:buy.href});
   });
 });
-if(enabledCount===4){document.getElementById("direct-notice").remove();}
+if(enabledCount===document.querySelectorAll("[data-product]").length){document.getElementById("direct-notice").remove();}
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5K0LXZLD9"></script>
 <script>
