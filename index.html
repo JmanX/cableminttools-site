@@ -72,10 +72,90 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
 }
 @media(max-width:360px){.brand span{font-size:12px}.booknav{font-size:11px;padding:7px 9px}}
 
+
+/* Unified site header — simple navigation and a single primary action */
+.cmnav{position:sticky;top:0;z-index:45;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid #e0ebe5}
+.cmnav-inner{width:min(1480px,calc(100% - 48px));margin:0 auto;min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.cmnav-brand{display:inline-flex;align-items:center;gap:10px;flex:0 0 auto;color:#152733;font-size:16px;font-weight:900;letter-spacing:-.035em;white-space:nowrap}
+.cmnav-brand img{width:43px;height:43px;object-fit:contain}.cmnav-brand strong{font-weight:900}
+.cmnav-links{display:flex;align-items:center;justify-content:center;gap:2px;flex:1;min-width:0}
+.cmnav-links a{position:relative;display:inline-flex;align-items:center;min-height:44px;padding:8px 9px;color:#344b51;font-size:12.5px;font-weight:800;white-space:nowrap;border-radius:6px;transition:color .16s,background .16s}
+.cmnav-links a:hover{color:#0d8154;background:#f0f8f3}
+.cmnav-links a:after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:2px;background:#18b979;transform:scaleX(0);transform-origin:center;transition:transform .16s}
+.cmnav-links a:hover:after,.cmnav-links a:focus-visible:after{transform:scaleX(1)}
+.cmnav-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.cmnav-login,.cmnav-signup{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border-radius:9px;font-size:12px;font-weight:850;white-space:nowrap;transition:background .16s,border-color .16s}
+.cmnav-login{padding:9px 13px;border:1px solid #c5d8ce;color:#25493d;background:#fff}.cmnav-login:hover{background:#f3f8f4;border-color:#96bca8}
+.cmnav-signup{padding:9px 15px;border:1px solid #18b979;background:#18b979;color:#fff}.cmnav-signup:hover{background:#0f9260;border-color:#0f9260}
+.cmnav a:focus-visible,.cmnav summary:focus-visible{outline:3px solid #2abf86;outline-offset:3px}
+.cmnav-menu{display:none;position:relative}
+.cmnav-menu summary{display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:9px 12px;border:1px solid #cfdfd6;border-radius:9px;background:#fff;color:#294b43;font-size:12px;font-weight:850;cursor:pointer;list-style:none}
+.cmnav-menu summary::-webkit-details-marker{display:none}
+.cmnav-menu summary svg{width:14px;height:14px;transition:transform .16s}
+.cmnav-menu[open] summary svg{transform:rotate(180deg)}
+.cmnav-panel{position:absolute;top:calc(100% + 10px);right:0;width:min(340px,calc(100vw - 32px));display:grid;gap:2px;padding:10px;border-radius:13px;border:1px solid #d5e4dc;background:#fff;box-shadow:0 20px 42px rgba(14,40,47,.18)}
+.cmnav-panel a{padding:12px 14px;border-radius:8px;font-size:13px;font-weight:800;color:#284a47}
+.cmnav-panel a:hover{background:#eaf7ef;color:#117c52}
+.cmnav-panel-login{display:none}
+@media(max-width:1240px){
+ .cmnav-links{display:none}
+ .cmnav-inner{justify-content:space-between}
+ .cmnav-menu{display:block}
+}
+@media(max-width:650px){
+ .cmnav-inner{width:calc(100% - 30px);min-height:65px;gap:9px}
+ .cmnav-brand{gap:7px;font-size:14px}
+ .cmnav-brand img{width:36px;height:36px}
+ .cmnav-login{display:none}
+ .cmnav-panel-login{display:block;border-top:1px solid #edf2ee;border-radius:0}
+ .cmnav-signup{min-height:39px;padding:8px 11px;font-size:11px}
+ .cmnav-menu summary{min-height:39px;padding:8px 9px;font-size:11px}
+}
+@media(max-width:370px){
+ .cmnav-brand span{font-size:12px}
+ .cmnav-signup{padding:8px 9px;font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .cmnav-links a,.cmnav-links a:after,.cmnav-login,.cmnav-signup,.cmnav-menu summary svg{transition:none}
+}
+
 </style>
 </head>
 <body>
-<nav class="nav"><div class="wrap navin"><a class="brand" href="#top"><img src="logo.png" alt="CableMint Tools logo"><span>CableMint Tools</span></a><a class="booknav" href="#field-logbook" aria-label="View CableMint Field Logbook paperback">📘 Field Logbook</a><div class="links"><a href="#tools">Digital Downloads</a><a class="fieldbtn" href="field-tools/">Field Tools</a><a href="#calculators">Free Calculators</a><a href="#learn">Resources</a><a href="#about">About</a><a class="shopbtn" href="/store/">Shop Downloads</a><a class="authlink" href="/field-tools/?auth=login">Log In</a><a class="signupbtn" href="/field-tools/?auth=signup">Sign Up Free</a></div></div></nav>
+<nav class="cmnav" aria-label="Main navigation">
+  <div class="cmnav-inner">
+    <a class="cmnav-brand" href="#top" aria-label="CableMint Tools home">
+      <img src="/logo.png" width="43" height="43" alt="">
+      <span>CableMint <strong>Tools</strong></span>
+    </a>
+    <div class="cmnav-links">
+      <a href="#field-logbook">Field Logbook</a>
+      <a href="#tools">Digital Downloads</a>
+      <a href="/field-tools/">Field Tools</a>
+      <a href="#calculators">Free Calculators</a>
+      <a href="#learn">Resources</a>
+      <a href="#about">About</a>
+      <a href="/store/">Shop Downloads</a>
+    </div>
+    <div class="cmnav-actions">
+      <a class="cmnav-login" href="/field-tools/?auth=login">Log In</a>
+      <a class="cmnav-signup" href="/field-tools/?auth=signup">Sign Up Free</a>
+      <details class="cmnav-menu">
+        <summary>Menu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="cmnav-panel">
+          <a href="#field-logbook">Field Logbook</a>
+          <a href="#tools">Digital Downloads</a>
+          <a href="/field-tools/">Field Tools</a>
+          <a href="#calculators">Free Calculators</a>
+          <a href="#learn">Resources</a>
+          <a href="#about">About</a>
+          <a href="/store/">Shop Downloads</a>
+          <a class="cmnav-panel-login" href="/field-tools/?auth=login">Log In</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</nav>
 <header class="hero" id="top"><img src="hero-v6.png" alt="CableMint Tools — digital tools for low voltage and IT professionals"></header>
 <div class="bookquick" aria-label="Featured physical Field Logbook paperback">
   <div class="wrap bookquickinner">
