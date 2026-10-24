@@ -3,123 +3,340 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Digital Downloads | CableMint Tools</title>
-<meta name="description" content="Editable low-voltage estimating, change order, and field documentation spreadsheets for technicians and contractors.">
-<meta name="theme-color" content="#152733">
+<title>Shop Low-Voltage Excel Tools &amp; Field Documentation | CableMint Tools</title>
+<meta name="description" content="Shop editable Excel workbooks for low-voltage estimating, change orders, CCTV, cable tracking, fiber, networking and access control. Instant digital downloads from CableMint Tools.">
+<meta name="theme-color" content="#102831">
+<meta property="og:title" content="CableMint Tools | Digital Downloads for the Field">
+<meta property="og:description" content="Nine practical Excel tools for estimating, documenting and handing off low-voltage projects. Shop digital downloads directly or on Etsy.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cableminttools.com/store/">
+<meta property="og:image" content="https://cableminttools.com/hero-v6.png">
 <link rel="canonical" href="https://cableminttools.com/store/">
 <style>
-:root{--navy:#152733;--navy2:#0e1d26;--green:#18b979;--text:#223740;--muted:#60747b;--line:#dce8e1;--bg:#f4f7f6}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.55}a{text-decoration:none;color:inherit}
-.wrap{width:min(1120px,92%);margin:auto}
-header{background:#fff;border-bottom:1px solid var(--line)}
-nav{display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:12px}
-.brand{display:flex;align-items:center;gap:9px;font-weight:900;color:var(--navy)}.brand img{width:44px;height:44px;object-fit:contain}
-nav .navlinks{display:flex;gap:20px;align-items:center;font-size:14px;font-weight:800}
-nav .navlinks a:last-child{background:var(--navy);color:#fff;padding:10px 14px;border-radius:9px}
-.hero{background:linear-gradient(125deg,var(--navy2),#1a4842);color:#fff;padding:64px 0}
-.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;color:#8fe5bc}
-h1{font-size:clamp(32px,5vw,56px);line-height:1.08;margin:13px 0 14px;max-width:750px}
-.hero p{max-width:670px;color:#d0e0de;font-size:17px}
-.pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:23px}.pills span{border:1px solid #4f8077;border-radius:100px;padding:7px 12px;font-size:12px;font-weight:700}
-.notice{background:#e9f6ef;border-bottom:1px solid #cfe8db;padding:13px 0;font-size:14px;color:#315e4a}
-main{padding:56px 0 72px}.intro{max-width:770px;margin-bottom:28px}.intro h2{font-size:30px;margin:0 0 8px;color:var(--navy)}.intro p{color:var(--muted)}
-.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
-.card{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 12px 28px #142b3810;padding:30px;display:flex;flex-direction:column}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.type{font-size:12px;font-weight:900;letter-spacing:.1em;color:#0e9964;text-transform:uppercase}
-.ico{height:42px;width:42px;border-radius:12px;display:grid;place-items:center;background:#e8f7ef;color:#11835b;font-size:12px;font-weight:900}
-h3{font-size:25px;line-height:1.16;margin:15px 0 10px;color:var(--navy)}.price{font-size:23px;font-weight:900;color:var(--navy);margin:-2px 0 14px}.price small{font-size:12px;font-weight:700;color:var(--muted)}.save{display:inline-block;margin-left:9px;border-radius:99px;padding:2px 8px;background:#e8f7ef;color:#117a55;font-size:12px;font-weight:900}.card{scroll-margin-top:20px}
-.card p{margin:0 0 16px;color:var(--muted)}.card ul{padding-left:20px;margin:0 0 25px}.card li{margin-bottom:8px}
-.actions{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;justify-content:center;text-align:center;border-radius:10px;padding:12px 18px;font-weight:900;font-size:14px}
-.primary{background:var(--green);color:#fff;min-width:160px}.secondary{background:#fff;border:1px solid #b4c9bf;color:var(--navy)}
-details{margin:36px 0 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
-summary{font-weight:900;cursor:pointer}details p{max-width:900px}
-footer{background:var(--navy2);color:#d2e2de;padding:29px 0}
-.foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:13px}
-.foot a{color:#fff;font-weight:800;margin-right:12px}
-@media(max-width:740px){.cards{grid-template-columns:1fr}.card{padding:23px}.hero{padding:50px 0}.navlinks a:first-child{display:none}nav .navlinks{gap:8px}.brand img{width:37px;height:37px}}
+:root{--ink:#102831;--ink2:#0a1d25;--green:#18b979;--green-dark:#107a53;--jade:#b8f4d1;--body:#243c43;--muted:#5c7378;--line:#dce8e2;--bg:#f4f8f6;--white:#fff;--shadow:0 18px 45px rgba(15,47,52,.07)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--body);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #4ee0a4;outline-offset:3px}[hidden]{display:none!important}
+.wrap{width:min(1200px,calc(100% - 48px));margin-inline:auto}.skip{position:absolute;top:-70px;left:16px;background:#fff;padding:12px;z-index:101}.skip:focus{top:12px}
+.site-header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(15px);border-bottom:1px solid var(--line)}
+.nav{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:inline-flex;align-items:center;gap:12px;min-width:0;color:var(--ink);font-size:18px;font-weight:900;letter-spacing:-.035em}.brand img{width:43px;height:43px;object-fit:contain}
+.nav-right{display:flex;align-items:center;gap:26px;font-size:13px;font-weight:800}.nav-right a:not(.nav-shop){color:#4a6368;transition:color .15s}.nav-right a:hover{color:var(--green-dark)}
+.nav-shop{background:var(--ink);color:#fff;border-radius:10px;padding:10px 17px;white-space:nowrap}
+.hero{position:relative;overflow:hidden;background:radial-gradient(circle at 85% 12%,rgba(26,185,121,.19),transparent 34%),linear-gradient(135deg,#102a33,#0a2029 66%,#0a302f);color:#fff}
+.hero:before{content:"";position:absolute;inset:0;opacity:.18;background-image:linear-gradient(#89b3a3 1px,transparent 1px),linear-gradient(90deg,#89b3a3 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(90deg,transparent,black)}
+.hero-layout{position:relative;display:grid;grid-template-columns:1.04fr .96fr;align-items:center;gap:7%;min-height:465px;padding:78px 0 82px}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:#a5efd0;font-size:11px;font-weight:900;letter-spacing:.17em;text-transform:uppercase}
+.eyebrow:before{content:"";height:7px;width:7px;background:var(--green);border-radius:50%;box-shadow:0 0 0 4px rgba(24,185,121,.15)}
+.hero h1{font-size:clamp(36px,4.7vw,64px);line-height:1.06;letter-spacing:-.055em;max-width:650px;margin:19px 0 19px;font-weight:900}
+.hero h1 span{color:#71dcb0}.hero-copy{max-width:530px;color:#c0d3cf;font-size:16px;margin:0}.hero-buttons{display:flex;gap:12px;flex-wrap:wrap;margin:29px 0 0}
+.hero-primary,.hero-secondary{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:11px;padding:14px 21px;font-size:14px;font-weight:900;min-height:50px;transition:transform .18s,background .18s}
+.hero-primary{color:#082b1d;background:#75e6ae}.hero-primary:hover{background:#96f2c2;transform:translateY(-2px)}
+.hero-secondary{color:#effbf5;border:1px solid rgba(200,238,225,.28);background:rgba(255,255,255,.06)}.hero-secondary:hover{background:rgba(255,255,255,.12)}
+.hero-points{display:flex;gap:14px 21px;align-items:center;flex-wrap:wrap;margin:28px 0 0;color:#c9dcd4;font-size:12px;font-weight:650}.hero-points span{display:inline-flex;align-items:center;gap:8px}.hero-points svg{height:15px;width:15px;color:#76e9b4}
+.workflow-art{position:relative;max-width:475px;width:100%;margin:0 auto;filter:drop-shadow(0 28px 33px rgba(0,0,0,.20))}
+.mock-window{background:#fbfefd;color:#14323a;border:1px solid #d7e6dd;border-radius:17px;box-shadow:0 20px 65px #061b2254;overflow:hidden;transform:rotate(-1.5deg)}
+.mock-header{height:50px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#eff6f2;border-bottom:1px solid #dbe8e1;padding:0 17px;font-size:10px;font-weight:900;color:#315d55;letter-spacing:.08em}
+.mock-dots{display:flex;gap:5px}.mock-dots i{display:block;width:7px;height:7px;border-radius:100px;background:#c1d5ce}.mock-dots i:first-child{background:#4acf93}
+.mock-title{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:25px 25px 16px}.mock-title b{font-size:20px;color:#102831;letter-spacing:-.035em}.mock-title small{display:block;font-size:10px;letter-spacing:.11em;color:#5b8381;font-weight:800}.mock-title .active-tag{font-size:10px;background:#dff8e9;padding:6px 11px;border-radius:99px;font-weight:850;color:#128052}
+.mock-rows{padding:3px 24px 25px}.mock-row{display:grid;grid-template-columns:38px 1fr 75px;align-items:center;gap:14px;padding:12px 0;border-top:1px solid #e3ece8}
+.mock-row .step{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:#e8f6ed;color:#17885c;font-size:11px;font-weight:900}
+.mock-row strong{font-size:13px;color:#203d42}.mock-row p{font-size:10px;color:#758a8d;margin:1px 0 0}.mock-row .done{font-size:10px;color:#137c53;text-align:right;font-weight:900}
+.mock-footer{padding:12px 24px;background:#143f3b;color:#bee9d6;font-size:11px;font-weight:850;display:flex;justify-content:space-between}
+.art-stamp{position:absolute;right:-13px;bottom:-18px;background:#7ce8b4;color:#093b2b;font-size:12px;letter-spacing:.04em;font-weight:900;padding:13px 17px;border-radius:11px;box-shadow:0 15px 30px #071e2440;transform:rotate(3deg)}
+.art-note{position:absolute;top:-20px;right:12px;color:#97c3b3;font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:800}
+.trustbar{background:#fff;border-bottom:1px solid var(--line)}.trust-layout{display:grid;grid-template-columns:repeat(3,1fr);gap:0}.trust-item{padding:20px 18px;display:flex;gap:12px;align-items:center;justify-content:center;border-right:1px solid var(--line)}.trust-item:last-child{border-right:0}
+.trust-icon{display:grid;place-items:center;flex:0 0 auto;height:37px;width:37px;border-radius:11px;color:#148357;background:#e8f8ee}.trust-icon svg{height:18px;width:18px}.trust-item strong{font-size:12px;color:var(--ink);display:block}.trust-item span{font-size:11px;color:var(--muted);display:block}
+.catalog{padding:78px 0 90px;scroll-margin-top:76px}.catalog-heading{display:flex;gap:25px;align-items:end;justify-content:space-between;margin-bottom:23px}
+.section-kicker{color:#11815b;font-weight:900;letter-spacing:.16em;font-size:11px;margin:0 0 10px}.catalog h2{color:var(--ink);font-size:clamp(29px,3.5vw,43px);letter-spacing:-.045em;line-height:1.12;margin:0}.heading-text{color:var(--muted);font-size:14px;margin:11px 0 0;max-width:575px}
+.search-wrap{position:relative;flex:0 0 275px}.search-wrap svg{width:18px;height:18px;position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#73928a;pointer-events:none}
+.search-wrap input{width:100%;border:1px solid #d1e3d9;border-radius:12px;background:#fff;height:48px;padding:0 13px 0 43px;outline:none;font-size:13px;color:var(--ink)}.search-wrap input::placeholder{color:#79918c}.search-wrap input:focus{border-color:#18b979;box-shadow:0 0 0 3px #18b97920}
+.filters{display:flex;gap:9px;flex-wrap:wrap;border-bottom:1px solid #dbe8e1;padding-bottom:20px}.filter{display:inline-flex;align-items:center;gap:9px;border-radius:9px;padding:9px 15px;background:#fff;border:1px solid var(--line);font-size:12px;font-weight:850;color:#44616a;transition:.18s}
+.filter:hover{border-color:#80c6a9;color:#0d704a}.filter[aria-pressed=true]{background:#173b37;color:#fff;border-color:#173b37}.filter b{font-size:11px;opacity:.65}
+.results-line{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:45px}.results-line p{font-size:12px;color:#607a7a;margin:11px 0 15px}
+.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:19px;align-items:stretch}
+.product-card{position:relative;scroll-margin-top:105px;display:flex;flex-direction:column;min-width:0;background:#fff;border:1px solid #dfebe5;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(19,50,55,.035);transition:transform .2s,box-shadow .2s,border-color .2s}
+.product-card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:#b7ddc9}
+.product-card:target{outline:3px solid #39c88b;outline-offset:4px}.product-card.art-all{border-color:#8bcfaf}
+.card-art{position:relative;height:145px;overflow:hidden;padding:17px 20px;color:#bee9d6;background:linear-gradient(135deg,#164e45,#0e2b37)}
+.card-art:before{content:"";position:absolute;inset:0;opacity:.26;background-image:linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px);background-size:23px 23px;mask-image:linear-gradient(110deg,transparent 30%,black)}
+.card-art:after{content:"";position:absolute;right:-34px;bottom:-115px;width:240px;height:240px;border-radius:50%;border:1px solid #b5e5cf3b;box-shadow:0 0 0 24px #b5e5cf12,0 0 0 48px #b5e5cf08}
+.art-topline{position:relative;z-index:2;display:flex;justify-content:space-between;font-size:9px;letter-spacing:.15em;font-weight:900;opacity:.85}
+.art-symbol{position:absolute;z-index:1;top:21px;right:24px;display:grid;place-items:center;width:96px;height:96px;border-radius:20px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);transform:rotate(-9deg)}
+.art-icon{width:54px;height:54px;color:#d9ffee}.art-bottomline{position:absolute;z-index:2;left:20px;bottom:19px;font-size:11px;font-weight:900;letter-spacing:.11em;color:#fff}
+.art-all .card-art{background:linear-gradient(125deg,#12362e,#15634b)}.art-all .art-symbol{background:#97efba20}
+.art-combo .card-art{background:linear-gradient(125deg,#1a3946,#1e6060)}
+.art-estimate .card-art{background:linear-gradient(125deg,#173e51,#225f5d)}
+.art-change .card-art{background:linear-gradient(125deg,#3b4059,#1c5061)}
+.art-cable .card-art{background:linear-gradient(125deg,#154e49,#357477)}
+.art-cctv .card-art{background:linear-gradient(125deg,#253c58,#386077)}
+.art-network .card-art{background:linear-gradient(125deg,#263d50,#415b74)}
+.art-fiber .card-art{background:linear-gradient(125deg,#29405f,#395c71)}
+.art-access .card-art{background:linear-gradient(125deg,#234c50,#1c5a55)}
+.ribbon{position:absolute;top:112px;right:0;z-index:4;background:#aef3c6;color:#0d533c;padding:7px 13px 7px 15px;border-radius:8px 0 0 0;font-size:9px;font-weight:900;letter-spacing:.06em}
+.card-body{display:flex;flex-direction:column;flex:1;padding:22px 24px 23px}.card-kickers{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.card-category{font-size:10px;font-weight:900;color:#128052;letter-spacing:.115em}.sheet-count{font-size:10px;color:#688280;background:#f0f6f3;border-radius:6px;padding:4px 7px;font-weight:800}
+.product-card h3{font-size:21px;font-weight:850;color:var(--ink);line-height:1.2;letter-spacing:-.035em;margin:12px 0 10px}
+.card-desc{font-size:12.5px;line-height:1.65;margin:0 0 14px;color:#63767b;min-height:61px}
+.features{margin:0 0 20px;padding:0;list-style:none;display:grid;gap:9px}
+.features li{position:relative;padding-left:19px;color:#30494e;font-size:12px;line-height:1.48}.features li:before{content:"✓";position:absolute;left:0;top:0;font-size:12px;color:#169365;font-weight:900}
+.purchase-bottom{margin-top:auto;border-top:1px solid #e6efeb;padding-top:15px}
+.card-price{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}.card-price strong{font-size:27px;color:var(--ink);line-height:1;letter-spacing:-.045em}.card-price span{font-size:11px;color:#74888b;font-weight:650}
+.card-actions{display:flex;align-items:center;justify-content:space-between;gap:13px;flex-wrap:wrap}
+.buy-direct{display:inline-flex;align-items:center;justify-content:center;min-height:44px;flex:1;padding:11px 14px;border-radius:9px;background:#17ad72;color:#fff;font-weight:900;font-size:13px;white-space:nowrap;text-align:center;transition:background .15s}
+.buy-direct:hover{background:#0d7f54}.etsy-alt{font-size:11px;font-weight:850;color:#416961;white-space:nowrap;text-decoration:underline;text-decoration-color:#9abcb3;text-underline-offset:3px}.etsy-alt:hover{color:#11764e}
+.no-results{margin:25px 0 0;padding:35px 18px;text-align:center;border:1px dashed #b8d7c6;border-radius:15px;background:#fff}.no-results h3{margin:0 0 8px;color:var(--ink);font-size:19px}.no-results p{margin:0 0 15px;color:var(--muted);font-size:14px}.reset{padding:11px 16px;color:#fff;background:#176647;border:0;border-radius:9px;font-size:12px;font-weight:900}
+.assurance{background:#eff7f2;border-top:1px solid #e2eee6;border-bottom:1px solid #dcebe0;padding:66px 0}
+.assurance-layout{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:65px}
+.assurance h2{font-size:clamp(26px,3vw,36px);line-height:1.16;letter-spacing:-.04em;color:var(--ink);margin:13px 0 16px}.assurance-intro{color:#5e7776;font-size:14px;max-width:470px;line-height:1.7}.assurance-steps{display:grid;gap:12px;margin-top:24px}
+.assurance-step{display:flex;align-items:start;gap:13px}.assurance-step b{border-radius:9px;background:#d1f2e0;color:#117c55;height:28px;width:28px;display:grid;place-items:center;flex:0 0 auto;font-size:11px}.assurance-step div{font-size:13px;color:#536e6b}.assurance-step strong{display:block;font-size:13px;color:#174237}
+.faqs{background:#fff;padding:20px 26px;border:1px solid #dce9e2;border-radius:17px;box-shadow:0 12px 35px #0c29270b}.faq-title{margin:0 0 4px!important;font-size:20px!important;letter-spacing:-.025em!important;color:var(--ink)!important}
+.faqs details{border-bottom:1px solid #e8efeb;padding:16px 0}.faqs details:last-child{border-bottom:0}.faqs summary{font-size:13px;font-weight:850;color:#214640;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:18px}.faqs summary::-webkit-details-marker{display:none}.faqs summary:after{content:"+";color:#169461;font-size:19px}.faqs details[open] summary:after{content:"−"}.faqs details p{font-size:12px;color:#617976;line-height:1.7;margin:11px 0 0}.faqs a{text-decoration:underline;color:#127951}
+.site-footer{background:#0c222b;color:#c2d5d1;padding:35px 0}
+.footer-layout{display:flex;gap:24px;justify-content:space-between;align-items:start;flex-wrap:wrap}.footer-brand{display:inline-flex;gap:10px;align-items:center;font-weight:900;font-size:16px;color:#fff}.footer-brand img{height:34px;width:34px}.footer-note{font-size:12px;max-width:340px;color:#a7c0b9}.footer-links{display:flex;gap:19px;flex-wrap:wrap;font-size:12px;font-weight:800}.footer-links a:hover{color:#78e2b0}
+.notice{padding:12px 0;background:#fff2db;color:#705523;font-size:12px;border-bottom:1px solid #eddbb7}
+@media(min-width:1250px){.art-stamp{right:-10px}}
+@media(max-width:1050px){.hero-layout{gap:35px}.products{grid-template-columns:repeat(2,minmax(0,1fr))}.card-desc{min-height:0}.nav-right{gap:17px}}
+@media(max-width:780px){.hero-layout{grid-template-columns:1fr;gap:60px;padding:61px 0 70px}.workflow-art{max-width:435px;margin:0}.art-stamp{right:0}.nav-right a:nth-child(2){display:none}.trust-item{padding:16px 10px}.trust-item span{display:none}.trust-item strong{font-size:11px}.catalog{padding:58px 0 65px}.assurance-layout{grid-template-columns:1fr;gap:35px}.catalog-heading{align-items:start;flex-direction:column}.search-wrap{flex:auto;width:100%}}
+@media(max-width:580px){.wrap{width:min(100% - 32px,1200px)}.nav{min-height:65px;gap:10px}.brand{font-size:15px;gap:8px}.brand img{height:36px;width:36px}.nav-right{gap:7px;font-size:11px}.nav-right a:not(.nav-shop){display:none}.nav-shop{padding:9px 12px}.hero-layout{padding:49px 0 66px;gap:57px}.hero h1{font-size:40px}.hero-copy{font-size:14px}.hero-points{gap:11px 16px}.workflow-art{max-width:calc(100% - 6px)}.mock-title{padding:20px 15px 13px}.mock-title b{font-size:16px}.mock-rows{padding:0 14px 14px}.mock-row{grid-template-columns:32px 1fr 57px;gap:9px}.mock-row .step{width:29px;height:29px}.mock-row strong{font-size:11px}.mock-row .done{font-size:9px}.art-stamp{font-size:10px}.trust-layout{grid-template-columns:1fr;gap:0;padding:9px 0}.trust-item{justify-content:flex-start;gap:12px;border-right:0;padding:7px 0}.trust-icon{height:28px;width:28px}.trust-icon svg{height:14px;width:14px}.trust-item span{display:block;font-size:10px}.trust-item strong{font-size:11px}.catalog{padding-top:50px}.products{grid-template-columns:1fr;gap:18px}.card-art{height:128px}.card-body{padding:22px}.card-desc{font-size:13px}.filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:14px;scrollbar-width:thin}.filter{white-space:nowrap;flex:0 0 auto}.assurance{padding:55px 0}.faqs{padding:12px 19px}.footer-links{gap:14px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.product-card,.hero-primary,.hero-secondary,.buy-direct,.filter{transition:none}.product-card:hover{transform:none}}
 </style>
 </head>
 <body>
-<header><nav class="wrap"><a class="brand" href="/"><img src="/logo.png" alt="CableMint Tools logo">CableMint Tools</a><div class="navlinks"><a href="/#calculators">Free Calculators</a><a href="/field-tools/">Field Tools</a><a href="/">Home</a></div></nav></header>
-<section class="hero"><div class="wrap"><span class="eyebrow">Digital downloads for low-voltage professionals</span><h1>Tools made for work in the field.</h1><p>Estimate jobs, control change orders, and document your installations with editable spreadsheets designed for real-world workflows.</p><div class="pills"><span>Editable Excel workbooks delivered in ZIP files</span><span>Instant digital download after direct checkout</span><span>No CableMint account required to purchase</span></div></div></section>
-<div class="notice" id="direct-notice"><div class="wrap">If direct checkout is unavailable, each product also offers a link to the corresponding Etsy listing.</div></div>
-<main class="wrap">
-<div class="intro"><h2>Choose the workflow you need.</h2><p>All direct purchases arrive as ZIP downloads containing editable Excel (.xlsx) workbooks and instructions. Extract the ZIP before opening the workbook. Please check spreadsheet formulas and layout if converting the Excel files to Google Sheets.</p></div>
-<div class="cards">
-<article class="card" data-product="estimate" id="estimate">
- <div class="top"><span class="type">Estimating spreadsheet · 10 tabs</span><span class="ico">ZIP</span></div>
- <h3>Low Voltage Estimate + Profit Calculator</h3><div class="price">$39.99 <small>one-time</small></div>
- <p>Build contractor quotes while keeping labor, materials, overhead, contingency, and estimated profit visible to your team.</p>
- <ul><li>Estimate builder and labor/material references</li><li>Customer quote summary and detail</li><li>Internal pricing dashboard and bid checklist</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4581405038/low-voltage-estimate-profit-calculator" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4581405038/low-voltage-estimate-profit-calculator" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="changeOrder" id="change-order">
- <div class="top"><span class="type">Change orders · 10 tabs</span><span class="ico">ZIP</span></div>
- <h3>Change Order Tracker + Cost Calculator</h3><div class="price">$29.99 <small>one-time</small></div>
- <p>Track additional scope from pricing through authorization, schedule impact, invoicing, and payment.</p>
- <ul><li>Cost builder and change order log</li><li>Approval, schedule and billing trackers</li><li>Customer-ready summary and financial dashboard</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4588451279/low-voltage-change-order-tracker-cost" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4588451279/low-voltage-change-order-tracker-cost" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="documentation" id="documentation">
- <div class="top"><span class="type">Field documentation · 7 workbooks</span><span class="ico">ZIP</span></div>
- <h3>Complete Field Documentation System</h3><div class="price">$79.99 <small>one-time</small></div>
- <p>Seven editable Excel workbooks in one ZIP: a complete 10-tab project documentation system, five specialized field documentation tools, and a bonus sample closeout portfolio. The same collection is available on Etsy.</p>
- <ul><li>Master Field Documentation System (10 tabs)</li><li>Cable + Device Tracker, CCTV Survey, Network Rack</li><li>Fiber Optic Kit, Access Control Tracker, bonus sample closeout portfolio</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4577504671/low-voltage-documentation-bundle-cable" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4577504671/low-voltage-documentation-bundle-cable" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="combo" id="bundle">
- <div class="top"><span class="type">Estimating bundle · 2 workbooks</span><span class="ico">ZIP</span></div>
- <h3>Estimating + Change Order Bundle</h3><div class="price">$59.99 <small>one-time</small><span class="save">Save $9.99 vs. separate purchases</span></div>
- <p>Get the estimator and change order tracker together, so you can price the original job and manage added scope separately.</p>
- <ul><li>Estimate + Profit Calculator workbook</li><li>Change Order Tracker workbook</li><li>Both complete Excel workbooks in one download</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4588469096/low-voltage-estimating-change-order" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4588469096/low-voltage-estimating-change-order" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="cableDevice" id="cable-device">
- <div class="top"><span class="type">Cable and device tracking · 7 tabs</span><span class="ico">ZIP</span></div>
- <h3>Low Voltage Cable + Device Tracker Bundle</h3><div class="price">$12.99 <small>one-time</small></div>
- <p>Keep cable runs, device details, patch-panel ports, and field documentation together in one editable Excel workbook.</p>
- <ul><li>Cable run labels, endpoints, and installation records</li><li>Device/IP details, patch-panel schedules, and equipment inventory</li><li>Materials tracker, punch list, and built-in instructions</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="cctvSurvey" id="cctv-survey">
- <div class="top"><span class="type">CCTV site survey · 9 tabs</span><span class="ico">ZIP</span></div>
- <h3>CCTV Site Survey Kit</h3><div class="price">$16.99 <small>one-time</small></div>
- <p>Plan security camera installations and organize survey findings in an editable Excel workbook for low-voltage teams.</p>
- <ul><li>Site details, camera schedules, placement and coverage plans</li><li>Network, PoE, storage and cable-route planning</li><li>Materials and project handoff documentation</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4571005424" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4571005424" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="networkRack" id="network-rack">
- <div class="top"><span class="type">Network rack documentation · 9 tabs</span><span class="ico">ZIP</span></div>
- <h3>Network Rack Documentation Kit</h3><div class="price">$16.99 <small>one-time</small></div>
- <p>Document rack equipment, patch panels, switch ports, IP addressing, power, and cable labels in one editable Excel workbook.</p>
- <ul><li>Rack overview and equipment elevation</li><li>Patch-panel, switch-port, device and IP schedules</li><li>Power/UPS planning, cable labels, and punch list</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4571010941" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4571010941" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="fiberOptic" id="fiber-optic">
- <div class="top"><span class="type">Fiber optic documentation · 10 tabs</span><span class="ico">ZIP</span></div>
- <h3>Fiber Optic Documentation Kit</h3><div class="price">$17.99 <small>one-time</small></div>
- <p>Document fiber cable runs, strand assignments, splices, panel ports, test results, and project handoff in one editable Excel workbook.</p>
- <ul><li>Fiber cable register, strand tracking and splice schedules</li><li>Panel and port maps, OTDR test log and loss budget</li><li>Materials, punch list and closeout checklist</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4571030692" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4571030692" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
-<article class="card" data-product="accessControl" id="access-control">
- <div class="top"><span class="type">Access control documentation · 10 tabs</span><span class="ico">ZIP</span></div>
- <h3>Access Control Door Checklist + Tracker</h3><div class="price">$15.99 <small>one-time</small></div>
- <p>Document access-control door installations, wiring, commissioning, and project handoff in one editable Excel workbook.</p>
- <ul><li>Door schedules, readers, locks, REX and DPS device details</li><li>Controller I/O wiring, cabling, power and programming records</li><li>Testing, punch list and final handoff checklists</li></ul>
- <div class="actions"><a class="btn primary purchase" href="https://cableminttools.etsy.com/listing/4571015878" target="_blank" rel="noopener">View on Etsy</a><a class="btn secondary etsy" hidden href="https://cableminttools.etsy.com/listing/4571015878" target="_blank" rel="noopener">Prefer Etsy?</a></div>
-</article>
+<a class="skip" href="#catalog">Skip to products</a>
+<header class="site-header"><nav class="wrap nav" aria-label="Main navigation">
+<a class="brand" href="/" aria-label="CableMint Tools home"><img src="/logo.png" width="43" height="43" alt=""><span>CableMint Tools</span></a>
+<div class="nav-right"><a href="/">Home</a><a href="/#calculators">Free Calculators</a><a href="/field-tools/">Field Tools</a><a class="nav-shop" href="#catalog" aria-current="page">Shop Downloads</a></div>
+</nav></header>
+<section class="hero" aria-labelledby="hero-title"><div class="wrap hero-layout">
+<div class="hero-main">
+<span class="eyebrow">CableMint / Digital Field Tools</span>
+<h1 id="hero-title">Less paperwork.<br><span>More work done.</span></h1>
+<p class="hero-copy">Professional Excel tools to estimate the job, document the install, and hand off a cleaner project. Built for low-voltage techs and contractors who live in the field.</p>
+<div class="hero-buttons"><a class="hero-primary" href="#catalog">Explore all 9 tools <span aria-hidden="true">↗</span></a><a class="hero-secondary" href="/field-tools/">Try free calculators <span aria-hidden="true">→</span></a></div>
+<div class="hero-points">
+<span><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 10 4 4 8-9"/></svg>One-time purchase</span>
+<span><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 10 4 4 8-9"/></svg>Editable Excel files</span>
+<span><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 10 4 4 8-9"/></svg>Digital ZIP delivery</span>
 </div>
-<details><summary>How digital downloads work</summary><p>After a successful direct checkout, Dodo Payments delivers a ZIP file. Download and extract the ZIP, read the included READ_ME_FIRST instructions, then open the Excel (.xlsx) workbook(s) and save a working copy before entering project data. On Etsy, individual workbooks may instead be delivered directly as .xlsx files. Digital files are not physical goods. For purchase or download support, visit <a href="/support/">CableMint support</a>.</p></details>
+</div>
+<div class="workflow-art" aria-label="Illustration of a field project workflow from estimating to handoff" role="img">
+<div class="art-note">Illustrative project workflow</div>
+<div class="mock-window">
+<div class="mock-header"><span class="mock-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>CABLEMINT / FIELD WORKFLOW</span></div>
+<div class="mock-title"><div><small>PROJECT TOOLBOX</small><b>One site. One book.</b></div><span class="active-tag">Organized</span></div>
+<div class="mock-rows">
+<div class="mock-row"><span class="step">01</span><div><strong>Estimate the scope</strong><p>Labor · Materials · Margin</p></div><span class="done">PLAN ✓</span></div>
+<div class="mock-row"><span class="step">02</span><div><strong>Track the installation</strong><p>Cables · Devices · Changes</p></div><span class="done">RECORD ✓</span></div>
+<div class="mock-row"><span class="step">03</span><div><strong>Document the handoff</strong><p>Testing · Punch List · Closeout</p></div><span class="done">DELIVER ✓</span></div>
+</div>
+<div class="mock-footer"><span>MADE FOR REAL FIELD WORK</span><span>CM / TOOLS</span></div>
+</div>
+<div class="art-stamp">THE FIELD, ORGANIZED. ✓</div>
+</div>
+</div></section>
+<div class="trustbar"><div class="wrap trust-layout">
+<div class="trust-item"><span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 3h9l4 4v14H8zM17 3v4h4M3 7v14h13"/></svg></span><div><strong>Editable .xlsx workbooks</strong><span>Real worksheets, not flat PDFs</span></div></div>
+<div class="trust-item"><span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 18v3h16v-3"/></svg></span><div><strong>Instant digital delivery</strong><span>Download ZIP files after purchase</span></div></div>
+<div class="trust-item"><span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9V4h7M21 15v5h-7M4 16a8.5 8.5 0 0 0 14 2M20 8A8.5 8.5 0 0 0 6 6"/></svg></span><div><strong>Shop your way</strong><span>Direct checkout or Etsy</span></div></div>
+</div></div>
+<div class="notice" id="direct-notice"><div class="wrap">Some direct checkouts may be unavailable. Etsy purchase links remain available on every product.</div></div>
+<main>
+<section class="catalog wrap" id="catalog" aria-labelledby="catalog-heading">
+<div class="catalog-heading">
+<div><p class="section-kicker">BUILT FOR TECHNICIANS. READY FOR THE FIELD.</p><h2 id="catalog-heading">Find your next field tool.</h2><p class="heading-text">From your first quote to final closeout, find the workbook that fits your job. All prices are one-time purchases.</p></div>
+<label class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="product-search" type="search" placeholder="Search field tools..." aria-label="Search CableMint products" autocomplete="off"></label>
+</div>
+<div class="filters" role="group" aria-label="Filter digital products">
+<button type="button" class="filter" data-filter="all" aria-pressed="true">All tools <b>9</b></button>
+<button type="button" class="filter" data-filter="estimating" aria-pressed="false">Estimating <b>3</b></button>
+<button type="button" class="filter" data-filter="documentation" aria-pressed="false">Field documentation <b>6</b></button>
+<button type="button" class="filter" data-filter="bundles" aria-pressed="false">Bundles <b>3</b></button>
+</div>
+<div class="results-line"><p id="result-count" role="status" aria-live="polite">Showing all 9 tools</p></div>
+<div class="products" id="products"><article class="product-card art-all" data-product="documentation" data-category="documentation bundles" id="documentation" aria-labelledby="title-documentation">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 01</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/><path d="M2 8V5a4 4 0 0 1 4-4h8"/></svg></div>
+   <div class="art-bottomline">THE FULL FIELD SYSTEM</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">DOCUMENTATION</span><span class="sheet-count">7 Excel workbooks</span></div>
+   <h3 id="title-documentation">Complete Field Documentation System</h3>
+   <p class="card-desc">Seven editable Excel workbooks in one ZIP: a complete 10-tab project documentation system, five specialized field documentation tools, and a bonus sample closeout portfolio. The same collection is available on Etsy.</p>
+   <ul class="features"><li>Master Field Documentation System (10 tabs)</li><li>Cable + Device Tracker, CCTV Survey, Network Rack</li><li>Fiber Optic Kit, Access Control Tracker, bonus sample closeout portfolio</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$79.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4577504671/low-voltage-documentation-bundle-cable" target="_blank" rel="noopener noreferrer" aria-label="View Complete Field Documentation System on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4577504671/low-voltage-documentation-bundle-cable" target="_blank" rel="noopener noreferrer" aria-label="View Complete Field Documentation System on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  <span class="ribbon">COMPLETE TOOLKIT</span>
+ </article>
+<article class="product-card art-combo" data-product="combo" data-category="estimating bundles" id="bundle" aria-labelledby="title-combo">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 02</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="13" height="15" rx="2"/><path d="M7.5 8.5h5M7.5 12h5M8 21h10a2.5 2.5 0 0 0 2.5-2.5v-11"/></svg></div>
+   <div class="art-bottomline">QUOTE · TRACK · FINISH</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">ESTIMATING</span><span class="sheet-count">2 Excel workbooks</span></div>
+   <h3 id="title-combo">Estimating + Change Order Bundle</h3>
+   <p class="card-desc">Get the estimator and change order tracker together, so you can price the original job and manage added scope separately.</p>
+   <ul class="features"><li>Estimate + Profit Calculator workbook</li><li>Change Order Tracker workbook</li><li>Both complete Excel workbooks in one download</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$59.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4588469096/low-voltage-estimating-change-order" target="_blank" rel="noopener noreferrer" aria-label="View Estimating + Change Order Bundle on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4588469096/low-voltage-estimating-change-order" target="_blank" rel="noopener noreferrer" aria-label="View Estimating + Change Order Bundle on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  <span class="ribbon">SAVE $9.99</span>
+ </article>
+<article class="product-card art-estimate" data-product="estimate" data-category="estimating" id="estimate" aria-labelledby="title-estimate">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 03</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7M9 11.5h1M14 11.5h1M9 16h1M14 16h1"/></svg></div>
+   <div class="art-bottomline">QUOTES &amp; MARGINS</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">ESTIMATING</span><span class="sheet-count">10 worksheets</span></div>
+   <h3 id="title-estimate">Low Voltage Estimate + Profit Calculator</h3>
+   <p class="card-desc">Build contractor quotes while keeping labor, materials, overhead, contingency, and estimated profit visible to your team.</p>
+   <ul class="features"><li>Estimate builder and labor/material references</li><li>Customer quote summary and detail</li><li>Internal pricing dashboard and bid checklist</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$39.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4581405038/low-voltage-estimate-profit-calculator" target="_blank" rel="noopener noreferrer" aria-label="View Low Voltage Estimate + Profit Calculator on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4581405038/low-voltage-estimate-profit-calculator" target="_blank" rel="noopener noreferrer" aria-label="View Low Voltage Estimate + Profit Calculator on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article>
+<article class="product-card art-change" data-product="changeOrder" data-category="estimating" id="change-order" aria-labelledby="title-changeOrder">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 04</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2.5h8l4 4v14.5H6z"/><path d="M14 2.5v4h4"/><path d="m9 14 2.2 2.2 4-4.3"/></svg></div>
+   <div class="art-bottomline">SCOPE UNDER CONTROL</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">ESTIMATING</span><span class="sheet-count">10 worksheets</span></div>
+   <h3 id="title-changeOrder">Change Order Tracker + Cost Calculator</h3>
+   <p class="card-desc">Track additional scope from pricing through authorization, schedule impact, invoicing, and payment.</p>
+   <ul class="features"><li>Cost builder and change order log</li><li>Approval, schedule and billing trackers</li><li>Customer-ready summary and financial dashboard</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$29.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4588451279/low-voltage-change-order-tracker-cost" target="_blank" rel="noopener noreferrer" aria-label="View Change Order Tracker + Cost Calculator on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4588451279/low-voltage-change-order-tracker-cost" target="_blank" rel="noopener noreferrer" aria-label="View Change Order Tracker + Cost Calculator on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article>
+<article class="product-card art-cable" data-product="cableDevice" data-category="documentation bundles" id="cable-device" aria-labelledby="title-cableDevice">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 05</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="2.5" width="7" height="6.5" rx="1.4"/><rect x="2" y="15" width="7" height="6.5" rx="1.4"/><rect x="15" y="15" width="7" height="6.5" rx="1.4"/><path d="M12 9v3.5M5.5 15v-2.5h13V15"/></svg></div>
+   <div class="art-bottomline">CABLES &amp; DEVICES</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">FIELD RECORDS</span><span class="sheet-count">7 worksheets</span></div>
+   <h3 id="title-cableDevice">Low Voltage Cable + Device Tracker Bundle</h3>
+   <p class="card-desc">Keep cable runs, device details, patch-panel ports, and field documentation together in one editable Excel workbook.</p>
+   <ul class="features"><li>Cable run labels, endpoints, and installation records</li><li>Device/IP details, patch-panel schedules, and equipment inventory</li><li>Materials tracker, punch list, and built-in instructions</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$12.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener noreferrer" aria-label="View Low Voltage Cable + Device Tracker Bundle on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4570923329" target="_blank" rel="noopener noreferrer" aria-label="View Low Voltage Cable + Device Tracker Bundle on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article>
+<article class="product-card art-cctv" data-product="cctvSurvey" data-category="documentation" id="cctv-survey" aria-labelledby="title-cctvSurvey">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 06</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13.5" height="10" rx="2"/><path d="m16.5 9 4.5-2.5v9L16.5 13M8 19h5M10.5 16v3"/></svg></div>
+   <div class="art-bottomline">CAMERA PLANNING</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">SITE SURVEYS</span><span class="sheet-count">9 worksheets</span></div>
+   <h3 id="title-cctvSurvey">CCTV Site Survey Kit</h3>
+   <p class="card-desc">Plan security camera installations and organize survey findings in an editable Excel workbook for low-voltage teams.</p>
+   <ul class="features"><li>Site details, camera schedules, placement and coverage plans</li><li>Network, PoE, storage and cable-route planning</li><li>Materials and project handoff documentation</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$16.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4571005424" target="_blank" rel="noopener noreferrer" aria-label="View CCTV Site Survey Kit on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4571005424" target="_blank" rel="noopener noreferrer" aria-label="View CCTV Site Survey Kit on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article>
+<article class="product-card art-network" data-product="networkRack" data-category="documentation" id="network-rack" aria-labelledby="title-networkRack">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 07</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M7.5 6h2M7.5 12h2M7.5 18h2M15 6h1M15 12h1M15 18h1"/></svg></div>
+   <div class="art-bottomline">RACK &amp; PORT MAPS</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">NETWORKING</span><span class="sheet-count">9 worksheets</span></div>
+   <h3 id="title-networkRack">Network Rack Documentation Kit</h3>
+   <p class="card-desc">Document rack equipment, patch panels, switch ports, IP addressing, power, and cable labels in one editable Excel workbook.</p>
+   <ul class="features"><li>Rack overview and equipment elevation</li><li>Patch-panel, switch-port, device and IP schedules</li><li>Power/UPS planning, cable labels, and punch list</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$16.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4571010941" target="_blank" rel="noopener noreferrer" aria-label="View Network Rack Documentation Kit on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4571010941" target="_blank" rel="noopener noreferrer" aria-label="View Network Rack Documentation Kit on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article>
+<article class="product-card art-fiber" data-product="fiberOptic" data-category="documentation" id="fiber-optic" aria-labelledby="title-fiberOptic">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 08</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19c5-1 5-13 10-14s5 8 8 5"/><path d="M3 13c5-1 5-10 10-10M7 21c4-2 5-10 10-10 2 0 3 .5 4 1.5"/><circle cx="3" cy="19" r="1"/><circle cx="21" cy="10" r="1"/></svg></div>
+   <div class="art-bottomline">FIBER &amp; TEST RESULTS</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">FIBER OPTICS</span><span class="sheet-count">10 worksheets</span></div>
+   <h3 id="title-fiberOptic">Fiber Optic Documentation Kit</h3>
+   <p class="card-desc">Document fiber cable runs, strand assignments, splices, panel ports, test results, and project handoff in one editable Excel workbook.</p>
+   <ul class="features"><li>Fiber cable register, strand tracking and splice schedules</li><li>Panel and port maps, OTDR test log and loss budget</li><li>Materials, punch list and closeout checklist</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$17.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4571030692" target="_blank" rel="noopener noreferrer" aria-label="View Fiber Optic Documentation Kit on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4571030692" target="_blank" rel="noopener noreferrer" aria-label="View Fiber Optic Documentation Kit on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article>
+<article class="product-card art-access" data-product="accessControl" data-category="documentation" id="access-control" aria-labelledby="title-accessControl">
+  <div class="card-art" aria-hidden="true">
+   <div class="art-topline"><span>CM / 09</span><span>FIELD SERIES</span></div>
+   <div class="art-symbol"><svg class="art-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="2"/><path d="M8 10.5v-3.5a4 4 0 0 1 8 0v3.5"/><circle cx="12" cy="16" r="1.3"/><path d="M12 17.5v1.5"/></svg></div>
+   <div class="art-bottomline">DOOR &amp; DEVICE RECORDS</div>
+  </div>
+  <div class="card-body">
+   <div class="card-kickers"><span class="card-category">ACCESS CONTROL</span><span class="sheet-count">10 worksheets</span></div>
+   <h3 id="title-accessControl">Access Control Door Checklist + Tracker</h3>
+   <p class="card-desc">Document access-control door installations, wiring, commissioning, and project handoff in one editable Excel workbook.</p>
+   <ul class="features"><li>Door schedules, readers, locks, REX and DPS device details</li><li>Controller I/O wiring, cabling, power and programming records</li><li>Testing, punch list and final handoff checklists</li></ul>
+   <div class="purchase-bottom">
+    <div class="card-price"><strong>$15.99</strong><span>One-time purchase</span></div>
+    <div class="card-actions"><a class="buy-direct purchase" href="https://cableminttools.etsy.com/listing/4571015878" target="_blank" rel="noopener noreferrer" aria-label="View Access Control Door Checklist + Tracker on Etsy">View on Etsy</a><a class="etsy-alt etsy" hidden href="https://cableminttools.etsy.com/listing/4571015878" target="_blank" rel="noopener noreferrer" aria-label="View Access Control Door Checklist + Tracker on Etsy">Prefer Etsy? <span aria-hidden="true">↗</span></a></div>
+   </div>
+  </div>
+  
+ </article></div>
+<div class="no-results" id="no-results" hidden><h3>No matching tools found.</h3><p>Try another keyword or view the full CableMint collection.</p><button class="reset" type="button" id="reset-filters">Show all tools</button></div>
+</section>
+<section class="assurance" aria-labelledby="how-heading"><div class="wrap assurance-layout">
+<div><p class="section-kicker">SIMPLE FROM START TO FINISH</p><h2 id="how-heading">Digital tools.<br>No complicated setup.</h2><p class="assurance-intro">Purchase the workbook you need, download the ZIP, and use your own project information. No CableMint account is required for these one-time digital downloads.</p>
+<div class="assurance-steps"><div class="assurance-step"><b>01</b><div><strong>Pick your tool</strong>Choose an individual workbook or a multi-workbook bundle.</div></div>
+<div class="assurance-step"><b>02</b><div><strong>Check out securely</strong>Buy directly through Dodo Payments, or choose Etsy.</div></div>
+<div class="assurance-step"><b>03</b><div><strong>Download and put it to work</strong>Extract the ZIP, read the README, and open the Excel workbook.</div></div></div></div>
+<div class="faqs"><h2 class="faq-title">Quick questions</h2>
+<details><summary>What exactly do I receive?</summary><p>A digital ZIP download containing editable Excel (.xlsx) workbook(s) and setup instructions. No physical item is shipped.</p></details>
+<details><summary>Do I need a subscription?</summary><p>No. These nine downloads are one-time purchases, separate from CableMint Field Tools Pro subscriptions.</p></details>
+<details><summary>Can I use Google Sheets?</summary><p>These files are delivered as Excel workbooks. If you import them into Google Sheets, please check formulas and layout because conversion may change workbook behavior.</p></details>
+<details><summary>Can I buy through Etsy instead?</summary><p>Yes. Every product includes a “Prefer Etsy?” link as an alternative to direct checkout.</p></details>
+<details><summary>Where can I get help?</summary><p>Visit <a href="/support/">CableMint Support</a> for download or product assistance. See our <a href="/refunds/">refund policy</a> and <a href="/terms/">terms</a>.</p></details>
+</div>
+</div></section>
 </main>
-<footer><div class="wrap foot"><div><strong>CableMint Tools</strong><div>Practical field software and downloadable spreadsheets.</div></div><div><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a><a href="/refunds/">Refunds</a><a href="/support/">Support</a></div></div></footer>
+<footer class="site-footer"><div class="wrap footer-layout">
+<div><a class="footer-brand" href="/"><img src="/logo.png" width="34" height="34" alt="">CableMint Tools</a><p class="footer-note">Practical tools for low-voltage, security, and network professionals. One site. One book.</p></div>
+<div class="footer-links"><a href="/">Home</a><a href="/field-tools/">Field Tools</a><a href="/support/">Support</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a><a href="/refunds/">Refunds</a></div>
+</div></footer>
 <script>
-/* Populate approved LIVE Dodo payment links only after digital delivery is tested.
- * Do not put paid ZIP files in the public website repository.
- * A blank link intentionally keeps the existing Etsy purchase button active.
- */
+/* Nine approved LIVE Dodo links; these are the same checkout destinations as the earlier store. */
 const dodoLinks = {
   estimate: "https://checkout.dodopayments.com/buy/pdt_0NqOzKcHjBsHpAO7y3LIF?quantity=1",
   changeOrder: "https://checkout.dodopayments.com/buy/pdt_0NqP2A7vdpJYr2NMBdxI0?quantity=1",
@@ -131,29 +348,62 @@ const dodoLinks = {
   fiberOptic: "https://checkout.dodopayments.com/buy/pdt_0NqPW9o1LlPvlPeywjRYR?quantity=1",
   accessControl: "https://checkout.dodopayments.com/buy/pdt_0NqPY0DVBnjOzYhabNgFL?quantity=1"
 };
-let enabledCount = 0;
-document.querySelectorAll("[data-product]").forEach(function(card){
-  const key = card.getAttribute("data-product");
-  const link = dodoLinks[key];
-  const buy = card.querySelector(".purchase");
-  const etsy = card.querySelector(".etsy");
-  if (link && /^https:\/\/[^ ]+$/.test(link)) {
-    buy.href=link;
-    buy.textContent="Buy Direct";
-    buy.target="_blank";
-    buy.rel="noopener noreferrer";
-    etsy.hidden=false;
-    enabledCount++;
-  }
-  buy.addEventListener("click", function(){
-    if (typeof gtag==="function") gtag("event",link ? "begin_checkout" : "etsy_click",{product_name:key,link_url:buy.href});
-  });
+let enabledCount=0;
+const productCards=Array.from(document.querySelectorAll('[data-product]'));
+productCards.forEach(function(card){
+ const key=card.dataset.product;
+ const link=dodoLinks[key];
+ const buy=card.querySelector('.purchase');
+ const etsy=card.querySelector('.etsy');
+ if(link && /^https:\/\/[^ ]+$/.test(link)){
+  buy.href=link;
+  buy.textContent='Buy direct ↗';
+  buy.setAttribute('aria-label','Buy '+card.querySelector('h3').textContent+' directly via Dodo Payments');
+  buy.target='_blank';
+  buy.rel='noopener noreferrer';
+  etsy.hidden=false;
+  enabledCount++;
+ }
+ buy.addEventListener('click',function(){
+  if(typeof gtag==='function')gtag('event',link?'begin_checkout':'etsy_click',{product_name:key,link_url:buy.href});
+ });
+ etsy.addEventListener('click',function(){
+  if(typeof gtag==='function')gtag('event','etsy_click',{product_name:key,link_url:etsy.href});
+ });
 });
-if(enabledCount===document.querySelectorAll("[data-product]").length){document.getElementById("direct-notice").remove();}
+if(enabledCount===productCards.length){document.getElementById('direct-notice').remove();}
+let activeFilter='all';
+const search=document.getElementById('product-search');
+const filterButtons=Array.from(document.querySelectorAll('[data-filter]'));
+const resultCount=document.getElementById('result-count');
+const noResults=document.getElementById('no-results');
+function applyFilters(){
+ const query=search.value.trim().toLowerCase();
+ let visible=0;
+ productCards.forEach(function(card){
+  const categoryMatch=activeFilter==='all'||card.dataset.category.split(' ').includes(activeFilter);
+  const textMatch=!query||card.textContent.toLowerCase().includes(query);
+  const show=categoryMatch&&textMatch;
+  card.hidden=!show;
+  if(show)visible++;
+ });
+ resultCount.textContent=visible===productCards.length?'Showing all '+visible+' tools':'Showing '+visible+' of '+productCards.length+' tools';
+ noResults.hidden=visible!==0;
+ filterButtons.forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.filter===activeFilter));});
+}
+filterButtons.forEach(function(button){button.addEventListener('click',function(){activeFilter=button.dataset.filter;applyFilters();});});
+search.addEventListener('input',applyFilters);
+document.getElementById('reset-filters').addEventListener('click',function(){activeFilter='all';search.value='';applyFilters();search.focus();});
+function makeAnchorVisible(){
+ const id=decodeURIComponent(location.hash.slice(1));
+ if(!id)return;
+ const target=document.getElementById(id);
+ if(target&&target.matches('[data-product]')&&target.hidden){activeFilter='all';search.value='';applyFilters();target.scrollIntoView({block:'start'});}
+}
+window.addEventListener('hashchange',makeAnchorVisible);
+applyFilters();makeAnchorVisible();
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R5K0LXZLD9"></script>
-<script>
-window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-R5K0LXZLD9");
-</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-R5K0LXZLD9');</script>
 </body>
 </html>
