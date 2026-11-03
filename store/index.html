@@ -396,7 +396,11 @@ productCards.forEach(function(card){
   enabledCount++;
  }
  buy.addEventListener('click',function(){
-  if(typeof gtag==='function')gtag('event',link?'begin_checkout':'etsy_click',{product_name:key,link_url:buy.href});
+  if(typeof gtag!=='function')return;
+  if(link){
+   const price=Number(card.querySelector('.card-price strong')?.textContent.replace(/[^0-9.]/g,'')||0);
+   gtag('event','begin_checkout',{currency:'USD',value:price,items:[{item_id:key,item_name:card.querySelector('h3')?.textContent.trim()||key,price,quantity:1}],product_name:key,link_url:buy.href});
+  }else gtag('event','etsy_click',{product_name:key,link_url:buy.href});
  });
  etsy.addEventListener('click',function(){
   if(typeof gtag==='function')gtag('event','etsy_click',{product_name:key,link_url:etsy.href});
