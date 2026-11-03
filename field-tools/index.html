@@ -40,6 +40,7 @@ footer{padding:26px 0;text-align:center;color:var(--muted);font-size:13px}
 .createprojectform{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:16px 0 20px;padding:17px;border:1px solid var(--line);background:#f7fbf9;border-radius:14px}.createprojectform .field{flex:1 1 220px}.createprojectform button{border:0;border-radius:10px;background:var(--green);color:#fff;padding:12px 16px;font-weight:900;cursor:pointer;min-height:47px}.createprojectform button:disabled{opacity:.55;cursor:not-allowed}.createprojectform .note{flex-basis:100%;padding:0}.createprojectform input:disabled{background:#edf2f0;color:var(--muted)}
 .macformathelp{font-size:12px;color:var(--muted);font-weight:500}.validationerror{color:var(--bad)!important;font-weight:800!important}input[aria-invalid="true"]{border-color:var(--bad);outline:2px solid rgba(180,35,24,.16)}
 .hero p.download-linkline{max-width:900px;margin:19px 0 0;font-size:13px;color:#c3e1d6}.download-linkline a{color:#95f0bf;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;font-weight:900}.download-linkline a:hover{color:#fff}.download-linkline a:focus-visible{outline:2px solid #95f0bf;outline-offset:4px}
+.cm-result-offer{margin-top:16px;padding:14px;border:1px solid #b6ddc7;border-radius:12px;background:#f0faf4;color:#173c30}.cm-result-offer strong{display:block;font-size:15px}.cm-result-offer p{margin:6px 0 12px;font-size:13px;line-height:1.5}.cm-result-offer a{display:inline-flex;align-items:center;min-height:42px;padding:10px 13px;border-radius:9px;background:#157e56;color:#fff;font-weight:850;font-size:13px;text-decoration:none}.cm-result-offer a:hover{background:#0c6542}
 </style>
 </head>
 <body>
@@ -634,11 +635,36 @@ function calcPoE(){const load=n('poeDevices')*n('poeWatts'),budget=n('poeBudget'
 function calcFiber(){const passive=n('fiberKm')*n('fiberAtt')+n('connectors')*n('connectorLoss')+n('splices')*n('spliceLoss'),design=passive+n('fiberMargin');setMetrics('fiberResult',[passive.toFixed(2)+' dB',design.toFixed(2)+' dB']);trackCalc('fiber')}
 function calcVoltage(){const resistancePer1000=parseFloat($('awg').value),r=resistancePer1000*(n('lengthFt')*2/1000),drop=n('amps')*r,load=n('sourceV')-drop,pct=n('sourceV')?drop/n('sourceV')*100:0;setMetrics('voltageResult',[drop.toFixed(2)+' V',load.toFixed(2)+' V',pct.toFixed(1)+'%']);trackCalc('voltage')}
 function calcLabor(){const cost=n('laborHours')*n('laborCost')+n('materialCost')+n('otherCost'),sell=cost*(1+n('markup')/100),profit=sell-cost,margin=sell?profit/sell*100:0;setMetrics('laborResult',['$'+cost.toFixed(2),'$'+sell.toFixed(2),'$'+profit.toFixed(2),margin.toFixed(1)+'%']);trackCalc('labor')}
+const cmToolOffers={
+ cctv:{title:'Have cameras to document?',description:'Use the CCTV Site Survey Kit to record camera locations, mounting plans, network details, and site notes.',url:'/store/#cctv-survey',label:'View CCTV Survey Kit'},
+ bandwidth:{title:'Track every camera and cable',description:'Keep a device list, location details, and cable records alongside your bandwidth plan.',url:'/store/#cable-device',label:'View Cable + Device Tracker'},
+ poe:{title:'Document the devices behind this PoE budget',description:'Track powered devices, switch locations, cable runs, and installation status in one workbook.',url:'/store/#cable-device',label:'View Cable + Device Tracker'},
+ poeclass:{title:'Document your PoE devices',description:'Record camera and access point details as part of your site handoff.',url:'/store/#cable-device',label:'View Cable + Device Tracker'},
+ poe_class:{title:'Document your PoE devices',description:'Record camera and access point details as part of your site handoff.',url:'/store/#cable-device',label:'View Cable + Device Tracker'},
+ fiber:{title:'Document your fiber links',description:'Log fiber runs, strand assignments, connector endpoints and related details.',url:'/store/#fiber-optic',label:'View Fiber Documentation Kit'},
+ voltage:{title:'Keep your installation records organized',description:'Capture cable runs, device labels, and associated project documentation.',url:'/store/#cable-device',label:'View Cable + Device Tracker'},
+ labor:{title:'Turn estimates into a repeatable process',description:'Estimate job costs, markup, and gross profit with a contractor-focused Excel workbook.',url:'/store/#estimate',label:'View Estimate + Profit Calculator'},
+ battery:{title:'Keep your field documentation together',description:'Record your security devices and other low-voltage installation details.',url:'/store/#cable-device',label:'View Cable + Device Tracker'}
+};
+function showCalculatedOffer(tool){
+ const offer=cmToolOffers[tool],sectionId=tool==='poe_class'?'poeclass':tool;
+ const panel=$(sectionId),card=panel?.querySelector('.card');
+ if(!offer||!card)return;
+ let box=card.querySelector('.cm-result-offer');
+ if(!box){
+  box=document.createElement('div');box.className='cm-result-offer';
+  const title=document.createElement('strong'),description=document.createElement('p'),link=document.createElement('a');
+  title.textContent=offer.title;description.textContent=offer.description;link.href=offer.url;link.textContent=offer.label+' →';
+  link.addEventListener('click',()=>{if(typeof gtag==='function')gtag('event','select_item',{item_list_name:'field_tool_result',item_id:tool,link_url:link.href});});
+  box.append(title,description,link);card.appendChild(box);
+ }
+}
 function trackCalc(tool){
   const usage=JSON.parse(localStorage.getItem('cm_usage')||'{}');
   usage[tool]=(usage[tool]||0)+1;
   localStorage.setItem('cm_usage',JSON.stringify(usage));
   renderQuickLinks();
+  showCalculatedOffer(tool);
   if(typeof gtag==='function')gtag('event','calculator_use',{tool_name:tool});
 }
 function localProjectKey(name){return (name||'My Project').trim()||'My Project'}
