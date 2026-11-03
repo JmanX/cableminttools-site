@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>if(location.hostname==='www.cableminttools.com'){location.replace('https://cableminttools.com'+location.pathname+location.search+location.hash);}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Shop Low-Voltage Excel Tools &amp; Field Documentation | CableMint Tools</title>
 <meta name="description" content="Shop editable Excel workbooks for low-voltage estimating, change orders, CCTV, cable tracking, fiber, networking and access control. Instant digital downloads from CableMint Tools.">
@@ -110,10 +111,11 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:poi
 .cm-reviews h3{font-size:25px;color:#102831;margin:0 0 4px}
 .cm-reviews .cm-sub{color:#657b77;font-size:13px;margin:0 0 18px}
 .cm-review-form{display:grid;gap:12px;padding:18px;border:1px solid #deebe3;border-radius:13px;background:#f7fbf8;margin-bottom:20px}
-.cm-review-form input[type=email],.cm-review-form input[type=text],.cm-review-form textarea,.cm-review-form select{width:100%;padding:11px 12px;border:1px solid #bad5c7;border-radius:9px;background:white;color:#12362d}
+.cm-review-form input[type=email],.cm-review-form input[type=password],.cm-review-form input[type=text],.cm-review-form textarea,.cm-review-form select{width:100%;padding:11px 12px;border:1px solid #bad5c7;border-radius:9px;background:white;color:#12362d}
 .cm-review-form label{font-size:13px;font-weight:750;color:#23453c}
 .cm-review-form textarea{min-height:92px;resize:vertical}
 .cm-review-form button{background:#147b54;color:white;border:0;border-radius:9px;padding:11px 17px;font-weight:800}
+.cm-review-form button.cm-quiet-button{background:#e1f2e8;color:#146046;border:1px solid #b8d8c6}
 .cm-review-form .cm-muted{font-size:12px;color:#637b70}
 .cm-review-form .cm-check{display:flex;align-items:center;gap:9px}
 .cm-review-form .cm-check input{width:17px;height:17px}
@@ -445,7 +447,7 @@ const titles=Object.fromEntries(productCards.map(c=>[c.dataset.product,c.querySe
 const listPanel=document.createElement("section");
 listPanel.id="customer-reviews";listPanel.className="cm-reviews";
 listPanel.hidden=true;
-listPanel.innerHTML='<h3 id="cm-review-heading">Customer reviews</h3><p class="cm-sub">Reviews from verified direct purchases. Your name can be hidden.</p><div id="cm-login" class="cm-review-form"><label for="cm-email">Email used at checkout</label><input type="email" id="cm-email" placeholder="you@example.com" autocomplete="email"><button id="cm-send" type="button">Email me a sign-in link</button><p class="cm-muted">Already have a CableMint account? <a id="cm-account-signin" href="/field-tools/?auth=login">Sign in to your account</a>. Otherwise, use the email link above. Use the same email as your Dodo checkout.</p></div><div id="cm-signed" hidden><p class="cm-sub"><span id="cm-signed-email"></span> · <button id="cm-signout" class="cm-review-link" type="button">Sign out</button></p></div><form id="cm-form" class="cm-review-form" hidden><label for="cm-rating">Your rating</label><select id="cm-rating" required><option value="">Choose stars</option><option value="5">★★★★★ — 5 stars</option><option value="4">★★★★☆ — 4 stars</option><option value="3">★★★☆☆ — 3 stars</option><option value="2">★★☆☆☆ — 2 stars</option><option value="1">★☆☆☆☆ — 1 star</option></select><label class="cm-check"><input type="checkbox" id="cm-anon"> Post anonymously (show “Anonymous” instead of my name)</label><div id="cm-name-area"><label for="cm-name">Public display name</label><input id="cm-name" type="text" maxlength="60" placeholder="Your name"></div><label for="cm-feedback">Written review (optional)</label><textarea id="cm-feedback" maxlength="1500" placeholder="How did this tool work for you?"></textarea><button type="submit">Submit review</button></form><p id="cm-review-status" role="status" aria-live="polite"></p><div id="cm-review-list"></div>';
+listPanel.innerHTML='<h3 id="cm-review-heading">Customer reviews</h3><p class="cm-sub">Reviews from verified direct purchases. Your name can be hidden.</p><div id="cm-login" class="cm-review-form"><label for="cm-email">CableMint account or checkout email</label><input type="email" id="cm-email" placeholder="you@example.com" autocomplete="email"><label for="cm-password">Password (for existing CableMint accounts)</label><input type="password" id="cm-password" placeholder="Your CableMint password" autocomplete="current-password"><button id="cm-password-signin" type="button">Sign in with my CableMint account</button><button id="cm-send" type="button" class="cm-quiet-button">Or email me a sign-in link</button><p class="cm-muted">Already have a CableMint account? <a id="cm-account-signin" href="/field-tools/?auth=login">Sign in to your account</a>. Otherwise, use the email link above. Use the same email as your Dodo checkout.</p></div><div id="cm-signed" hidden><p class="cm-sub"><span id="cm-signed-email"></span> · <button id="cm-signout" class="cm-review-link" type="button">Sign out</button></p></div><form id="cm-form" class="cm-review-form" hidden><label for="cm-rating">Your rating</label><select id="cm-rating" required><option value="">Choose stars</option><option value="5">★★★★★ — 5 stars</option><option value="4">★★★★☆ — 4 stars</option><option value="3">★★★☆☆ — 3 stars</option><option value="2">★★☆☆☆ — 2 stars</option><option value="1">★☆☆☆☆ — 1 star</option></select><label class="cm-check"><input type="checkbox" id="cm-anon"> Post anonymously (show “Anonymous” instead of my name)</label><div id="cm-name-area"><label for="cm-name">Public display name</label><input id="cm-name" type="text" maxlength="60" placeholder="Your name"></div><label for="cm-feedback">Written review (optional)</label><textarea id="cm-feedback" maxlength="1500" placeholder="How did this tool work for you?"></textarea><button type="submit">Submit review</button></form><p id="cm-review-status" role="status" aria-live="polite"></p><div id="cm-review-list"></div>';
 document.querySelector('.catalog').appendChild(listPanel);
 document.getElementById('cm-account-signin').addEventListener('click',function(){
  const target='/store/?review='+encodeURIComponent(current||'documentation');
@@ -506,6 +508,18 @@ async function open(key){
  document.getElementById('cm-review-heading').textContent='Reviews — '+titles[key];
  await updateAuth();await load(key);listPanel.scrollIntoView({behavior:'smooth',block:'start'});
 }
+document.getElementById('cm-password-signin').addEventListener('click',async()=>{
+ const email=document.getElementById('cm-email').value.trim(),password=document.getElementById('cm-password').value;
+ if(!email||!password){status.textContent='Enter your CableMint email and password.';return;}
+ status.textContent='Signing in to CableMint…';
+ try{
+  const {error}=await client.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  document.getElementById('cm-password').value='';
+  status.textContent='Signed in. Your purchase will be checked when you submit a review.';
+  await updateAuth();
+ }catch(err){status.textContent='Sign in failed: '+err.message;}
+});
 document.getElementById('cm-send').addEventListener('click',async()=>{
  const email=document.getElementById('cm-email').value.trim();
  if(!email){status.textContent='Enter your purchase email.';return;}
