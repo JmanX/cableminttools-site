@@ -138,8 +138,8 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
       <a href="/store/">Shop Downloads</a>
     </div>
     <div class="cmnav-actions">
-      <a class="cmnav-login" href="/field-tools/?auth=login">Log In</a>
-      <a class="cmnav-signup" href="/field-tools/?auth=signup">Sign Up Free</a>
+      <a class="cmnav-login" id="cmnav-login" href="/field-tools/?auth=login">Log In</a>
+      <a class="cmnav-signup" id="cmnav-signup" href="/field-tools/?auth=signup">Sign Up Free</a>
       <details class="cmnav-menu">
         <summary>Menu <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="cmnav-panel">
@@ -149,7 +149,7 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
           <a href="#learn">Resources</a>
           <a href="#about">About</a>
           <a href="/store/">Shop Downloads</a>
-          <a class="cmnav-panel-login" href="/field-tools/?auth=login">Log In</a>
+          <a class="cmnav-panel-login" id="cmnav-panel-login" href="/field-tools/?auth=login">Log In</a>
         </div>
       </details>
     </div>
@@ -273,6 +273,27 @@ document.addEventListener("click", function (event) {
   const link = event.target.closest('a[href^="/store/"]');
   if (!link || typeof gtag !== "function") return;
   gtag("event", "digital_store_click", {link_url:link.href,link_text:(link.textContent||"").trim()});
+});
+</script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded',async()=>{
+ const login=document.getElementById('cmnav-login'),panel=document.getElementById('cmnav-panel-login'),signup=document.getElementById('cmnav-signup');
+ if(!window.supabase?.createClient)return;
+ const auth=window.supabase.createClient('https://kgbrhdjbeosljpwghxte.supabase.co','sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y');
+ const show=async()=>{
+  try{
+   const {data:{session}}=await auth.auth.getSession();
+   const signed=!!session?.user;
+   for(const link of [login,panel]){if(!link)continue;link.textContent=signed?'My Account':'Log In';link.href=signed?'/field-tools/':'/field-tools/?auth=login';}
+   if(signup){signup.textContent=signed?'Field Tools':'Sign Up Free';signup.href=signed?'/field-tools/':'/field-tools/?auth=signup';}
+  }catch(e){/* Keep original navigation if session lookup is unavailable. */}
+ };
+ await show();
+ auth.auth.onAuthStateChange(()=>setTimeout(show,0));
+ window.addEventListener('pageshow',show);
+ window.addEventListener('focus',show);
 });
 </script>
 </body>
