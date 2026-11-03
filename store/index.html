@@ -445,8 +445,12 @@ const titles=Object.fromEntries(productCards.map(c=>[c.dataset.product,c.querySe
 const listPanel=document.createElement("section");
 listPanel.id="customer-reviews";listPanel.className="cm-reviews";
 listPanel.hidden=true;
-listPanel.innerHTML='<h3 id="cm-review-heading">Customer reviews</h3><p class="cm-sub">Reviews from verified direct purchases. Your name can be hidden.</p><div id="cm-login" class="cm-review-form"><label for="cm-email">Email used at checkout</label><input type="email" id="cm-email" placeholder="you@example.com" autocomplete="email"><button id="cm-send" type="button">Email me a sign-in link</button><p class="cm-muted">To write a review, sign in using the same email you used with Dodo Payments. Buying downloads does not require an account.</p></div><div id="cm-signed" hidden><p class="cm-sub"><span id="cm-signed-email"></span> · <button id="cm-signout" class="cm-review-link" type="button">Sign out</button></p></div><form id="cm-form" class="cm-review-form" hidden><label for="cm-rating">Your rating</label><select id="cm-rating" required><option value="">Choose stars</option><option value="5">★★★★★ — 5 stars</option><option value="4">★★★★☆ — 4 stars</option><option value="3">★★★☆☆ — 3 stars</option><option value="2">★★☆☆☆ — 2 stars</option><option value="1">★☆☆☆☆ — 1 star</option></select><label class="cm-check"><input type="checkbox" id="cm-anon"> Post anonymously (show “Anonymous” instead of my name)</label><div id="cm-name-area"><label for="cm-name">Public display name</label><input id="cm-name" type="text" maxlength="60" placeholder="Your name"></div><label for="cm-feedback">Written review (optional)</label><textarea id="cm-feedback" maxlength="1500" placeholder="How did this tool work for you?"></textarea><button type="submit">Submit review</button></form><p id="cm-review-status" role="status" aria-live="polite"></p><div id="cm-review-list"></div>';
+listPanel.innerHTML='<h3 id="cm-review-heading">Customer reviews</h3><p class="cm-sub">Reviews from verified direct purchases. Your name can be hidden.</p><div id="cm-login" class="cm-review-form"><label for="cm-email">Email used at checkout</label><input type="email" id="cm-email" placeholder="you@example.com" autocomplete="email"><button id="cm-send" type="button">Email me a sign-in link</button><p class="cm-muted">Already have a CableMint account? <a id="cm-account-signin" href="/field-tools/?auth=login">Sign in to your account</a>. Otherwise, use the email link above. Use the same email as your Dodo checkout.</p></div><div id="cm-signed" hidden><p class="cm-sub"><span id="cm-signed-email"></span> · <button id="cm-signout" class="cm-review-link" type="button">Sign out</button></p></div><form id="cm-form" class="cm-review-form" hidden><label for="cm-rating">Your rating</label><select id="cm-rating" required><option value="">Choose stars</option><option value="5">★★★★★ — 5 stars</option><option value="4">★★★★☆ — 4 stars</option><option value="3">★★★☆☆ — 3 stars</option><option value="2">★★☆☆☆ — 2 stars</option><option value="1">★☆☆☆☆ — 1 star</option></select><label class="cm-check"><input type="checkbox" id="cm-anon"> Post anonymously (show “Anonymous” instead of my name)</label><div id="cm-name-area"><label for="cm-name">Public display name</label><input id="cm-name" type="text" maxlength="60" placeholder="Your name"></div><label for="cm-feedback">Written review (optional)</label><textarea id="cm-feedback" maxlength="1500" placeholder="How did this tool work for you?"></textarea><button type="submit">Submit review</button></form><p id="cm-review-status" role="status" aria-live="polite"></p><div id="cm-review-list"></div>';
 document.querySelector('.catalog').appendChild(listPanel);
+document.getElementById('cm-account-signin').addEventListener('click',function(){
+ const target='/store/?review='+encodeURIComponent(current||'documentation');
+ this.href='/field-tools/?auth=login&return='+encodeURIComponent(target);
+});
 let current=null;
 const status=document.getElementById('cm-review-status'),reviews=document.getElementById('cm-review-list');
 const anon=document.getElementById('cm-anon'),nameArea=document.getElementById('cm-name-area'),name=document.getElementById('cm-name');
@@ -454,6 +458,8 @@ anon.addEventListener('change',()=>{nameArea.hidden=anon.checked;name.required=!
 async function session(){if(!client)return null;return (await client.auth.getSession()).data.session;}
 async function updateAuth(){
  const s=await session();
+ const link=document.getElementById('cm-account-signin');
+ if(link)link.href='/field-tools/?auth=login&return='+encodeURIComponent('/store/?review='+encodeURIComponent(current||'documentation'));
  document.getElementById('cm-login').hidden=!!s;
  document.getElementById('cm-signed').hidden=!s;
  document.getElementById('cm-form').hidden=!s;
@@ -540,7 +546,10 @@ document.getElementById('cm-form').addEventListener('submit',async e=>{
  await load(current);
  }catch(err){status.textContent=err.message;}
 });
-if(client)client.auth.onAuthStateChange(()=>{if(!listPanel.hidden)updateAuth();});
+if(client)client.auth.onAuthStateChange(()=>setTimeout(()=>{if(!listPanel.hidden)updateAuth();},0));
+window.addEventListener('pageshow',()=>{if(!listPanel.hidden)updateAuth();});
+window.addEventListener('focus',()=>{if(!listPanel.hidden)updateAuth();});
+window.addEventListener('storage',event=>{if(event.key&&event.key.includes('auth-token')&&!listPanel.hidden)updateAuth();});
 const initial=new URLSearchParams(location.search).get('review');
 if(initial&&titles[initial]){setTimeout(()=>open(initial),100);}
 })();
