@@ -9,6 +9,7 @@
   gtag('config', 'G-R5K0LXZLD9');
 </script>
 <meta charset="UTF-8">
+<script>if(location.hostname==='www.cableminttools.com'){location.replace('https://cableminttools.com'+location.pathname+location.search+location.hash);}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CableMint Tools | Low Voltage & IT Field Tools</title>
 <meta name="description" content="Low-voltage field software, free calculators, contractor documentation templates, and a printed technician field logbook for CCTV, cabling, networking, access control, and fiber.">
@@ -276,9 +277,9 @@ document.addEventListener("click", function (event) {
 });
 </script>
 
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
 <script>
-window.addEventListener('DOMContentLoaded',async()=>{
+(async()=>{
  const login=document.getElementById('cmnav-login'),panel=document.getElementById('cmnav-panel-login'),signup=document.getElementById('cmnav-signup');
  if(!window.supabase?.createClient)return;
  const auth=window.supabase.createClient('https://kgbrhdjbeosljpwghxte.supabase.co','sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y');
@@ -288,13 +289,17 @@ window.addEventListener('DOMContentLoaded',async()=>{
    const signed=!!session?.user;
    for(const link of [login,panel]){if(!link)continue;link.textContent=signed?'My Account':'Log In';link.href=signed?'/field-tools/':'/field-tools/?auth=login';}
    if(signup){signup.textContent=signed?'Field Tools':'Sign Up Free';signup.href=signed?'/field-tools/':'/field-tools/?auth=signup';}
+   document.querySelectorAll('a[href="/field-tools/?auth=login"]').forEach(link=>{link.textContent=signed?'My Account':'Log In';if(signed)link.href='/field-tools/';});
+   document.querySelectorAll('a[href="/field-tools/?auth=signup"]').forEach(link=>{link.textContent=signed?'Open Field Tools':'Create Free Account';if(signed)link.href='/field-tools/';});
   }catch(e){/* Keep original navigation if session lookup is unavailable. */}
  };
  await show();
  auth.auth.onAuthStateChange(()=>setTimeout(show,0));
  window.addEventListener('pageshow',show);
  window.addEventListener('focus',show);
-});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)show();});
+ window.addEventListener('storage',event=>{if(event.key?.includes('auth-token'))show();});
+})();
 </script>
 </body>
 </html>
