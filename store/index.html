@@ -504,6 +504,21 @@ document.getElementById('cm-send').addEventListener('click',async()=>{
  }catch(e){status.textContent='Could not send sign-in link: '+e.message;}
 });
 document.getElementById('cm-signout').addEventListener('click',async()=>{await client.auth.signOut();await updateAuth();status.textContent='Signed out.';});
+
+const legacy=document.createElement('div');
+legacy.className='cm-review-form';
+legacy.innerHTML='<label for="cm-payment-id">Bought before reviews were added?</label><p class="cm-muted">If your purchase does not appear as verified, enter the payment ID from your Dodo receipt. We will check the payment securely with Dodo. Your payment details will not be public.</p><input type="text" id="cm-payment-id" placeholder="pay_..." autocomplete="off"><button type="button" id="cm-verify-old">Verify my earlier purchase</button>';
+document.getElementById('cm-signed').appendChild(legacy);
+document.getElementById('cm-verify-old').addEventListener('click',async()=>{
+ const s=await session();
+ if(!s){status.textContent='Sign in with your checkout email first.';return;}
+ status.textContent='Verifying your payment with Dodo…';
+ try{
+  const res=await fetch(api+'?product='+encodeURIComponent(current),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+s.access_token,'apikey':"sb_publishable_N8a6FEiRxjl1kz_k798nTQ_CsPpLo0y"},body:JSON.stringify({action:'verify_existing',paymentId:document.getElementById('cm-payment-id').value.trim()})});
+  const result=await res.json();if(!res.ok)throw Error(result.error||'Verification failed');
+  status.textContent='Purchase verified! You can now submit your review.';
+ }catch(err){status.textContent=err.message;}
+});
 document.getElementById('cm-form').addEventListener('submit',async e=>{
  e.preventDefault();const s=await session();
  if(!s){status.textContent='Please sign in again.';return;}
