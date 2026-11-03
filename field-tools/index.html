@@ -430,12 +430,24 @@ $('recoveryUpdate').addEventListener('click',async()=>{
 });
 $('recoveryCancel').addEventListener('click',async()=>{$('recoveryForm').classList.remove('show');$('recoveryPassword').value='';await sb.auth.signOut();});
 $('accountToggle').addEventListener('click',()=>{$('resetRequestForm').classList.remove('show');$('authForm').classList.toggle('show');});
+function reviewReturnTarget(){
+ const raw=new URLSearchParams(window.location.search).get('return');
+ if(!raw)return null;
+ try{
+  const url=new URL(raw,window.location.origin);
+  const allowed=['documentation','combo','estimate','changeOrder','cableDevice','cctvSurvey','networkRack','fiberOptic','accessControl'];
+  if(url.origin===window.location.origin&&url.pathname==='/store/'&&allowed.includes(url.searchParams.get('review'))&&![...url.searchParams.keys()].some(k=>k!=='review'))return url.pathname+url.search;
+ }catch(e){}
+ return null;
+}
 $('signInBtn').addEventListener('click',async()=>{
   $('authMsg').textContent='Signing in…';
   const {error}=await sb.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
   if(error){$('authMsg').textContent=error.message;return}
   $('authMsg').textContent='Signed in.';
   $('authForm').classList.remove('show');
+  const returnToReview=reviewReturnTarget();
+  if(returnToReview){window.location.assign(returnToReview);return;}
   await refreshAccount();
 });
 $('signUpBtn').addEventListener('click',async()=>{
@@ -463,6 +475,11 @@ const requestedAuthView=new URLSearchParams(window.location.search).get('auth');
 if(requestedAuthView==='forgot'){
   showResetRequest();
 }else if(requestedAuthView==='login'||requestedAuthView==='signup'){
+  sb.auth.getSession().then(({data:{session}})=>{
+   const returnToReview=reviewReturnTarget();
+   if(session?.user&&returnToReview)window.location.assign(returnToReview);
+   else if(session?.user)$('authForm').classList.remove('show');
+  }).catch(()=>{});
   $('authForm').classList.add('show');
   $('authMsg').textContent=requestedAuthView==='signup'?'New to CableMint? Enter an email and password, then select Create Account. You may need to confirm your email.':'Welcome back. Enter your email and password, then select Sign In.';
   $('accountBar').scrollIntoView({block:'start'});
