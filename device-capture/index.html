@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>if(location.hostname==='www.cableminttools.com'){location.replace('https://cableminttools.com'+location.pathname+location.search+location.hash);}</script>
-<title>CableMint Device Capture | Android App for Low-Voltage Field Documentation</title>
-<meta name="description" content="Explore CableMint Device Capture for Android: scan equipment labels, verify MAC addresses and serial numbers, organize devices by project, and sync field records to the CableMint web workspace.">
+<title>CableMint Device Capture | Android Field Documentation — Pro Required</title>
+<meta name="description" content="Explore CableMint Device Capture for Android. Active CableMint Pro access required: scan labels, verify MAC addresses and serial numbers, organize records, and sync with your workspace.">
 <meta name="theme-color" content="#15313c">
 <meta property="og:type" content="website">
 <meta property="og:title" content="CableMint Device Capture — Capture. Verify. Organize.">
@@ -35,6 +35,16 @@ footer{background:#fff;border-top:1px solid var(--line);padding:32px 0}.footer{d
 @media(max-width:680px){.nav{min-height:68px;flex-wrap:wrap;padding:9px 0}.navlinks{gap:10px;font-size:12px}.brand img{width:38px;height:38px}.navlinks .navcta{padding:8px 10px}.hero{padding:46px 0 56px}.hero-grid{grid-template-columns:1fr;gap:36px}.hero h1{font-size:42px}.phone{transform:none;max-width:313px}.features,.stepgrid{grid-template-columns:1fr}.strip-inner{grid-template-columns:1fr 1fr;gap:16px}.bottomcta{padding:50px 0}.bottomcta .btn{width:100%}.actions{flex-direction:column}section.block{padding:56px 0}.feature{padding:25px}}
 @media(max-width:350px){.navlinks a:nth-child(1){display:none}.hero h1{font-size:37px}.strip-inner{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;transform:none!important}}
+
+/* Clear Pro requirement and a shorter mobile-friendly feature section */
+.pro-requirement{margin-top:24px;background:#fff;border:2px solid #e6ad5c;border-left:7px solid #e6ad5c;border-radius:12px;padding:16px 19px;box-shadow:0 8px 23px rgba(25,50,58,.08)}
+.pro-requirement strong{display:block;color:#593d18;font-size:17px;line-height:1.35;margin-bottom:5px}
+.pro-requirement span{display:block;color:#655136;font-size:14px;line-height:1.5}
+.features{grid-template-columns:repeat(2,minmax(0,1fr))}
+.hero{padding:58px 0 62px}
+section.block{padding:56px 0}
+.faq details[open]{background:#f9fcfa;border-radius:11px;padding:20px}
+@media(max-width:680px){.features{grid-template-columns:1fr}.hero{padding:42px 0 46px}section.block{padding:46px 0}.pro-requirement{padding:13px 14px;margin-top:18px}.pro-requirement strong{font-size:15px}}
 </style>
 </head>
 <body>
@@ -42,9 +52,10 @@ footer{background:#fff;border-top:1px solid var(--line);padding:32px 0}.footer{d
 <header><nav class="wrap nav" aria-label="Main navigation"><a class="brand" href="/" aria-label="CableMint Tools home"><img src="/logo.png" alt="">CableMint Tools</a><div class="navlinks"><a href="/">Home</a><a href="/field-tools/">Field Tools</a><a href="/store/">Digital Downloads</a><a class="navcta" href="/field-tools/">Open Workspace</a></div></nav></header>
 <main id="main">
 <section class="hero" aria-labelledby="hero-title"><div class="wrap hero-grid">
-<div><div class="eyebrow"><span class="dot" aria-hidden="true"></span> Android app • public access being verified</div><h1 id="hero-title">Device details, <em>captured in the field.</em></h1><p>Meet CableMint Device Capture: an Android app for low-voltage, security, and IT technicians who need reliable device records without juggling loose photos and notes.</p>
-<div class="actions"><a class="btn primary" href="#features" data-app-cta="explore_features">Explore the features ↓</a><a class="btn secondary" href="/field-tools/" data-app-cta="open_workspace">Open web workspace ↗</a></div>
-<p class="statusnote">Public Google Play availability is being verified. This page is an early preview, not a public installation announcement.</p>
+<div><div class="eyebrow"><span class="dot" aria-hidden="true"></span> Android app • active Pro access required</div><h1 id="hero-title">Device details, <em>captured in the field.</em></h1><p>Meet CableMint Device Capture: an Android app for low-voltage, security, and IT technicians who need reliable device records without juggling loose photos and notes.</p>
+<div class="pro-requirement" role="note"><strong>Active CableMint Pro account required</strong><span>Device Capture is a Pro-only Android app. A free CableMint account alone does not unlock device capture or syncing inside the Android app.</span></div>
+<div class="actions"><a class="btn primary" href="/pricing/" data-app-cta="pricing_top">View Pro plans ↗</a><a class="btn secondary" href="#features" data-app-cta="explore_features">See app features ↓</a></div>
+<p class="statusnote">Public Google Play availability is still being verified. View Pro plans and app features now; a public install link is not yet confirmed.</p>
 </div>
 <div class="mockup" aria-label="Illustration of a device field record"><div class="phone"><div class="phonehead"><div class="appname">CableMint Device Capture</div><small>Project: Bay View Install • Sample data</small></div><div class="phonecontent">
 <div class="phonecard tinted"><div class="label">Device</div><div class="scanline"><div><strong>IP Camera</strong><small>Building A / Floor 03 / Room 318</small></div><span class="scanicon" aria-hidden="true">▥</span></div></div>
@@ -55,25 +66,17 @@ footer{background:#fff;border-top:1px solid var(--line);padding:32px 0}.footer{d
 </div></section>
 <div class="strip"><div class="wrap strip-inner"><span>Label and barcode capture</span><span>MAC and serial review</span><span>Project-based records</span><span>Offline queue and sync</span></div></div>
 <section class="block" id="features"><div class="wrap"><div class="sectiontitle"><span class="small">BUILT AROUND ACTUAL FIELD WORK</span><h2>Know which device went where.</h2><p>From the first scan to project closeout, keep the important details together and easier to find.</p></div><div class="features">
-<article class="feature"><span class="glyph" aria-hidden="true">▥</span><h3>Capture equipment details</h3><p>Scan supported equipment labels and barcodes to help enter MAC addresses and serial numbers. Review the result before saving.</p></article>
-<article class="feature"><span class="glyph" aria-hidden="true">✓</span><h3>Verify before saving</h3><p>Correct scanned information, document device types, and reduce avoidable typing mistakes.</p></article>
-<article class="feature"><span class="glyph" aria-hidden="true">▦</span><h3>Organize by real location</h3><p>Keep building, floor, room, device type, and project assignments with the captured equipment record.</p></article>
-<article class="feature"><span class="glyph" aria-hidden="true">↻</span><h3>Work through weak signal</h3><p>Queue captures while offline and automatically sync queued records after connectivity returns.</p></article>
-<article class="feature"><span class="glyph" aria-hidden="true">◇</span><h3>Catch possible duplicates</h3><p>Duplicate warnings help you notice when an equipment record may already exist.</p></article>
-<article class="feature"><span class="glyph" aria-hidden="true">⇄</span><h3>Connect field and office</h3><p>Keep records synchronized with the CableMint web workspace so your team can review them from a browser.</p></article>
-</div></div></section>
-<section class="block steps"><div class="wrap"><div class="sectiontitle"><span class="small">FOUR SIMPLE STEPS</span><h2>Capture. Verify. Organize. Sync.</h2><p>Get the workflow right at the device—not hours later when details are harder to remember.</p></div><div class="stepgrid">
-<div class="step"><span class="number">1</span><strong>Scan</strong><p>Capture a camera, switch, or other supported device label.</p></div>
-<div class="step"><span class="number">2</span><strong>Check</strong><p>Confirm the MAC address, serial number, and other captured fields.</p></div>
-<div class="step"><span class="number">3</span><strong>Place</strong><p>Assign the device to its project, building, floor, and room.</p></div>
-<div class="step"><span class="number">4</span><strong>Sync</strong><p>Save the record and sync it to your CableMint web workspace.</p></div>
-</div></div></section>
-<section class="bottomcta"><div class="wrap cta-grid"><div><h2>Make your next installation easier to document.</h2><p>Device Capture for Android is preparing for broader availability. In the meantime, explore the connected CableMint web tools and project workspace.</p><div class="sub">Some Device Capture capabilities may require Pro access. Check the app for your account's current entitlement.</div></div><div class="actions"><a class="btn light" href="/field-tools/" data-app-cta="workspace_bottom">Open CableMint Field Tools ↗</a></div></div></section>
+<article class="feature"><span class="glyph" aria-hidden="true">▥</span><h3>Scan and verify labels</h3><p>Capture supported equipment labels and barcodes, then review MAC addresses and serial numbers before saving.</p></article>
+<article class="feature"><span class="glyph" aria-hidden="true">▦</span><h3>Organize devices by location</h3><p>Keep project, building, floor, room and device type details with each record.</p></article>
+<article class="feature"><span class="glyph" aria-hidden="true">↻</span><h3>Keep working offline</h3><p>Queue captures without a connection and sync when you reconnect.</p></article>
+<article class="feature"><span class="glyph" aria-hidden="true">⇄</span><h3>Sync to the web workspace</h3><p>Review your saved project records from CableMint's web workspace and get duplicate warnings.</p></article></div></div></section>
+
+<section class="bottomcta"><div class="wrap cta-grid"><div><h2>Make your next installation easier to document.</h2><p>An active CableMint Pro account is required to use Device Capture for Android. Explore Pro options now; public Google Play access is still being verified.</p><div class="sub">The Android app requires Pro access. Free online calculators remain separate and available on the web.</div></div><div class="actions"><a class="btn light" href="/pricing/" data-app-cta="pricing_bottom">View Pro plans ↗</a></div></div></section>
 <section class="block"><div class="wrap"><div class="sectiontitle"><span class="small">QUESTIONS</span><h2>Good to know.</h2></div><div class="faq">
 <details><summary>Can I install the Android app right now?</summary><p>Public Google Play access has not yet been confirmed for all visitors. Existing authorized testers should continue using their approved testing access. A public download button will be added once installation is verified.</p></details>
-<details><summary>Do I need to create a CableMint account?</summary><p>Sign in with your CableMint account to use connected project features. You can create an account through the <a href="/field-tools/?auth=signup" style="color:#08764e;text-decoration:underline">web workspace</a>.</p></details>
+<details open><summary>Do I need Pro to use Device Capture?</summary><p><strong>Yes. Active CableMint Pro access is required for the Android app.</strong> A free account alone is not enough. See <a href="/pricing/" style="color:#08764e;text-decoration:underline">Pro pricing and plans</a> to get started.</p></details>
 <details><summary>Does it work without service?</summary><p>Device Capture supports an offline queue for captured records. When a connection returns, queued changes can sync to the web workspace.</p></details>
-<details><summary>Is Device Capture the same as the spreadsheet downloads?</summary><p>No. Device Capture is the Android field companion; Field Tools is the browser-based workspace; the downloadable spreadsheets are separate products sold in the CableMint store.</p></details>
+<details><summary>Are the web calculators still free?</summary><p>Yes. CableMint's free web calculators are separate from the Pro-only Android Device Capture app. Certain browser workspace features also require Pro access.</p></details>
 </div></div></section>
 </main>
 <footer><div class="wrap footer"><div><strong>CableMint Tools</strong><div>Digital tools for connected work.</div></div><div class="footerlinks"><a href="/">Home</a><a href="/field-tools/">Field Tools</a><a href="/store/">Shop Downloads</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div></div></footer>
