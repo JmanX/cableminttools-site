@@ -12,7 +12,7 @@
 <script>if(location.hostname==='www.cableminttools.com'){location.replace('https://cableminttools.com'+location.pathname+location.search+location.hash);}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CableMint Tools | Low Voltage & IT Field Tools</title>
-<meta name="description" content="Low-voltage field software, free calculators, contractor documentation templates, and a printed technician field logbook for CCTV, cabling, networking, access control, and fiber.">
+<meta name="description" content="CableMint Tools: Android Device Capture, low-voltage field software, free CCTV and PoE calculators, contractor documentation templates, and field logbooks.">
 <meta name="theme-color" content="#152733">
 <meta property="og:title" content="CableMint Tools | Low Voltage & IT Field Tools">
 <meta property="og:description" content="Estimate, plan, document, and complete low-voltage and IT projects with practical digital tools built around real field workflows.">
@@ -121,6 +121,24 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
 }
 
 .hero-accessibility-title{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;border:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+
+/* Android Device Capture campaign — stable layout with no auto motion */
+.dc-promo{padding:64px 0;background:radial-gradient(circle at 92% 10%,#ffdfad 0,transparent 41%),radial-gradient(circle at 2% 94%,#c7f5e5 0,transparent 40%),linear-gradient(125deg,#f2faff,#fff9ed);border-bottom:1px solid #dce9e5}
+.dc-promo-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(310px,.9fr);gap:52px;align-items:center}
+.dc-kicker{font-size:12px;font-weight:900;letter-spacing:.09em;color:#146a52;text-transform:uppercase}.dc-promo h2{font-size:clamp(30px,3.9vw,49px);line-height:1.11;letter-spacing:-.035em;margin:15px 0 15px;max-width:680px;color:#16313d}
+.dc-promo h2 span{color:#0f9064}.dc-promo p{font-size:16px;color:#47616e;max-width:660px;margin:0}
+.dc-perks{display:flex;gap:10px;flex-wrap:wrap;margin-top:21px}.dc-perks span{font-size:12px;font-weight:800;background:#fff;color:#22554b;border:1px solid #dae9e2;border-radius:999px;padding:8px 12px}
+.dc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.dc-actions a{display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;min-height:47px;padding:12px 18px;border-radius:10px}
+.dc-actions .dc-main{background:#138b61;color:#fff}.dc-actions .dc-alt{background:#fff;border:1px solid #bdd0c4;color:#1c4547}
+.dc-note{font-size:12px!important;color:#62747a!important;margin-top:15px!important}
+.dc-illustration{background:#fff;border:1px solid #dce9e4;border-radius:24px;padding:25px;box-shadow:0 20px 45px rgba(21,56,62,.1);max-width:420px;width:100%;margin:0 auto;transform:none}
+.dc-illus-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;font-weight:900;color:#193741;font-size:16px}.dc-illus-badge{font-size:11px;color:#985012;background:#ffe4b7;border-radius:99px;padding:5px 9px}
+.dc-device{background:#e7f8f1;border:1px solid #c9ebda;border-radius:14px;padding:16px;margin-bottom:10px}.dc-device small{display:block;color:#3b7967;text-transform:uppercase;font-weight:900;letter-spacing:.08em;font-size:10px}.dc-device strong{display:block;margin-top:4px;font-size:19px}
+.dc-record{display:flex;justify-content:space-between;gap:18px;align-items:center;background:#f5f8fc;border-radius:12px;padding:12px 14px;margin-top:9px;font-size:12px}.dc-record span{color:#6b7c83;font-weight:800}.dc-record strong{font-size:13px;color:#213f47;overflow-wrap:anywhere;text-align:right}
+.dc-sync{margin-top:13px;color:#127952;font-size:12px;font-weight:900}.dc-preview-label{text-align:center;font-size:11px;color:#5b6d75;margin-top:12px}
+@media(max-width:850px){.dc-promo-grid{grid-template-columns:1fr;gap:28px}.dc-illustration{max-width:440px}.dc-promo{padding:47px 0}}
+@media(max-width:500px){.dc-promo h2{font-size:32px}.dc-actions{display:grid;grid-template-columns:1fr}.dc-actions a{width:100%}.dc-illustration{padding:17px}.dc-promo p{font-size:15px}}
+
 </style>
 </head>
 <body>
@@ -133,6 +151,7 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
     <div class="cmnav-links">
       <a href="#field-logbook">Field Logbook</a>
       <a href="/field-tools/">Field Tools</a>
+      <a href="/device-capture/">Device Capture</a>
       <a href="#calculators">Free Calculators</a>
       <a href="#learn">Resources</a>
       <a href="#about">About</a>
@@ -146,6 +165,7 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
         <div class="cmnav-panel">
           <a href="#field-logbook">Field Logbook</a>
           <a href="/field-tools/">Field Tools</a>
+          <a href="/device-capture/">Device Capture</a>
           <a href="#calculators">Free Calculators</a>
           <a href="#learn">Resources</a>
           <a href="#about">About</a>
@@ -170,6 +190,26 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
     <a class="bookquickcta" href="#field-logbook">Explore the Book <span aria-hidden="true">→</span></a>
   </div>
 </div>
+<section class="dc-promo" id="device-capture" aria-labelledby="dc-heading">
+ <div class="wrap dc-promo-grid">
+  <div>
+   <div class="dc-kicker">ANDROID FIELD APP · PUBLIC ACCESS BEING VERIFIED</div>
+   <h2 id="dc-heading">Meet <span>CableMint Device Capture.</span> Less typing. Cleaner records.</h2>
+   <p>Scan equipment labels, review MAC addresses and serial numbers, organize devices by project and location, and sync field records with your CableMint web workspace.</p>
+   <div class="dc-perks"><span>✓ Scan &amp; verify labels</span><span>✓ Organize by project</span><span>✓ Offline capture queue</span><span>✓ Web workspace sync</span></div>
+   <div class="dc-actions"><a class="dc-main" href="/device-capture/" data-dc-click="learn_more">Explore Android App →</a><a class="dc-alt" href="/field-tools/" data-dc-click="open_web">Open Web Field Tools</a></div>
+   <p class="dc-note">Public Google Play installation is still being verified. Explore the app now; we'll add an install button when access is confirmed.</p>
+  </div>
+  <div><div class="dc-illustration" aria-label="Illustration of a sample Device Capture record">
+   <div class="dc-illus-head"><span>Device Capture</span><span class="dc-illus-badge">FIELD RECORD</span></div>
+   <div class="dc-device"><small>PROJECT · BAY VIEW INSTALL</small><strong>IP Camera · Lobby</strong></div>
+   <div class="dc-record"><span>MAC address</span><strong>F4:8B:32:1C:0B:A2</strong></div>
+   <div class="dc-record"><span>Serial</span><strong>SN-420-8AE</strong></div>
+   <div class="dc-record"><span>Location</span><strong>Bldg A / Floor 03</strong></div>
+   <div class="dc-sync">✓ Ready to sync with CableMint workspace</div>
+   </div><div class="dc-preview-label">Illustrative sample — not an actual app screenshot.</div></div>
+ </div>
+</section>
 <div class="proof"><div class="wrap proofin"><div class="proofitem"><strong>Save Time</strong><span>Structured templates for recurring field tasks</span></div><div class="proofitem"><strong>Work Smarter</strong><span>Keep project information organized</span></div><div class="proofitem"><strong>Built for Technicians</strong><span>Designed around practical field workflows</span></div><div class="proofitem"><strong>Digital + Print</strong><span>Digital tools here; the physical Field Logbook is sold separately on Amazon</span></div></div></div>
 <section class="accountpitch" aria-label="CableMint account"><div class="wrap accountpitchinner"><div><h2>Get started with CableMint Field Tools</h2><p>Create a free account to start using CableMint&#39;s field tools. Sign in anytime to access your account and explore Pro project features.</p></div><div class="pitchactions"><a class="pitchprimary" href="/field-tools/?auth=signup">Create Free Account</a><a class="pitchsecondary" href="/field-tools/?auth=login">Log In</a></div></div></section>
 <section id="calculators" style="background:#eaf6f0;padding:52px 0;border-bottom:1px solid #dce6e1"><div class="wrap">
@@ -234,7 +274,7 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
 </div>
 </div>
 </section>
-<footer><div class="wrap foot"><div><strong>CableMint Tools</strong><br><small>Digital Tools for Connected Work</small></div><div class="footlinks"><a href="https://cableminttools.com">Home</a><a href="/store/">Shop Downloads</a><a href="https://www.youtube.com/@CableMintTools" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://www.tiktok.com/@cableminttools" target="_blank" rel="noopener noreferrer">TikTok</a><a href="https://www.instagram.com/cableminttools" target="_blank" rel="noopener noreferrer">Instagram</a><a href="/pricing/">Pricing</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a><a href="/refunds/">Refunds</a></div></div></footer>
+<footer><div class="wrap foot"><div><strong>CableMint Tools</strong><br><small>Digital Tools for Connected Work</small></div><div class="footlinks"><a href="https://cableminttools.com">Home</a><a href="/store/">Shop Downloads</a><a href="/device-capture/">Device Capture</a><a href="https://www.youtube.com/@CableMintTools" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://www.tiktok.com/@cableminttools" target="_blank" rel="noopener noreferrer">TikTok</a><a href="https://www.instagram.com/cableminttools" target="_blank" rel="noopener noreferrer">Instagram</a><a href="/pricing/">Pricing</a><a href="/terms/">Terms</a><a href="/privacy/">Privacy</a><a href="/refunds/">Refunds</a></div></div></footer>
 <script>
 document.addEventListener('click', function (event) {
   const link = event.target.closest('a[href*="etsy.com"]');
@@ -301,5 +341,6 @@ document.addEventListener("click", function (event) {
  window.addEventListener('storage',event=>{if(event.key?.includes('auth-token'))show();});
 })();
 </script>
+<script>document.addEventListener("click",function(e){const a=e.target.closest("a[data-dc-click]");if(a&&typeof gtag==="function"){gtag("event","device_capture_promo_click",{cta_name:a.dataset.dcClick,link_url:a.href});}});</script>
 </body>
 </html>
