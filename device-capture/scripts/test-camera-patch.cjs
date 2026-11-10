@@ -1,0 +1,16 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {spawnSync}=require('node:child_process');
+const app=path.resolve(__dirname,'..');
+const root=fs.mkdtempSync(path.join(app,'.artifacts/v125-review/clean-camera-'));
+const camera=path.join(root,'node_modules/expo-camera');fs.mkdirSync(camera,{recursive:true});
+fs.copyFileSync(path.join(app,'package.json'),path.join(root,'package.json'));
+const extracted=spawnSync('tar',['-xf',path.resolve(process.argv[2]),'-C',camera,'--strip-components=1'],{stdio:'inherit'});
+assert.equal(extracted.status,0);
+const plugin=require('../plugins/withSmartBarcode.cjs');plugin.apply(root);
+const viewPath=path.join(camera,'android/src/main/java/expo/modules/camera/ExpoCameraView.kt');
+const before=fs.readFileSync(viewPath,'utf8');
+const analyzer=fs.readFileSync(path.join(camera,'android/src/main/java/expo/modules/camera/analyzers/BarcodeAnalyzer.kt'),'utf8');
+for(const token of ['enableAllPotentialBarcodes()','setZoomSuggestionOptions(zoomOptions)','onZoomSuggestion(ratio)'])assert.ok(analyzer.includes(token),token);
+for(const token of ['CableMintZoomOperation.submit(boundCamera.cameraControl','potential.mapNotNull(::bounds), reads','automaticCameraRequestCount','generation != cableMintCameraGeneration','cableMintAutoZoom.cameraRebound()'])assert.ok(before.includes(token),token);
+plugin.apply(root);assert.equal(fs.readFileSync(viewPath,'utf8'),before,'Repeated prebuild must not reinitialize or duplicate native patches');
+console.log('Clean pinned Expo Camera source: potential detection, suggestions, geometry fallback, active-camera request path and idempotence verified.');
