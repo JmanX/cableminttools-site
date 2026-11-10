@@ -45,6 +45,32 @@ footer{background:#fff;border-top:1px solid var(--line);padding:32px 0}.footer{d
 section.block{padding:56px 0}
 .faq details[open]{background:#f9fcfa;border-radius:11px;padding:20px}
 @media(max-width:680px){.features{grid-template-columns:1fr}.hero{padding:42px 0 46px}section.block{padding:46px 0}.pro-requirement{padding:13px 14px;margin-top:18px}.pro-requirement strong{font-size:15px}}
+
+/* Device Capture real-app demo and accessible screenshot gallery */
+.demo-wrap{width:min(100%,355px);margin-inline:auto}
+.demo-topline{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.demo-tag{display:inline-flex;align-items:center;border:1px solid #badaca;background:#fff;color:#216a50;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:850}
+.demo-phone{width:min(100%,306px);margin-inline:auto;border:9px solid #1b333e;border-radius:39px;overflow:hidden;box-shadow:0 26px 56px rgba(8,33,43,.24);background:#17303b}
+.demo-phone video{display:block;width:100%;aspect-ratio:720/1560;object-fit:cover;background:#132d39}
+.demo-caption{text-align:center;font-size:12px;color:#48606b;margin:13px auto 0;max-width:340px}
+.demo-inline{display:inline-block;margin-top:12px;color:#137a58;text-decoration:underline;text-underline-offset:4px;font-weight:800;font-size:14px}
+.screenshots{background:#fff;border-top:1px solid var(--line);overflow:hidden}
+.gallery-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:20px}
+.gallery-heading h2{margin:8px 0 7px;font-size:clamp(29px,3.5vw,42px);letter-spacing:-.035em;line-height:1.13}
+.gallery-heading p{max-width:620px;margin:0;color:var(--muted)}
+.gallery-controls{display:flex;gap:10px;flex-shrink:0}
+.gallery-controls button{width:45px;height:45px;display:grid;place-items:center;border:1px solid #b8cfc5;border-radius:12px;background:#fff;color:#15313c;font-size:24px;font-weight:900;cursor:pointer}
+.gallery-controls button:hover,.gallery-controls button:focus-visible{background:#dff6eb;outline-offset:3px}
+.gallery-track{display:flex;gap:17px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;scroll-padding-inline:4%;-webkit-overflow-scrolling:touch;padding:4px 4px 18px;scrollbar-color:#abd3c0 #eaf4ee}
+.gallery-item{flex:0 0 clamp(225px,25vw,286px);scroll-snap-align:start;margin:0;min-width:0}
+.gallery-item a{display:block;border-radius:20px;overflow:hidden;border:1px solid #d8e7e0;box-shadow:0 10px 24px rgba(20,45,57,.08);background:#eaf4ef}
+.gallery-item a:focus-visible{outline:3px solid #0f8f62;outline-offset:3px}
+.gallery-item img{display:block;width:100%;height:auto;aspect-ratio:9/16;object-fit:contain}
+.gallery-item figcaption{font-size:13px;font-weight:750;color:#435d65;margin:10px 3px 0}
+.gallery-fine{font-size:12px;color:#65787c;margin:8px 0 0}
+@media(max-width:680px){.demo-wrap{width:min(100%,330px)}.demo-phone{width:min(100%,265px)}.gallery-heading{align-items:start}.gallery-controls button{width:40px;height:40px}.gallery-item{flex-basis:min(75vw,290px)}.gallery-heading h2{font-size:30px}}
+@media(prefers-reduced-motion:reduce){.gallery-track{scroll-behavior:auto}}
+
 </style>
 </head>
 <body>
@@ -54,17 +80,27 @@ section.block{padding:56px 0}
 <section class="hero" aria-labelledby="hero-title"><div class="wrap hero-grid">
 <div><div class="eyebrow"><span class="dot" aria-hidden="true"></span> Now on Google Play • Pro required</div><h1 id="hero-title">Device details, <em>captured in the field.</em></h1><p>Meet CableMint Device Capture: an Android app for low-voltage, security, and IT technicians who need reliable device records without juggling loose photos and notes.</p>
 <div class="pro-requirement" role="note"><strong>Active CableMint Pro account required</strong><span>Device Capture is a Pro-only Android app. A free CableMint account alone does not unlock device capture or syncing inside the Android app.</span></div>
-<div class="actions"><a class="btn primary" href="https://play.google.com/store/apps/details?id=com.cableminttools.devicecapture" target="_blank" rel="noopener noreferrer" data-app-cta="play_download_top" aria-label="Get CableMint Device Capture on Google Play">Get it on Google Play ↗</a><a class="btn secondary" href="/pricing/" data-app-cta="pricing_top">View Pro plans</a></div>
+<a class="demo-inline" href="#demo">Watch the 27-second demo ↓</a><div class="actions"><a class="btn primary" href="https://play.google.com/store/apps/details?id=com.cableminttools.devicecapture" target="_blank" rel="noopener noreferrer" data-app-cta="play_download_top" aria-label="Get CableMint Device Capture on Google Play">Get it on Google Play ↗</a><a class="btn secondary" href="/pricing/" data-app-cta="pricing_top">View Pro plans</a></div>
 <p class="statusnote">Available on Google Play. An active CableMint Pro account is required to use the Android app. Availability may vary by country or device.</p>
 </div>
-<div class="mockup" aria-label="Illustration of a device field record"><div class="phone"><div class="phonehead"><div class="appname">CableMint Device Capture</div><small>Project: Bay View Install • Sample data</small></div><div class="phonecontent">
-<div class="phonecard tinted"><div class="label">Device</div><div class="scanline"><div><strong>IP Camera</strong><small>Building A / Floor 03 / Room 318</small></div><span class="scanicon" aria-hidden="true">▥</span></div></div>
-<div class="phonecard"><div class="label">MAC address • verified</div><strong>F4:8B:32:1C:0B:A2</strong></div>
-<div class="phonecard"><div class="label">Serial number</div><strong>SN-420-8AE</strong></div>
-<div class="phonecard"><div class="sync">Record ready to sync</div></div>
-</div></div><p class="preview-label">Illustrative sample workflow — not an actual app screenshot.</p></div>
+<div class="demo-wrap" id="demo" aria-label="Actual Device Capture app demonstration"><div class="demo-topline"><span class="demo-tag">27-second app demo</span><span class="demo-tag">Synthetic test data</span></div><div class="demo-phone"><video id="app-demo-video" muted autoplay playsinline loop controls preload="metadata" poster="/device-capture/media/poster.jpg" aria-label="CableMint Device Capture demo: scan, verify, save, and sync">
+<source src="/device-capture/media/personal-demo.mp4" type="video/mp4"><source src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JPEpaiUjmH3ZQ9whmdAeXWTbU6/c68aeb58-ef81-4dfd-b878-40713c0edb50.mp4" type="video/mp4">
+Your browser does not support embedded videos. <a href="https://d2ol7oe51mr4n9.cloudfront.net/user_3JPEpaiUjmH3ZQ9whmdAeXWTbU6/c68aeb58-ef81-4dfd-b878-40713c0edb50.mp4" target="_blank" rel="noopener noreferrer">Watch the demonstration</a>.
+</video></div><p class="demo-caption">Recorded on a Galaxy S24 Ultra using the isolated Personal workflow. No customer records shown.</p></div>
 </div></section>
 <div class="strip"><div class="wrap strip-inner"><span>Label and barcode capture</span><span>MAC and serial review</span><span>Project-based records</span><span>Offline queue and sync</span></div></div>
+<section class="block screenshots" id="screenshots" aria-labelledby="gallery-title"><div class="wrap">
+<div class="gallery-heading"><div><span class="small" style="color:#138960;font-size:12px;font-weight:900;letter-spacing:.12em">SEE THE APP</span><h2 id="gallery-title">Built for real field work.</h2><p>Explore actual CableMint Device Capture screens. Swipe through to see projects, label scanning, verification, and Gap documentation.</p></div><div class="gallery-controls" aria-label="Browse screenshots"><button id="gallery-prev" type="button" aria-label="Previous screenshots">‹</button><button id="gallery-next" type="button" aria-label="Next screenshots">›</button></div></div>
+<div class="gallery-track" id="gallery-track" aria-label="Device Capture screenshots" tabindex="0">
+<figure class="gallery-item"><a href="/device-capture/media/slide1.webp" target="_blank" rel="noopener noreferrer" aria-label="Open full Track every field project screenshot"><img src="/device-capture/media/slide1.webp" alt="Track every field project: See project activity and synced jobs" width="720" height="1280" loading="lazy" decoding="async"></a><figcaption>See project activity and synced jobs</figcaption></figure>
+<figure class="gallery-item"><a href="/device-capture/media/slide2.webp" target="_blank" rel="noopener noreferrer" aria-label="Open full Capture devices faster screenshot"><img src="/device-capture/media/slide2.webp" alt="Capture devices faster: Choose the device type before scanning" width="720" height="1280" loading="lazy" decoding="async"></a><figcaption>Choose the device type before scanning</figcaption></figure>
+<figure class="gallery-item"><a href="/device-capture/media/slide3.webp" target="_blank" rel="noopener noreferrer" aria-label="Open full Scan MAC and serial labels screenshot"><img src="/device-capture/media/slide3.webp" alt="Scan MAC and serial labels: Camera, gallery and manual capture options" width="720" height="1280" loading="lazy" decoding="async"></a><figcaption>Camera, gallery and manual capture options</figcaption></figure>
+<figure class="gallery-item"><a href="/device-capture/media/slide4.webp" target="_blank" rel="noopener noreferrer" aria-label="Open full Verify before saving screenshot"><img src="/device-capture/media/slide4.webp" alt="Verify before saving: Review the identifiers and correct them" width="720" height="1280" loading="lazy" decoding="async"></a><figcaption>Review the identifiers and correct them</figcaption></figure>
+<figure class="gallery-item"><a href="/device-capture/media/slide5.webp" target="_blank" rel="noopener noreferrer" aria-label="Open full Track Gaps and Punch Lists screenshot"><img src="/device-capture/media/slide5.webp" alt="Track Gaps and Punch Lists: Document missing devices and work" width="720" height="1280" loading="lazy" decoding="async"></a><figcaption>Document missing devices and work</figcaption></figure>
+<figure class="gallery-item"><a href="/device-capture/media/slide6.webp" target="_blank" rel="noopener noreferrer" aria-label="Open full Resolve issues with photo proof screenshot"><img src="/device-capture/media/slide6.webp" alt="Resolve issues with photo proof: Keep closeout evidence together" width="720" height="1280" loading="lazy" decoding="async"></a><figcaption>Keep closeout evidence together</figcaption></figure>
+</div><p class="gallery-fine">Promotional screenshots demonstrate app features using example device records. The video above is a separate recorded workflow with synthetic data.</p>
+</div></section>
+
 <section class="block" id="features"><div class="wrap"><div class="sectiontitle"><span class="small">BUILT AROUND ACTUAL FIELD WORK</span><h2>Know which device went where.</h2><p>From the first scan to project closeout, keep the important details together and easier to find.</p></div><div class="features">
 <article class="feature"><span class="glyph" aria-hidden="true">▥</span><h3>Scan and verify labels</h3><p>Capture supported equipment labels and barcodes, then review MAC addresses and serial numbers before saving.</p></article>
 <article class="feature"><span class="glyph" aria-hidden="true">▦</span><h3>Organize devices by location</h3><p>Keep project, building, floor, room and device type details with each record.</p></article>
@@ -82,6 +118,15 @@ section.block{padding:56px 0}
 <footer><div class="wrap footer"><div><strong>CableMint Tools</strong><div>Digital tools for connected work.</div></div><div class="footerlinks"><a href="/">Home</a><a href="/field-tools/">Field Tools</a><a href="/store/">Shop Downloads</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div></div></footer>
 <script>
 document.addEventListener('click',function(e){const a=e.target.closest('a[data-app-cta]');if(a&&typeof gtag==='function'){gtag('event','device_capture_cta_click',{cta_name:a.dataset.appCta,link_url:a.href});}});
+
+(function(){const t=document.getElementById('gallery-track');if(!t)return;
+ const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ function move(d){const first=t.querySelector('.gallery-item');if(!first)return;const gap=parseFloat(getComputedStyle(t).gap)||17;t.scrollBy({left:d*(first.getBoundingClientRect().width+gap),behavior:reduced?'instant':'smooth'});}
+ document.getElementById('gallery-prev').addEventListener('click',()=>move(-1));
+ document.getElementById('gallery-next').addEventListener('click',()=>move(1));
+ const video=document.getElementById('app-demo-video');
+ if(video){video.addEventListener('play',()=>{if(typeof gtag==='function')gtag('event','device_capture_demo_play',{demo_type:'synthetic_personal'});},{once:true});}
+})();
 </script>
 </body>
 </html>
