@@ -143,6 +143,18 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
 .dc-pronote{margin-top:20px!important;padding:13px 15px;border:1px solid #e4bb77;border-left:5px solid #dc9f43;border-radius:10px;background:#fffaf0;color:#533d20!important;font-size:14px!important}
 .dc-pronote strong{color:#4d3216}
 .dc-note a{color:#087c57;text-decoration:underline;font-weight:900}
+
+/* Real Device Capture demo teaser: no animated hero or auto-play on home */
+.dc-demo-preview{display:grid;justify-items:center;gap:10px}
+.dc-demo-link{position:relative;display:block;width:min(100%,265px);overflow:hidden;border:8px solid #1b343e;border-radius:34px;background:#16303b;box-shadow:0 23px 48px rgba(19,49,59,.23);transition:transform .15s}
+.dc-demo-link:hover{transform:translateY(-3px)}
+.dc-demo-link:focus-visible{outline:3px solid #138960;outline-offset:4px}
+.dc-demo-link img{display:block;width:100%;aspect-ratio:720/1560;height:auto;object-fit:cover}
+.dc-demo-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:62px;height:62px;border:2px solid #fff;border-radius:100%;background:rgba(17,54,55,.85);color:#fff;font-size:25px;padding-left:4px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.dc-demo-preview .dc-preview-label{display:grid;gap:3px;font-size:12px}
+.dc-demo-preview .dc-preview-label strong{color:#1e4950;font-size:14px}
+.dc-demo-preview .dc-preview-label span{color:#64767e}
+@media(max-width:850px){.dc-demo-link{width:min(75vw,252px)}}
 </style>
 </head>
 <body>
@@ -204,14 +216,10 @@ section{padding:78px 0}.sectionhead{display:flex;justify-content:space-between;g
    <div class="dc-actions"><a class="dc-main" href="https://play.google.com/store/apps/details?id=com.cableminttools.devicecapture" target="_blank" rel="noopener noreferrer" data-dc-click="play_download">Get it on Google Play ↗</a><a class="dc-alt" href="/device-capture/" data-dc-click="learn_more">Explore Device Capture</a></div>
    <p class="dc-note">Android app available on Google Play; use requires an active Pro subscription. <a href="/pricing/">See Pro plans</a>. App availability may vary by device or country.</p>
   </div>
-  <div><div class="dc-illustration" aria-label="Illustration of a sample Device Capture record">
-   <div class="dc-illus-head"><span>Device Capture</span><span class="dc-illus-badge">FIELD RECORD</span></div>
-   <div class="dc-device"><small>PROJECT · BAY VIEW INSTALL</small><strong>IP Camera · Lobby</strong></div>
-   <div class="dc-record"><span>MAC address</span><strong>F4:8B:32:1C:0B:A2</strong></div>
-   <div class="dc-record"><span>Serial</span><strong>SN-420-8AE</strong></div>
-   <div class="dc-record"><span>Location</span><strong>Bldg A / Floor 03</strong></div>
-   <div class="dc-sync">✓ Ready to sync with CableMint workspace</div>
-   </div><div class="dc-preview-label">Illustrative sample — not an actual app screenshot.</div></div>
+  <div class="dc-demo-preview"><a class="dc-demo-link" href="/device-capture/#demo" data-dc-click="watch_demo" aria-label="Watch the 27-second real Device Capture app demonstration">
+    <img src="/device-capture/media/poster.jpg" width="420" height="910" loading="lazy" decoding="async" alt="Real CableMint Device Capture Android app, project and device type selection">
+    <span class="dc-demo-play" aria-hidden="true">▶</span>
+    </a><div class="dc-preview-label"><strong>Watch 27-second app demo</strong><span>Galaxy S24 Ultra · local demonstration with synthetic data</span></div></div>
  </div>
 </section>
 <div class="proof"><div class="wrap proofin"><div class="proofitem"><strong>Save Time</strong><span>Structured templates for recurring field tasks</span></div><div class="proofitem"><strong>Work Smarter</strong><span>Keep project information organized</span></div><div class="proofitem"><strong>Built for Technicians</strong><span>Designed around practical field workflows</span></div><div class="proofitem"><strong>Digital + Print</strong><span>Digital tools here; the physical Field Logbook is sold separately on Amazon</span></div></div></div>
