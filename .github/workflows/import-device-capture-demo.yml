@@ -1,0 +1,32 @@
+name: Import Device Capture demo media
+on:
+  push:
+    branches:
+      - feature/device-capture-real-demo-gallery
+    paths:
+      - .github/workflows/import-device-capture-demo.yml
+permissions:
+  contents: write
+jobs:
+  import-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/device-capture-real-demo-gallery
+      - name: Download approved synthetic-data demonstration
+        run: |
+          set -euo pipefail
+          mkdir -p device-capture/media
+          curl -fLsS --retry 3 --max-time 120 "https://d2ol7oe51mr4n9.cloudfront.net/user_3JPEpaiUjmH3ZQ9whmdAeXWTbU6/c68aeb58-ef81-4dfd-b878-40713c0edb50.mp4" -o device-capture/media/personal-demo.mp4
+          test "$(stat -c%s device-capture/media/personal-demo.mp4)" -gt 100000
+          file device-capture/media/personal-demo.mp4
+      - name: Commit video on feature branch only
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add device-capture/media/personal-demo.mp4
+          if ! git diff --cached --quiet; then
+            git commit -m "assets: include real synthetic Personal Device Capture demo video"
+            git push origin HEAD:feature/device-capture-real-demo-gallery
+          fi
