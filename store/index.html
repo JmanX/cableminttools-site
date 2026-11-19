@@ -368,6 +368,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:poi
 </div></footer>
 <script>
 /* Nine approved LIVE Dodo links; these are the same checkout destinations as the earlier store. */
+const purchaseReturnUrl = "https://cableminttools.com/store/success/";
 const dodoLinks = {
   estimate: "https://checkout.dodopayments.com/buy/pdt_0NqOzKcHjBsHpAO7y3LIF?quantity=1",
   changeOrder: "https://checkout.dodopayments.com/buy/pdt_0NqP2A7vdpJYr2NMBdxI0?quantity=1",
@@ -384,10 +385,11 @@ const productCards=Array.from(document.querySelectorAll('[data-product]'));
 productCards.forEach(function(card){
  const key=card.dataset.product;
  const link=dodoLinks[key];
+ const checkoutLink=link ? link + "&redirect_url=" + encodeURIComponent(purchaseReturnUrl) : "";
  const buy=card.querySelector('.purchase');
  const etsy=card.querySelector('.etsy');
- if(link && /^https:\/\/[^ ]+$/.test(link)){
-  buy.href=link;
+ if(checkoutLink && /^https:\/\/[^ ]+$/.test(checkoutLink)){
+  buy.href=checkoutLink;
   buy.textContent='Buy direct ↗';
   buy.setAttribute('aria-label','Buy '+card.querySelector('h3').textContent+' directly via Dodo Payments');
   buy.target='_blank';
